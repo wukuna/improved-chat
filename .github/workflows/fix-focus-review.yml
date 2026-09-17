@@ -36,32 +36,22 @@ jobs:
           assert s.count(anchor) == 1
           s = s.replace(anchor, anchor + '    private static volatile boolean clientFocused = true;\n')
 
-          anchor = '''    public static void beginOverlay(OverlayConfig config) {
-              CURRENT.set(config);
-          }
-          '''
-          assert s.count(anchor) == 1
-          s = s.replace(anchor, anchor + '''
-              public static void setClientFocused(boolean focused) {
-                  clientFocused = focused;
-              }
-          ''')
+          begin = '    public static void beginOverlay(OverlayConfig config) {\n        CURRENT.set(config);\n    }\n'
+          assert s.count(begin) == 1
+          s = s.replace(begin, begin + '\n    public static void setClientFocused(boolean focused) {\n        clientFocused = focused;\n    }\n')
 
-          old = '''    private static boolean isClientFocused() {
-              try {
-                  Window w = KeyboardFocusManager.getCurrentKeyboardFocusManager().getActiveWindow();
-                  return w != null && w.isFocused();
-              } catch (RuntimeException ex) {
-                  return true;
-              }
-          }
-          '''
-          new = '''    private static boolean isClientFocused() {
-              return clientFocused;
-          }
-          '''
-          assert s.count(old) == 1
-          s = s.replace(old, new)
+          old_focus = (
+              '    private static boolean isClientFocused() {\n'
+              '        try {\n'
+              '            Window w = KeyboardFocusManager.getCurrentKeyboardFocusManager().getActiveWindow();\n'
+              '            return w != null && w.isFocused();\n'
+              '        } catch (RuntimeException ex) {\n'
+              '            return true;\n'
+              '        }\n'
+              '    }\n'
+          )
+          assert s.count(old_focus) == 1
+          s = s.replace(old_focus, '    private static boolean isClientFocused() {\n        return clientFocused;\n    }\n')
           attention.write_text(s)
 
           plugin = Path('src/main/java/com/improvedchat/ImprovedChatPlugin.java')
@@ -75,23 +65,19 @@ jobs:
           assert p.count(event_import_anchor) == 1
           p = p.replace(event_import_anchor, 'import net.runelite.api.events.FocusChanged;\n' + event_import_anchor)
 
-          handler_anchor = '''    @Subscribe
-              public void onGameStateChanged(GameStateChanged event) {
-          '''
+          handler_anchor = '    @Subscribe\n    public void onGameStateChanged(GameStateChanged event) {\n'
           assert p.count(handler_anchor) == 1
-          p = p.replace(handler_anchor, '''    @Subscribe
-              public void onFocusChanged(FocusChanged event) {
-                  AttentionEngine.setClientFocused(event.isFocused());
-              }
-
-              @Subscribe
-              public void onGameStateChanged(GameStateChanged event) {
-          ''')
+          focus_handler = (
+              '    @Subscribe\n'
+              '    public void onFocusChanged(FocusChanged event) {\n'
+              '        AttentionEngine.setClientFocused(event.isFocused());\n'
+              '    }\n\n'
+          )
+          p = p.replace(handler_anchor, focus_handler + handler_anchor)
 
           shutdown_anchor = '        OverlayColorRuleEngine.configure(null);\n'
           assert p.count(shutdown_anchor) == 1
           p = p.replace(shutdown_anchor, shutdown_anchor + '        AttentionEngine.setClientFocused(true);\n')
-
           plugin.write_text(p)
           PY
 
