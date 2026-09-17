@@ -8,9 +8,7 @@ import com.improvedchat.model.OverlayMessage;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.KeyboardFocusManager;
 import java.awt.Stroke;
-import java.awt.Window;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -20,11 +18,16 @@ public final class AttentionEngine {
     private static final Map<String, AlertState> STATES = new ConcurrentHashMap<>();
     private static final Map<String, AlertState> WHOLE_OVERLAY = new ConcurrentHashMap<>();
     private static volatile long lastCleanup;
+    private static volatile boolean clientFocused = true;
 
     private AttentionEngine() {}
 
     public static void beginOverlay(OverlayConfig config) {
         CURRENT.set(config);
+    }
+
+    public static void setClientFocused(boolean focused) {
+        clientFocused = focused;
     }
 
     public static int adjustAlpha(OverlayMessage msg, long now, int baseAlpha) {
@@ -146,12 +149,7 @@ public final class AttentionEngine {
     }
 
     private static boolean isClientFocused() {
-        try {
-            Window w = KeyboardFocusManager.getCurrentKeyboardFocusManager().getActiveWindow();
-            return w != null && w.isFocused();
-        } catch (RuntimeException ex) {
-            return true;
-        }
+        return clientFocused;
     }
 
     private static String key(OverlayConfig cfg, OverlayMessage msg) {

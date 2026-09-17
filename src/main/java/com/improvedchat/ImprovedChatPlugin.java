@@ -3,6 +3,7 @@ package com.improvedchat;
 import com.improvedchat.model.MessageCategory;
 import com.improvedchat.model.MessageMergeRule;
 import com.improvedchat.model.OverlayMessage;
+import com.improvedchat.overlay.AttentionEngine;
 import com.improvedchat.overlay.DynamicChatOverlay;
 import com.improvedchat.overlay.OverlayConfig;
 import com.google.gson.Gson;
@@ -14,6 +15,7 @@ import net.runelite.api.GameState;
 import net.runelite.api.MessageNode;
 import net.runelite.api.Point;
 import net.runelite.api.events.ChatMessage;
+import net.runelite.api.events.FocusChanged;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.MenuOptionClicked;
@@ -267,6 +269,7 @@ public class ImprovedChatPlugin extends Plugin {
         pendingUpdates.clear();
         MessageColorRuleEngine.configure(null);
         OverlayColorRuleEngine.configure(null);
+        AttentionEngine.setClientFocused(true);
 
         if (pmWidgetsHidden) {
             setPmWidgetsHidden(false);
@@ -422,6 +425,11 @@ public class ImprovedChatPlugin extends Plugin {
     }
 
     // --- Event handlers ---
+
+    @Subscribe
+    public void onFocusChanged(FocusChanged event) {
+        AttentionEngine.setClientFocused(event.isFocused());
+    }
 
     @Subscribe
     public void onGameStateChanged(GameStateChanged event) {
