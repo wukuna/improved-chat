@@ -1,0 +1,125 @@
+name: Apply focus review fix
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/fix-focus-review.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply reviewer-requested focus fix
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          attention = Path('src/main/java/com/improvedchat/overlay/AttentionEngine.java')
+          s = attention.read_text()
+
+          assert s.count('import java.awt.KeyboardFocusManager;\n') == 1
+          assert s.count('import java.awt.Window;\n') == 1
+          s = s.replace('import java.awt.KeyboardFocusManager;\n', '')
+          s = s.replace('import java.awt.Window;\n', '')
+
+          anchor = '    private static volatile long lastCleanup;\n'
+          assert s.count(anchor) == 1
+          s = s.replace(anchor, anchor + '    private static volatile boolean clientFocused = true;\n')
+
+          anchor = '''    public static void beginOverlay(OverlayConfig config) {
+              CURRENT.set(config);
+          }
+          '''
+          assert s.count(anchor) == 1
+          s = s.replace(anchor, anchor + '''
+              public static void setClientFocused(boolean focused) {
+                  clientFocused = focused;
+              }
+          ''')
+
+          old = '''    private static boolean isClientFocused() {
+              try {
+                  Window w = KeyboardFocusManager.getCurrentKeyboardFocusManager().getActiveWindow();
+                  return w != null && w.isFocused();
+              } catch (RuntimeException ex) {
+                  return true;
+              }
+          }
+          '''
+          new = '''    private static boolean isClientFocused() {
+              return clientFocused;
+          }
+          '''
+          assert s.count(old) == 1
+          s = s.replace(old, new)
+          attention.write_text(s)
+
+          plugin = Path('src/main/java/com/improvedchat/ImprovedChatPlugin.java')
+          p = plugin.read_text()
+
+          import_anchor = 'import com.improvedchat.overlay.DynamicChatOverlay;\n'
+          assert p.count(import_anchor) == 1
+          p = p.replace(import_anchor, 'import com.improvedchat.overlay.AttentionEngine;\n' + import_anchor)
+
+          event_import_anchor = 'import net.runelite.api.events.GameStateChanged;\n'
+          assert p.count(event_import_anchor) == 1
+          p = p.replace(event_import_anchor, 'import net.runelite.api.events.FocusChanged;\n' + event_import_anchor)
+
+          handler_anchor = '''    @Subscribe
+              public void onGameStateChanged(GameStateChanged event) {
+          '''
+          assert p.count(handler_anchor) == 1
+          p = p.replace(handler_anchor, '''    @Subscribe
+              public void onFocusChanged(FocusChanged event) {
+                  AttentionEngine.setClientFocused(event.isFocused());
+              }
+
+              @Subscribe
+              public void onGameStateChanged(GameStateChanged event) {
+          ''')
+
+          shutdown_anchor = '        OverlayColorRuleEngine.configure(null);\n'
+          assert p.count(shutdown_anchor) == 1
+          p = p.replace(shutdown_anchor, shutdown_anchor + '        AttentionEngine.setClientFocused(true);\n')
+
+          plugin.write_text(p)
+          PY
+
+          if grep -R "KeyboardFocusManager" src/main/java; then
+            echo "KeyboardFocusManager still present"
+            exit 1
+          fi
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '13'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+
+      - name: Run tests
+        run: gradle clean test --no-daemon
+
+      - name: Commit verified fix and remove temporary workflow
+        shell: bash
+        run: |
+          rm .github/workflows/fix-focus-review.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Replace KeyboardFocusManager focus tracking"
+          git push origin HEAD:main
