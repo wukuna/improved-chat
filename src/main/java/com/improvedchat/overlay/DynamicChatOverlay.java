@@ -6,6 +6,7 @@ import com.improvedchat.model.FontSize;
 import com.improvedchat.model.MessageCategory;
 import com.improvedchat.model.OverlayMessage;
 import com.improvedchat.model.PlacementMode;
+import com.improvedchat.model.TextAlignment;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FontMetrics;
@@ -209,7 +210,7 @@ public class DynamicChatOverlay extends Overlay {
 
         int y = widgetHeight - paddingY - metrics.getDescent();
         if (inputSegments != null) {
-            drawSegments(graphics, inputSegments, 255, y, followPlayer, widgetWidth,
+            drawSegments(graphics, inputSegments, 255, y, widgetWidth,
                     paddingX, fontSize, metrics, modIcons, drawShadow);
             y -= lineHeight;
         }
@@ -219,7 +220,7 @@ public class DynamicChatOverlay extends Overlay {
             if (line.alpha <= 0) {
                 continue;
             }
-            drawSegments(graphics, line.segments, line.alpha, y, followPlayer, widgetWidth,
+            drawSegments(graphics, line.segments, line.alpha, y, widgetWidth,
                     paddingX, fontSize, metrics, modIcons, drawShadow);
             y -= lineHeight;
         }
@@ -320,14 +321,23 @@ public class DynamicChatOverlay extends Overlay {
         return width;
     }
 
+    static int calculateAlignedX(TextAlignment alignment, int paddingX, int contentWidth, int lineWidth) {
+        int remaining = Math.max(0, contentWidth - lineWidth);
+        if (alignment == TextAlignment.RIGHT) {
+            return paddingX + remaining;
+        }
+        if (alignment == TextAlignment.CENTER) {
+            return paddingX + remaining / 2;
+        }
+        return paddingX;
+    }
+
     private void drawSegments(Graphics2D graphics, List<TextSegment> segments, int alpha, int y,
-            boolean followPlayer, int widgetWidth, int paddingX, FontSize fontSize,
+            int widgetWidth, int paddingX, FontSize fontSize,
             FontMetrics metrics, IndexedSprite[] modIcons, boolean drawShadow) {
         int lineWidth = calculateLineWidth(segments, metrics);
         int contentWidth = Math.max(0, widgetWidth - paddingX * 2);
-        int x = followPlayer
-                ? paddingX + Math.max(0, (contentWidth - lineWidth) / 2)
-                : paddingX;
+        int x = calculateAlignedX(overlayConfig.getTextAlignment(), paddingX, contentWidth, lineWidth);
 
         for (TextSegment segment : segments) {
             if (segment.iconId >= 0) {
