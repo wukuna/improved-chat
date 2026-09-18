@@ -7,6 +7,7 @@ import com.improvedchat.model.BorderThickness;
 import com.improvedchat.model.FontSize;
 import com.improvedchat.model.MessageCategory;
 import com.improvedchat.model.PlacementMode;
+import com.improvedchat.model.TextAlignment;
 import java.awt.Color;
 import java.util.EnumSet;
 import java.util.Set;
@@ -29,6 +30,7 @@ public final class OverlayConfig {
     private int offsetX;
     private int offsetY;
     private PlacementMode placementMode = PlacementMode.FREE;
+    private TextAlignment textAlignment;
 
     private boolean overlayColorOverrideEnabled;
     private Color overlayTextColor = Color.WHITE;
@@ -146,6 +148,17 @@ public final class OverlayConfig {
 
     public void setPlacementMode(PlacementMode mode) {
         placementMode = mode == null ? PlacementMode.FREE : mode;
+    }
+
+    public TextAlignment getTextAlignment() {
+        if (textAlignment != null) {
+            return textAlignment;
+        }
+        return getPlacementMode() == PlacementMode.FREE ? TextAlignment.LEFT : TextAlignment.CENTER;
+    }
+
+    public void setTextAlignment(TextAlignment value) {
+        textAlignment = value;
     }
 
     public boolean isOverlayColorOverrideEnabled() { return overlayColorOverrideEnabled; }
