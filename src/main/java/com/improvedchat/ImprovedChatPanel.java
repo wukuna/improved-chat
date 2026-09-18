@@ -7,6 +7,7 @@ import com.improvedchat.model.AttentionTrigger;
 import com.improvedchat.model.BorderThickness;
 import com.improvedchat.model.MessageCategory;
 import com.improvedchat.model.PlacementMode;
+import com.improvedchat.model.TextAlignment;
 import com.improvedchat.overlay.OverlayConfig;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -181,6 +182,7 @@ public class ImprovedChatPanel extends PluginPanel {
         appearance.setLayout(new BoxLayout(appearance, BoxLayout.Y_AXIS));
         appearance.add(comboRow("Text Size", FontSize.values(), oc.getFontSize(), v -> { oc.setFontSize(v); saveOverlay(); }));
         appearance.add(comboRow("Text Font", FONT_FAMILIES, oc.getFontFamily(), v -> { oc.setFontFamily(v); saveOverlay(); }));
+        appearance.add(comboRow("Text Alignment", TextAlignment.values(), oc.getTextAlignment(), v -> { oc.setTextAlignment(v); saveOverlay(); }));
         appearance.add(checkRow("Bold", oc.isBoldText(), v -> { oc.setBoldText(v); saveOverlay(); }));
         appearance.add(spinnerRow("Width", oc.getWidgetWidth(), 150, 1024, 8, v -> { oc.setWidgetWidth(v); saveOverlay(); }));
         appearance.add(spinnerRow("Horizontal Padding", oc.getPaddingHorizontal(), 0, 50, 1, v -> { oc.setPaddingHorizontal(v); saveOverlay(); }));
