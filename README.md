@@ -9,7 +9,7 @@ The project is derived in part from the BSD-2-Clause **Chat Widgets** plugin, bu
 - Create multiple independent chat overlays and choose the message categories shown by each one.
 - Use RuneLite's normal movable/resizable overlay placement, or attach an overlay above/below the local player.
 - Configure width, padding, player-relative offsets, message count, fade time, dynamic height, timestamps, and input preview per overlay.
-- Customize fonts, bold text, background colors, borders, and per-overlay text color overrides.
+- Customize fonts, bold text, left/center/right text alignment, background colors, borders, and per-overlay text color overrides.
 - Use **Message Color Rules** to recolor matching messages in both the RuneLite chatbox and Improved Chat overlays.
 - Append `::flash` to a Message Color Rule to mark matching overlay messages for attention effects.
 - Use **Overlay Rainbow Rules** for overlay-only rainbow rendering by word or visible character.
