@@ -24,31 +24,29 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
 
-          # New persisted per-overlay alignment enum.
           enum_path = Path('src/main/java/com/improvedchat/model/TextAlignment.java')
           assert not enum_path.exists()
           enum_path.write_text("""package com.improvedchat.model;
 
-          /** Horizontal alignment for text rendered inside an Improved Chat overlay. */
-          public enum TextAlignment {
-              LEFT("Left"),
-              CENTER("Center"),
-              RIGHT("Right");
+/** Horizontal alignment for text rendered inside an Improved Chat overlay. */
+public enum TextAlignment {
+    LEFT("Left"),
+    CENTER("Center"),
+    RIGHT("Right");
 
-              private final String label;
+    private final String label;
 
-              TextAlignment(String label) {
-                  this.label = label;
-              }
+    TextAlignment(String label) {
+        this.label = label;
+    }
 
-              @Override
-              public String toString() {
-                  return label;
-              }
-          }
-          """.replace('          ', ''))
+    @Override
+    public String toString() {
+        return label;
+    }
+}
+""")
 
-          # OverlayConfig: nullable stored value preserves legacy placement-dependent behavior.
           path = Path('src/main/java/com/improvedchat/overlay/OverlayConfig.java')
           s = path.read_text()
           anchor = 'import com.improvedchat.model.PlacementMode;\n'
@@ -59,27 +57,28 @@ jobs:
           assert s.count(anchor) == 1
           s = s.replace(anchor, anchor + '    private TextAlignment textAlignment;\n')
 
-          anchor = """    public void setPlacementMode(PlacementMode mode) {
-                  placementMode = mode == null ? PlacementMode.FREE : mode;
-              }
-          """.replace('          ', '')
+          anchor = (
+              '    public void setPlacementMode(PlacementMode mode) {\n'
+              '        placementMode = mode == null ? PlacementMode.FREE : mode;\n'
+              '    }\n'
+          )
           assert s.count(anchor) == 1
-          replacement = anchor + """
-              public TextAlignment getTextAlignment() {
-                  if (textAlignment != null) {
-                      return textAlignment;
-                  }
-                  return getPlacementMode() == PlacementMode.FREE ? TextAlignment.LEFT : TextAlignment.CENTER;
-              }
-
-              public void setTextAlignment(TextAlignment value) {
-                  textAlignment = value;
-              }
-          """.replace('          ', '')
+          replacement = anchor + (
+              '\n'
+              '    public TextAlignment getTextAlignment() {\n'
+              '        if (textAlignment != null) {\n'
+              '            return textAlignment;\n'
+              '        }\n'
+              '        return getPlacementMode() == PlacementMode.FREE ? TextAlignment.LEFT : TextAlignment.CENTER;\n'
+              '    }\n'
+              '\n'
+              '    public void setTextAlignment(TextAlignment value) {\n'
+              '        textAlignment = value;\n'
+              '    }\n'
+          )
           s = s.replace(anchor, replacement)
           path.write_text(s)
 
-          # Panel: expose Left / Center / Right in each overlay's Appearance section.
           path = Path('src/main/java/com/improvedchat/ImprovedChatPanel.java')
           s = path.read_text()
           anchor = 'import com.improvedchat.model.PlacementMode;\n'
@@ -91,115 +90,117 @@ jobs:
           s = s.replace(anchor, anchor + '        appearance.add(comboRow("Text Alignment", TextAlignment.values(), oc.getTextAlignment(), v -> { oc.setTextAlignment(v); saveOverlay(); }));\n')
           path.write_text(s)
 
-          # Renderer: align the complete rendered line (including icons and styled segments).
           path = Path('src/main/java/com/improvedchat/overlay/DynamicChatOverlay.java')
           s = path.read_text()
           anchor = 'import com.improvedchat.model.PlacementMode;\n'
           assert s.count(anchor) == 1
           s = s.replace(anchor, anchor + 'import com.improvedchat.model.TextAlignment;\n')
 
-          old = """            drawSegments(graphics, inputSegments, 255, y, followPlayer, widgetWidth,
-                      paddingX, fontSize, metrics, modIcons, drawShadow);
-          """.replace('          ', '')
-          new = """            drawSegments(graphics, inputSegments, 255, y, widgetWidth,
-                      paddingX, fontSize, metrics, modIcons, drawShadow);
-          """.replace('          ', '')
+          old = (
+              '            drawSegments(graphics, inputSegments, 255, y, followPlayer, widgetWidth,\n'
+              '                    paddingX, fontSize, metrics, modIcons, drawShadow);\n'
+          )
+          new = (
+              '            drawSegments(graphics, inputSegments, 255, y, widgetWidth,\n'
+              '                    paddingX, fontSize, metrics, modIcons, drawShadow);\n'
+          )
           assert s.count(old) == 1
           s = s.replace(old, new)
 
-          old = """            drawSegments(graphics, line.segments, line.alpha, y, followPlayer, widgetWidth,
-                      paddingX, fontSize, metrics, modIcons, drawShadow);
-          """.replace('          ', '')
-          new = """            drawSegments(graphics, line.segments, line.alpha, y, widgetWidth,
-                      paddingX, fontSize, metrics, modIcons, drawShadow);
-          """.replace('          ', '')
+          old = (
+              '            drawSegments(graphics, line.segments, line.alpha, y, followPlayer, widgetWidth,\n'
+              '                    paddingX, fontSize, metrics, modIcons, drawShadow);\n'
+          )
+          new = (
+              '            drawSegments(graphics, line.segments, line.alpha, y, widgetWidth,\n'
+              '                    paddingX, fontSize, metrics, modIcons, drawShadow);\n'
+          )
           assert s.count(old) == 1
           s = s.replace(old, new)
 
-          old = """    private void drawSegments(Graphics2D graphics, List<TextSegment> segments, int alpha, int y,
-                      boolean followPlayer, int widgetWidth, int paddingX, FontSize fontSize,
-                      FontMetrics metrics, IndexedSprite[] modIcons, boolean drawShadow) {
-                  int lineWidth = calculateLineWidth(segments, metrics);
-                  int contentWidth = Math.max(0, widgetWidth - paddingX * 2);
-                  int x = followPlayer
-                          ? paddingX + Math.max(0, (contentWidth - lineWidth) / 2)
-                          : paddingX;
-
-                  for (TextSegment segment : segments) {
-          """.replace('          ', '')
-          new = """    static int calculateAlignedX(TextAlignment alignment, int paddingX, int contentWidth, int lineWidth) {
-                  int remaining = Math.max(0, contentWidth - lineWidth);
-                  if (alignment == TextAlignment.RIGHT) {
-                      return paddingX + remaining;
-                  }
-                  if (alignment == TextAlignment.CENTER) {
-                      return paddingX + remaining / 2;
-                  }
-                  return paddingX;
-              }
-
-              private void drawSegments(Graphics2D graphics, List<TextSegment> segments, int alpha, int y,
-                      int widgetWidth, int paddingX, FontSize fontSize,
-                      FontMetrics metrics, IndexedSprite[] modIcons, boolean drawShadow) {
-                  int lineWidth = calculateLineWidth(segments, metrics);
-                  int contentWidth = Math.max(0, widgetWidth - paddingX * 2);
-                  int x = calculateAlignedX(overlayConfig.getTextAlignment(), paddingX, contentWidth, lineWidth);
-
-                  for (TextSegment segment : segments) {
-          """.replace('          ', '')
+          old = (
+              '    private void drawSegments(Graphics2D graphics, List<TextSegment> segments, int alpha, int y,\n'
+              '            boolean followPlayer, int widgetWidth, int paddingX, FontSize fontSize,\n'
+              '            FontMetrics metrics, IndexedSprite[] modIcons, boolean drawShadow) {\n'
+              '        int lineWidth = calculateLineWidth(segments, metrics);\n'
+              '        int contentWidth = Math.max(0, widgetWidth - paddingX * 2);\n'
+              '        int x = followPlayer\n'
+              '                ? paddingX + Math.max(0, (contentWidth - lineWidth) / 2)\n'
+              '                : paddingX;\n'
+              '\n'
+              '        for (TextSegment segment : segments) {\n'
+          )
+          new = (
+              '    static int calculateAlignedX(TextAlignment alignment, int paddingX, int contentWidth, int lineWidth) {\n'
+              '        int remaining = Math.max(0, contentWidth - lineWidth);\n'
+              '        if (alignment == TextAlignment.RIGHT) {\n'
+              '            return paddingX + remaining;\n'
+              '        }\n'
+              '        if (alignment == TextAlignment.CENTER) {\n'
+              '            return paddingX + remaining / 2;\n'
+              '        }\n'
+              '        return paddingX;\n'
+              '    }\n'
+              '\n'
+              '    private void drawSegments(Graphics2D graphics, List<TextSegment> segments, int alpha, int y,\n'
+              '            int widgetWidth, int paddingX, FontSize fontSize,\n'
+              '            FontMetrics metrics, IndexedSprite[] modIcons, boolean drawShadow) {\n'
+              '        int lineWidth = calculateLineWidth(segments, metrics);\n'
+              '        int contentWidth = Math.max(0, widgetWidth - paddingX * 2);\n'
+              '        int x = calculateAlignedX(overlayConfig.getTextAlignment(), paddingX, contentWidth, lineWidth);\n'
+              '\n'
+              '        for (TextSegment segment : segments) {\n'
+          )
           assert s.count(old) == 1
           s = s.replace(old, new)
           path.write_text(s)
 
-          # Targeted unit tests for alignment math and legacy saved-overlay fallback semantics.
           test_path = Path('src/test/java/com/improvedchat/overlay/OverlayAlignmentTest.java')
           assert not test_path.exists()
           test_path.write_text("""package com.improvedchat.overlay;
 
-          import com.improvedchat.model.PlacementMode;
-          import com.improvedchat.model.TextAlignment;
-          import org.junit.Test;
+import com.improvedchat.model.PlacementMode;
+import com.improvedchat.model.TextAlignment;
+import org.junit.Test;
 
-          import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
-          public class OverlayAlignmentTest {
-              @Test
-              public void calculatesLeftCenterAndRightPositions() {
-                  assertEquals(4, DynamicChatOverlay.calculateAlignedX(TextAlignment.LEFT, 4, 100, 40));
-                  assertEquals(34, DynamicChatOverlay.calculateAlignedX(TextAlignment.CENTER, 4, 100, 40));
-                  assertEquals(64, DynamicChatOverlay.calculateAlignedX(TextAlignment.RIGHT, 4, 100, 40));
-              }
+public class OverlayAlignmentTest {
+    @Test
+    public void calculatesLeftCenterAndRightPositions() {
+        assertEquals(4, DynamicChatOverlay.calculateAlignedX(TextAlignment.LEFT, 4, 100, 40));
+        assertEquals(34, DynamicChatOverlay.calculateAlignedX(TextAlignment.CENTER, 4, 100, 40));
+        assertEquals(64, DynamicChatOverlay.calculateAlignedX(TextAlignment.RIGHT, 4, 100, 40));
+    }
 
-              @Test
-              public void clampsAlignmentWhenLineExceedsContentWidth() {
-                  assertEquals(4, DynamicChatOverlay.calculateAlignedX(TextAlignment.LEFT, 4, 100, 140));
-                  assertEquals(4, DynamicChatOverlay.calculateAlignedX(TextAlignment.CENTER, 4, 100, 140));
-                  assertEquals(4, DynamicChatOverlay.calculateAlignedX(TextAlignment.RIGHT, 4, 100, 140));
-              }
+    @Test
+    public void clampsAlignmentWhenLineExceedsContentWidth() {
+        assertEquals(4, DynamicChatOverlay.calculateAlignedX(TextAlignment.LEFT, 4, 100, 140));
+        assertEquals(4, DynamicChatOverlay.calculateAlignedX(TextAlignment.CENTER, 4, 100, 140));
+        assertEquals(4, DynamicChatOverlay.calculateAlignedX(TextAlignment.RIGHT, 4, 100, 140));
+    }
 
-              @Test
-              public void preservesLegacyPlacementDefaultsUntilAlignmentIsExplicitlySet() {
-                  OverlayConfig config = new OverlayConfig();
-                  assertEquals(TextAlignment.LEFT, config.getTextAlignment());
+    @Test
+    public void preservesLegacyPlacementDefaultsUntilAlignmentIsExplicitlySet() {
+        OverlayConfig config = new OverlayConfig();
+        assertEquals(TextAlignment.LEFT, config.getTextAlignment());
 
-                  config.setPlacementMode(PlacementMode.ABOVE_PLAYER);
-                  assertEquals(TextAlignment.CENTER, config.getTextAlignment());
+        config.setPlacementMode(PlacementMode.ABOVE_PLAYER);
+        assertEquals(TextAlignment.CENTER, config.getTextAlignment());
 
-                  config.setTextAlignment(TextAlignment.RIGHT);
-                  config.setPlacementMode(PlacementMode.FREE);
-                  assertEquals(TextAlignment.RIGHT, config.getTextAlignment());
-              }
-          }
-          """.replace('          ', ''))
+        config.setTextAlignment(TextAlignment.RIGHT);
+        config.setPlacementMode(PlacementMode.FREE);
+        assertEquals(TextAlignment.RIGHT, config.getTextAlignment());
+    }
+}
+""")
 
-          # README feature documentation.
           path = Path('README.md')
           s = path.read_text()
           old = '- Customize fonts, bold text, background colors, borders, and per-overlay text color overrides.\n'
           assert s.count(old) == 1
           new = '- Customize fonts, bold text, left/center/right text alignment, background colors, borders, and per-overlay text color overrides.\n'
-          s = s.replace(old, new)
-          path.write_text(s)
+          path.write_text(s.replace(old, new))
           PY
 
           test -f src/main/java/com/improvedchat/model/TextAlignment.java
