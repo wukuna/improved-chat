@@ -1,0 +1,232 @@
+name: Add overlay text alignment
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/add-text-alignment.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  implement-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Apply text-alignment feature
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          # New persisted per-overlay alignment enum.
+          enum_path = Path('src/main/java/com/improvedchat/model/TextAlignment.java')
+          assert not enum_path.exists()
+          enum_path.write_text("""package com.improvedchat.model;
+
+          /** Horizontal alignment for text rendered inside an Improved Chat overlay. */
+          public enum TextAlignment {
+              LEFT("Left"),
+              CENTER("Center"),
+              RIGHT("Right");
+
+              private final String label;
+
+              TextAlignment(String label) {
+                  this.label = label;
+              }
+
+              @Override
+              public String toString() {
+                  return label;
+              }
+          }
+          """.replace('          ', ''))
+
+          # OverlayConfig: nullable stored value preserves legacy placement-dependent behavior.
+          path = Path('src/main/java/com/improvedchat/overlay/OverlayConfig.java')
+          s = path.read_text()
+          anchor = 'import com.improvedchat.model.PlacementMode;\n'
+          assert s.count(anchor) == 1
+          s = s.replace(anchor, anchor + 'import com.improvedchat.model.TextAlignment;\n')
+
+          anchor = '    private PlacementMode placementMode = PlacementMode.FREE;\n'
+          assert s.count(anchor) == 1
+          s = s.replace(anchor, anchor + '    private TextAlignment textAlignment;\n')
+
+          anchor = """    public void setPlacementMode(PlacementMode mode) {
+                  placementMode = mode == null ? PlacementMode.FREE : mode;
+              }
+          """.replace('          ', '')
+          assert s.count(anchor) == 1
+          replacement = anchor + """
+              public TextAlignment getTextAlignment() {
+                  if (textAlignment != null) {
+                      return textAlignment;
+                  }
+                  return getPlacementMode() == PlacementMode.FREE ? TextAlignment.LEFT : TextAlignment.CENTER;
+              }
+
+              public void setTextAlignment(TextAlignment value) {
+                  textAlignment = value;
+              }
+          """.replace('          ', '')
+          s = s.replace(anchor, replacement)
+          path.write_text(s)
+
+          # Panel: expose Left / Center / Right in each overlay's Appearance section.
+          path = Path('src/main/java/com/improvedchat/ImprovedChatPanel.java')
+          s = path.read_text()
+          anchor = 'import com.improvedchat.model.PlacementMode;\n'
+          assert s.count(anchor) == 1
+          s = s.replace(anchor, anchor + 'import com.improvedchat.model.TextAlignment;\n')
+
+          anchor = '        appearance.add(comboRow("Text Font", FONT_FAMILIES, oc.getFontFamily(), v -> { oc.setFontFamily(v); saveOverlay(); }));\n'
+          assert s.count(anchor) == 1
+          s = s.replace(anchor, anchor + '        appearance.add(comboRow("Text Alignment", TextAlignment.values(), oc.getTextAlignment(), v -> { oc.setTextAlignment(v); saveOverlay(); }));\n')
+          path.write_text(s)
+
+          # Renderer: align the complete rendered line (including icons and styled segments).
+          path = Path('src/main/java/com/improvedchat/overlay/DynamicChatOverlay.java')
+          s = path.read_text()
+          anchor = 'import com.improvedchat.model.PlacementMode;\n'
+          assert s.count(anchor) == 1
+          s = s.replace(anchor, anchor + 'import com.improvedchat.model.TextAlignment;\n')
+
+          old = """            drawSegments(graphics, inputSegments, 255, y, followPlayer, widgetWidth,
+                      paddingX, fontSize, metrics, modIcons, drawShadow);
+          """.replace('          ', '')
+          new = """            drawSegments(graphics, inputSegments, 255, y, widgetWidth,
+                      paddingX, fontSize, metrics, modIcons, drawShadow);
+          """.replace('          ', '')
+          assert s.count(old) == 1
+          s = s.replace(old, new)
+
+          old = """            drawSegments(graphics, line.segments, line.alpha, y, followPlayer, widgetWidth,
+                      paddingX, fontSize, metrics, modIcons, drawShadow);
+          """.replace('          ', '')
+          new = """            drawSegments(graphics, line.segments, line.alpha, y, widgetWidth,
+                      paddingX, fontSize, metrics, modIcons, drawShadow);
+          """.replace('          ', '')
+          assert s.count(old) == 1
+          s = s.replace(old, new)
+
+          old = """    private void drawSegments(Graphics2D graphics, List<TextSegment> segments, int alpha, int y,
+                      boolean followPlayer, int widgetWidth, int paddingX, FontSize fontSize,
+                      FontMetrics metrics, IndexedSprite[] modIcons, boolean drawShadow) {
+                  int lineWidth = calculateLineWidth(segments, metrics);
+                  int contentWidth = Math.max(0, widgetWidth - paddingX * 2);
+                  int x = followPlayer
+                          ? paddingX + Math.max(0, (contentWidth - lineWidth) / 2)
+                          : paddingX;
+
+                  for (TextSegment segment : segments) {
+          """.replace('          ', '')
+          new = """    static int calculateAlignedX(TextAlignment alignment, int paddingX, int contentWidth, int lineWidth) {
+                  int remaining = Math.max(0, contentWidth - lineWidth);
+                  if (alignment == TextAlignment.RIGHT) {
+                      return paddingX + remaining;
+                  }
+                  if (alignment == TextAlignment.CENTER) {
+                      return paddingX + remaining / 2;
+                  }
+                  return paddingX;
+              }
+
+              private void drawSegments(Graphics2D graphics, List<TextSegment> segments, int alpha, int y,
+                      int widgetWidth, int paddingX, FontSize fontSize,
+                      FontMetrics metrics, IndexedSprite[] modIcons, boolean drawShadow) {
+                  int lineWidth = calculateLineWidth(segments, metrics);
+                  int contentWidth = Math.max(0, widgetWidth - paddingX * 2);
+                  int x = calculateAlignedX(overlayConfig.getTextAlignment(), paddingX, contentWidth, lineWidth);
+
+                  for (TextSegment segment : segments) {
+          """.replace('          ', '')
+          assert s.count(old) == 1
+          s = s.replace(old, new)
+          path.write_text(s)
+
+          # Targeted unit tests for alignment math and legacy saved-overlay fallback semantics.
+          test_path = Path('src/test/java/com/improvedchat/overlay/OverlayAlignmentTest.java')
+          assert not test_path.exists()
+          test_path.write_text("""package com.improvedchat.overlay;
+
+          import com.improvedchat.model.PlacementMode;
+          import com.improvedchat.model.TextAlignment;
+          import org.junit.Test;
+
+          import static org.junit.Assert.assertEquals;
+
+          public class OverlayAlignmentTest {
+              @Test
+              public void calculatesLeftCenterAndRightPositions() {
+                  assertEquals(4, DynamicChatOverlay.calculateAlignedX(TextAlignment.LEFT, 4, 100, 40));
+                  assertEquals(34, DynamicChatOverlay.calculateAlignedX(TextAlignment.CENTER, 4, 100, 40));
+                  assertEquals(64, DynamicChatOverlay.calculateAlignedX(TextAlignment.RIGHT, 4, 100, 40));
+              }
+
+              @Test
+              public void clampsAlignmentWhenLineExceedsContentWidth() {
+                  assertEquals(4, DynamicChatOverlay.calculateAlignedX(TextAlignment.LEFT, 4, 100, 140));
+                  assertEquals(4, DynamicChatOverlay.calculateAlignedX(TextAlignment.CENTER, 4, 100, 140));
+                  assertEquals(4, DynamicChatOverlay.calculateAlignedX(TextAlignment.RIGHT, 4, 100, 140));
+              }
+
+              @Test
+              public void preservesLegacyPlacementDefaultsUntilAlignmentIsExplicitlySet() {
+                  OverlayConfig config = new OverlayConfig();
+                  assertEquals(TextAlignment.LEFT, config.getTextAlignment());
+
+                  config.setPlacementMode(PlacementMode.ABOVE_PLAYER);
+                  assertEquals(TextAlignment.CENTER, config.getTextAlignment());
+
+                  config.setTextAlignment(TextAlignment.RIGHT);
+                  config.setPlacementMode(PlacementMode.FREE);
+                  assertEquals(TextAlignment.RIGHT, config.getTextAlignment());
+              }
+          }
+          """.replace('          ', ''))
+
+          # README feature documentation.
+          path = Path('README.md')
+          s = path.read_text()
+          old = '- Customize fonts, bold text, background colors, borders, and per-overlay text color overrides.\n'
+          assert s.count(old) == 1
+          new = '- Customize fonts, bold text, left/center/right text alignment, background colors, borders, and per-overlay text color overrides.\n'
+          s = s.replace(old, new)
+          path.write_text(s)
+          PY
+
+          test -f src/main/java/com/improvedchat/model/TextAlignment.java
+          test -f src/test/java/com/improvedchat/overlay/OverlayAlignmentTest.java
+          grep -q 'Text Alignment' src/main/java/com/improvedchat/ImprovedChatPanel.java
+          grep -q 'calculateAlignedX' src/main/java/com/improvedchat/overlay/DynamicChatOverlay.java
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '11'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+
+      - name: Run full test suite
+        run: gradle clean test --no-daemon
+
+      - name: Commit verified feature and remove temporary workflow
+        shell: bash
+        run: |
+          rm .github/workflows/add-text-alignment.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Add per-overlay text alignment"
+          git push origin HEAD:main
