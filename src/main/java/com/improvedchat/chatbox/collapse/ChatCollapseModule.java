@@ -21,6 +21,7 @@ import net.runelite.client.events.ConfigChanged;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import com.improvedchat.ImprovedChatConfig;
+import com.improvedchat.chatbox.opacity.ChatboxOpacityModule;
 import net.runelite.api.events.GameTick;
 import net.runelite.client.eventbus.EventBus;
 
@@ -41,6 +42,8 @@ public class ChatCollapseModule {
     private ImprovedChatConfig config;
     @Inject
     private EventBus eventBus;
+    @Inject
+    private ChatboxOpacityModule chatboxOpacityModule;
 
     private boolean started;
 
@@ -64,6 +67,7 @@ public class ChatCollapseModule {
         clientThread.invokeLater(() -> {
             refreshChatWidgets();
             client.runScript(113);
+            chatboxOpacityModule.reapplyAfterChatMutation();
         });
     }
 
@@ -75,6 +79,7 @@ public class ChatCollapseModule {
 
     private void refreshChatWidgets() {
         widgetManager.updateChatWidgets(state);
+        chatboxOpacityModule.reapplyAfterChatMutation();
     }
 
     public void refreshAfterExternalStyleChange() {
