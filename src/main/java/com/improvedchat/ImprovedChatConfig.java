@@ -627,6 +627,22 @@ public interface ImprovedChatConfig extends Config {
     @ConfigItem(keyName = "antiAlias", name = "Anti-aliasing", description = "Smooth dialogue font edges", section = dialogueFontsSection, position = 4)
     default boolean antiAlias() { return true; }
 
+    @Range(min = 10, max = 24)
+    @ConfigItem(keyName = "dialogueOptionFontSize", name = "Option Font Size", description = "Separate font size for dialogue option rows", section = dialogueFontsSection, position = 5)
+    default int dialogueOptionFontSize() { return 13; }
+
+    @Range(min = -2, max = 8)
+    @Units(Units.PIXELS)
+    @ConfigItem(keyName = "dialogueLineSpacing", name = "Line Spacing", description = "Extra spacing between wrapped dialogue lines", section = dialogueFontsSection, position = 6)
+    default int dialogueLineSpacing() { return 0; }
+
+    @ConfigItem(keyName = "dialogueTextShadow", name = "Text Shadow", description = "Draw a subtle shadow behind replacement dialogue text", section = dialogueFontsSection, position = 7)
+    default boolean dialogueTextShadow() { return false; }
+
+    @Alpha
+    @ConfigItem(keyName = "dialogueShadowColor", name = "Shadow Color", description = "Color and opacity of the optional dialogue text shadow", section = dialogueFontsSection, position = 8)
+    default Color dialogueShadowColor() { return new Color(0, 0, 0, 150); }
+
     @ConfigItem(keyName = "replaceNpc", name = "NPC Dialogue", description = "Replace NPC dialogue text", section = dialogueFontsSection, position = 10)
     default boolean replaceNpc() { return true; }
 
