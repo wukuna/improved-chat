@@ -71,8 +71,11 @@ public class ChatUiConfigTest {
         assertTrue(config.enableOfflineIcon());
         assertTrue(config.enableOfflineColor());
         assertEquals(14, config.fontSize());
+        assertEquals(13, config.dialogueOptionFontSize());
+        assertEquals(0, config.dialogueLineSpacing());
         assertFalse(config.boldText());
         assertTrue(config.antiAlias());
+        assertFalse(config.dialogueTextShadow());
         assertTrue(config.replaceNpc());
         assertTrue(config.replacePlayer());
         assertTrue(config.replaceOptions());
