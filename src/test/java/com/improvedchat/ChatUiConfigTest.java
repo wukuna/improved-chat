@@ -17,6 +17,11 @@ public class ChatUiConfigTest {
         assertFalse(config.enableCollapsibleChat());
         assertFalse(config.enableResizableChat());
         assertFalse(config.modernizeChat());
+        assertFalse(config.enableCleanChat());
+        assertFalse(config.enableChatboxOpacity());
+        assertFalse(config.enableRemoveChatOptions());
+        assertFalse(config.enableOfflineChatStatus());
+        assertFalse(config.enableDialogueFonts());
     }
 
     @Test
@@ -57,6 +62,21 @@ public class ChatUiConfigTest {
 
         assertEquals(ImprovedChatConfig.resizeChatSection, item.section());
         assertEquals(6, item.position());
+    }
+
+    @Test
+    public void companionFeatureDefaultsAreSafe() {
+        assertEquals(150, config.chatboxOpacity());
+        assertEquals(-1, config.buttonOpacity());
+        assertTrue(config.enableOfflineIcon());
+        assertTrue(config.enableOfflineColor());
+        assertEquals(14, config.fontSize());
+        assertFalse(config.boldText());
+        assertTrue(config.antiAlias());
+        assertTrue(config.replaceNpc());
+        assertTrue(config.replacePlayer());
+        assertTrue(config.replaceOptions());
+        assertTrue(config.replaceSprite());
     }
 
     @Test

@@ -1,5 +1,6 @@
 package com.improvedchat.chatbox.clean;
 
+import com.improvedchat.ImprovedChatConfig;
 import static com.improvedchat.chatbox.clean.util.CleanChatUtil.CLAN_INSTRUCTION_MESSAGE;
 import static com.improvedchat.chatbox.clean.util.CleanChatUtil.SCRIPT_REBUILD_CHATBOX;
 import static com.improvedchat.chatbox.clean.util.CleanChatUtil.SCRIPT_SCROLLBAR_MAX;

@@ -1,5 +1,6 @@
 package com.improvedchat.chatbox.clean;
 
+import com.improvedchat.ImprovedChatConfig;
 import static com.improvedchat.chatbox.clean.util.CleanChatUtil.getTextLength;
 import static com.improvedchat.chatbox.clean.util.CleanChatUtil.getTextLineCount;
 import static com.improvedchat.chatbox.clean.util.CleanChatUtil.wrapWithBrackets;

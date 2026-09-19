@@ -24,6 +24,7 @@
  */
 package com.improvedchat.dialogue;
 
+import com.improvedchat.ImprovedChatConfig;
 import net.runelite.api.Client;
 import net.runelite.api.Point;
 import net.runelite.api.widgets.Widget;

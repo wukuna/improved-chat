@@ -26,6 +26,7 @@
  */
 package com.improvedchat.chatbox.clean;
 
+import com.improvedchat.ImprovedChatConfig;
 import com.improvedchat.chatbox.clean.data.ChatChannel;
 import com.improvedchat.chatbox.clean.data.ChatBlock;
 import com.improvedchat.chatbox.clean.data.ChatTab;

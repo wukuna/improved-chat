@@ -1,5 +1,6 @@
 package com.improvedchat.chatbox.clean;
 
+import com.improvedchat.ImprovedChatConfig;
 import static com.improvedchat.ImprovedChatConfig.DEFAULT_CUSTOM_CHANNEL_NAME;
 import com.improvedchat.chatbox.clean.util.CleanChatUtil;
 import static com.improvedchat.chatbox.clean.util.CleanChatUtil.MAX_CHANNEL_LIST_SIZE;

@@ -72,7 +72,7 @@ public class ModernChatOverlay extends Overlay {
     }
 
     private void drawMessageSurface(Graphics2D g, Rectangle b) {
-        Color background = config.modernBackgroundColor();
+        Color background = applyOpacity(config.modernBackgroundColor(), config.chatboxOpacity());
         Color accent = config.modernAccentColor();
 
         g.setColor(background);
@@ -111,7 +111,7 @@ public class ModernChatOverlay extends Overlay {
     }
 
     private void drawTabRail(Graphics2D g, Rectangle rail) {
-        Color tab = config.modernTabColor();
+        Color tab = applyOpacity(config.modernTabColor(), config.buttonOpacity());
         int inset = config.modernCompactTabs() ? 1 : 0;
         Rectangle r = new Rectangle(
             rail.x + inset,
@@ -162,6 +162,7 @@ public class ModernChatOverlay extends Overlay {
             );
 
             Color fill = selected ? config.modernSelectedTabColor() : config.modernTabColor();
+            fill = applyOpacity(fill, config.buttonOpacity());
             g.setColor(fill);
             g.fillRoundRect(face.x, face.y, face.width, face.height, TAB_ARC, TAB_ARC);
 
@@ -183,7 +184,7 @@ public class ModernChatOverlay extends Overlay {
     }
 
     private void drawInputDock(Graphics2D g, Rectangle input, Rectangle chatBounds) {
-        Color tab = config.modernTabColor();
+        Color tab = applyOpacity(config.modernTabColor(), config.buttonOpacity());
         Color accent = config.modernAccentColor();
 
         int x = chatBounds == null ? input.x - 5 : chatBounds.x + 8;
@@ -217,6 +218,18 @@ public class ModernChatOverlay extends Overlay {
             }
         }
         return true;
+    }
+
+    private Color applyOpacity(Color color, int widgetOpacity) {
+        if (!config.enableChatboxOpacity() || widgetOpacity < 0) {
+            return color;
+        }
+        // RuneLite widget opacity is inverted: 0 = opaque, 255 = transparent.
+        // Preserve the user's chosen modern-color alpha and apply the opacity control as
+        // an additional transparency factor rather than letting the two settings fight.
+        int visible = 255 - Math.max(0, Math.min(255, widgetOpacity));
+        int combinedAlpha = color.getAlpha() * visible / 255;
+        return alpha(color, combinedAlpha);
     }
 
     private static Color alpha(Color color, int alpha) {

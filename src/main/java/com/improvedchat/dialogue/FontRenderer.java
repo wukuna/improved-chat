@@ -24,6 +24,7 @@
  */
 package com.improvedchat.dialogue;
 
+import com.improvedchat.ImprovedChatConfig;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.inject.Inject;
