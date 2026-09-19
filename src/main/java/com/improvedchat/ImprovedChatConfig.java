@@ -652,30 +652,4 @@ public interface ImprovedChatConfig extends Config {
     @ConfigItem(keyName = "replaceSprite", name = "Item/Action Dialogue", description = "Replace item and action dialogue text", section = dialogueFontsSection, position = 13)
     default boolean replaceSprite() { return true; }
 
-    default boolean anyChatCleanupEnabled() {
-        return removeWelcome()
-            || indentationMode() != IndentMode.MESSAGE
-            || hideScrollbar()
-            || hideSpecs()
-            || isFixedWidthTimestampEnabled()
-            || isColorBarEnabled()
-            || removeClanInstruction()
-            || removeClanName()
-            || removeClanRank()
-            || removeGuestClanInstruction()
-            || removeGuestClanReconnecting()
-            || removeGuestClanName()
-            || removeGroupIronInstruction()
-            || removeGroupIronName()
-            || removeGroupIronFromClan()
-            || removeFriendsChatStartup()
-            || removeFriendsChatName()
-            || removeFriendsAttempting()
-            || removeFriendsNowTalking()
-            || !DEFAULT_CUSTOM_CHANNEL_NAME.equals(getShortClanName())
-            || !DEFAULT_CUSTOM_CHANNEL_NAME.equals(getShortGuestClanName())
-            || !DEFAULT_CUSTOM_CHANNEL_NAME.equals(getShortGroupIronName())
-            || !DEFAULT_CUSTOM_CHANNEL_NAME.equals(getShortFriendsName());
-    }
-
 }
