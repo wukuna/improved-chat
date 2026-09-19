@@ -36,6 +36,11 @@ jobs:
             exit 1
           fi
 
+          if grep -Eq "ImprovedChatConfig.*has no @ConfigItem" runtime-smoke.log; then
+            echo "ImprovedChatConfig contains a non-config method invoked through RuneLite's config proxy"
+            exit 1
+          fi
+
           if ! grep -Eq "Loaded plugin ImprovedChatPlugin|ImprovedChatPlugin is now running" runtime-smoke.log; then
             echo "RuneLite never confirmed ImprovedChatPlugin loaded (process exit: $smoke_rc)"
             exit 1
