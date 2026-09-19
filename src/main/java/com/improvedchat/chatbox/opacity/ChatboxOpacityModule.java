@@ -71,6 +71,12 @@ public final class ChatboxOpacityModule {
         }
     }
 
+    public void reapplyAfterChatMutation() {
+        if (!started) return;
+        apply();
+        clientThread.invokeLater(this::apply);
+    }
+
     private void apply() {
         if (!started) return;
 
