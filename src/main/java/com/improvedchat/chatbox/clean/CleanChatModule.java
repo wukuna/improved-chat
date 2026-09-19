@@ -44,7 +44,7 @@ public final class CleanChatModule {
     private int timestampTemplateWidth;
 
     public synchronized void startUp() {
-        if (started || !config.enableCleanChat()) {
+        if (started) {
             return;
         }
         started = true;
@@ -116,7 +116,7 @@ public final class CleanChatModule {
     @Subscribe
     public void onConfigChanged(ConfigChanged event) {
         if (ImprovedChatConfig.GROUP.equals(event.getGroup())) {
-            if (!started || "enableCleanChat".equals(event.getKey())) {
+            if (!started) {
                 return;
             }
             clientThread.invokeLater(() -> {
