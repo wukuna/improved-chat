@@ -58,7 +58,7 @@ The integrated module retains channel-name cleanup, startup-message filtering, i
 
 Improved Chat's optional native transparent-chat opacity controls are derived from **Chatbox Opacity**:
 
-- Repository: `https://github.com/Trevor159/runelite-external-plugins`
+- Repository: `https://github.com/Trevor159/runelite-chatbox-opacity`
 - Copyright: Copyright (c) 2019, Trevor
 - License: BSD 2-Clause
 
@@ -92,4 +92,4 @@ Improved Chat's optional dialogue-font replacement is derived from **Dialogue Fo
 - Copyright: Copyright (c) 2026, theOranguzang
 - License: BSD 2-Clause
 
-NPC, player, option-menu, and item/action dialogue replacement behavior is integrated under Improved Chat's lifecycle and configuration.
+NPC, player, option-menu, and item/action dialogue replacement behavior is integrated under Improved Chat's lifecycle and configuration. Improved Chat additionally adds separate option sizing, line spacing, optional shadow styling, and safer live restoration when dialogue-type toggles change.
