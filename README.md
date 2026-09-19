@@ -1,8 +1,6 @@
 # Improved Chat
 
-Improved Chat is a separate RuneLite Plugin Hub plugin for building configurable chat overlays and styling important messages without replacing RuneLite's chat system.
-
-The project is derived in part from the BSD-2-Clause **Chat Widgets** plugin, but it has its own package, configuration namespace, repository, feature set, and Plugin Hub identity. It does not read or write Chat Widgets' saved configuration.
+Improved Chat is a RuneLite Plugin Hub plugin for configurable chat overlays, native chatbox controls, message styling, cleanup, and accessibility features.
 
 ## Features
 
@@ -14,23 +12,19 @@ The project is derived in part from the BSD-2-Clause **Chat Widgets** plugin, bu
 - Append `::flash` to a Message Color Rule to mark matching overlay messages for attention effects.
 - Use **Overlay Rainbow Rules** for overlay-only rainbow rendering by word or visible character.
 - Configure attention behavior for message text, border, and background flashes.
-- Integrate with RuneLite's built-in Chat Color, Chat Filter, and Emojis functionality.
+- Respect current RuneLite chat colors, filtering preferences, and emoji rendering.
 - Collapse duplicate messages, preserve contextual colors, show channel names, and optionally hide RuneLite's default split private-chat widget.
 - Optionally collapse RuneLite's native chat to a single customizable button, including hover text, transparency, and per-channel unread highlighting.
 - Resize native chat in resizable and fixed layouts, including private-chat rewrapping, tab resizing, interface growth, dialog/interface reversion, drag-resizing, and a keybound secondary size.
 - Enable **Modernize Chat** for a flat modern native-chat presentation with configurable background, tab, selected-tab, unread, and text colors.
 
-## How it differs from Chat Widgets
-
-Improved Chat is not only a widget-layout variant. In addition to configurable chat overlays, it adds chatbox message recoloring rules, overlay-only rainbow rules, attention/flash rules, border and background attention effects, richer text styling, native chat collapse/resize controls, and an optional modernized native-chat presentation. The plugin keeps its existing hard conflicts with Chat Widgets and Force Recolor. The optional Collapse, Resize, and Modernize features are off by default; users should disable the corresponding standalone chatbox plugin before enabling an overlapping Improved Chat feature.
-
 ## Resource Packs compatibility
 
-Resizable Chat retains Chat Resizer's compatibility controls: **Don't Draw Resize Borders** and **Don't Zoom Background**. These can be enabled when a Resource Pack supplies chatbox art that should not be stretched or framed by Improved Chat.
+Resizable Chat includes **Don't Draw Resize Borders** and **Don't Zoom Background** controls for custom chatbox artwork that should not be stretched or framed by Improved Chat.
 
-**Modernize Chat intentionally replaces native/resource-pack tab artwork while it is enabled.** The dark modern message background is only substituted when RuneLite is using its transparent resizable-chat color set; opaque/fixed chat keeps the native or Resource Pack message background so RuneLite's darker opaque-chat text remains readable. Improved Chat does not replace the underlying sprite IDs or Resource Pack files. When Modernize Chat is disabled or Improved Chat shuts down, the original live widget opacity/text colors are restored so the Resource Pack can resume drawing normally.
+**Modernize Chat intentionally replaces native tab artwork while it is enabled.** The modern message background is only substituted when RuneLite is using its transparent resizable-chat color set; opaque/fixed chat keeps the native message background so darker opaque-chat text remains readable. Improved Chat restores original live widget opacity and text colors when modernization is disabled or the plugin shuts down.
 
-Collapsible Chat continues to use RuneLite's native chat-tab sprite IDs and state changes rather than installing replacement assets.
+Collapsible Chat uses RuneLite's native chat-tab states rather than installing replacement assets.
 
 ## Rule syntax
 
