@@ -318,7 +318,7 @@ public interface ImprovedChatConfig extends Config {
     @ConfigItem(keyName = REVERT_FOR_MODALS, name = "Revert For Interfaces", description = "Temporarily return adjusted dimensions toward stock while top-level interfaces are open", section = resizeChatSection, position = 21)
     default Revert revertForModals() { return Revert.UNGROW; }
 
-    @ConfigItem(keyName = TOGGLE_SHOW_CHAT, name = "Show/Hide Chat Keybind", description = "Hide or unhide the native chatbox", section = resizeChatSection, position = 22)
+    @ConfigItem(keyName = TOGGLE_SHOW_CHAT, name = "Show/Hide Chat Keybind", description = "Hide or unhide the native chatbox", section = resizeChatSection, position = 6)
     default Keybind toggleShowChat() { return Keybind.NOT_SET; }
 
     @ConfigItem(keyName = NO_BORDERS, name = "Don't Draw Resize Borders", description = "Avoid drawing replacement resize borders for Resource Pack compatibility", section = resizeChatSection, position = 30)
@@ -369,14 +369,18 @@ public interface ImprovedChatConfig extends Config {
     default Color modernSelectedTabColor() { return new Color(68, 68, 68, 230); }
 
     @Alpha
-    @ConfigItem(keyName = "modernTextColor", name = "Tab Text", description = "Modernized chat tab text color", section = modernChatSection, position = 4)
+    @ConfigItem(keyName = "modernAccentColor", name = "Accent", description = "Accent rail and selected-tab highlight color", section = modernChatSection, position = 4)
+    default Color modernAccentColor() { return new Color(88, 166, 255, 235); }
+
+    @Alpha
+    @ConfigItem(keyName = "modernTextColor", name = "Tab Text", description = "Modernized chat tab text color", section = modernChatSection, position = 5)
     default Color modernTextColor() { return Color.WHITE; }
 
     @Alpha
-    @ConfigItem(keyName = "modernUnreadColor", name = "Unread Highlight", description = "Color used when a modernized chat tab has unread activity", section = modernChatSection, position = 5)
+    @ConfigItem(keyName = "modernUnreadColor", name = "Unread Highlight", description = "Color used when a modernized chat tab has unread activity", section = modernChatSection, position = 6)
     default Color modernUnreadColor() { return new Color(255, 180, 60); }
 
-    @ConfigItem(keyName = "modernCompactTabs", name = "Compact Tabs", description = "Use a flatter, tighter visual treatment for native chat tabs", section = modernChatSection, position = 6)
+    @ConfigItem(keyName = "modernCompactTabs", name = "Compact Tabs", description = "Use a flatter, tighter visual treatment for native chat tabs", section = modernChatSection, position = 7)
     default boolean modernCompactTabs() { return true; }
 
 

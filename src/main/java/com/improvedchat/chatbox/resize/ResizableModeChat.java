@@ -59,6 +59,7 @@ public class ResizableModeChat {
         } else {
             ChatRebuild.now(client, RawScripts.RESIZES_CHAT); // Re-fits an already-open dialog group too, not just the text
             mainModals.relayout();
+            consumeRelayoutNeeded(); // onEnable handled the fresh interface band immediately
         }
     }
 
@@ -96,6 +97,9 @@ public class ResizableModeChat {
         int backgroundH = Math.max(0, ChatGeometry.CHATBOX_SPRITE_H + heightChange);
 
         hudAnchors.sync(heightChange); // Vertically shift RuneLite's HUD anchors
+        if (hudAnchors.consumeLayoutChanged()) {
+            relayoutNeeded = true; // Child modal slots changed height; re-run the toplevel fit once settled
+        }
         movedChat.sync(slot, slotW, slotH); // Hold a RuneLite-moved chat's bottom edge still through the resize
 
         if (!force &&
@@ -168,6 +172,7 @@ public class ResizableModeChat {
         bgGraphic.revertBackground(); // After the cascade, so the container resolves against a settled chat area
         dialogBoxes.resetDialogPositions();
         hudAnchors.restore();
+        hudAnchors.consumeLayoutChanged(); // shutdown/layout-swap caller performs its own stock relayout
 
         // Only the literal height was overridden, so a plain revalidate recomputes the stock MINUS reserve
         Widget dodger = client.getWidget(InterfaceID.HpbarHud.HPDODGER);

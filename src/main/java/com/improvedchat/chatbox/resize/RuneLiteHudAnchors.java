@@ -37,6 +37,7 @@ public final class RuneLiteHudAnchors {
 
     private boolean applied;
     private boolean swapped; // A snap-corner read is currently seeing a fake stock height, to be restored after
+    private boolean layoutChanged; // HUD reserve changed; mounted interfaces need one fresh toplevel re-fit
 
     // Hold that fake height in place for as long as a snap corner can be dragged against it
     private boolean dragHotkeyHeld; // RuneLite's hotkey for moving HUD items and HUD snap anchors
@@ -87,9 +88,20 @@ public final class RuneLiteHudAnchors {
         if (hud.getOriginalHeight() != target) {
             hud.setOriginalHeight(target);
             hud.revalidate();
+            // A plain parent revalidate updates the HUD itself but can leave its child modal slots
+            // at their previous height until some unrelated toplevel layout event occurs.
+            Widgets.revalidateChildren(hud);
+            layoutChanged = true;
         }
 
         applied = true;
+    }
+
+    // True once after the usable interface band changed. Consumers re-fit mounted windows exactly once.
+    boolean consumeLayoutChanged() {
+        boolean changed = layoutChanged;
+        layoutChanged = false;
+        return changed;
     }
 
     // Freeze the bottom-right snap corner: present the stock rendered height for both reads that place
@@ -141,6 +153,8 @@ public final class RuneLiteHudAnchors {
         if (w != null && w.getOriginalHeight() != base) {
             w.setOriginalHeight(base);
             w.revalidate();
+            Widgets.revalidateChildren(w);
+            layoutChanged = true;
         }
     }
 

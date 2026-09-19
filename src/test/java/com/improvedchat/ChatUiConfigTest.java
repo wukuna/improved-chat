@@ -1,6 +1,7 @@
 package com.improvedchat;
 
 import com.improvedchat.chatbox.resize.internal.SizeClamps;
+import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.Keybind;
 import org.junit.Test;
 
@@ -46,6 +47,16 @@ public class ChatUiConfigTest {
         assertEquals(Keybind.NOT_SET, config.toggleShowChat());
         assertEquals(Keybind.NOT_SET, config.dragModifier());
         assertEquals(Keybind.NOT_SET, config.secondaryKeybind());
+    }
+
+    @Test
+    public void showHideKeybindIsInResizableChatSection() throws Exception {
+        ConfigItem item = ImprovedChatConfig.class
+            .getMethod("toggleShowChat")
+            .getAnnotation(ConfigItem.class);
+
+        assertEquals(ImprovedChatConfig.resizeChatSection, item.section());
+        assertEquals(6, item.position());
     }
 
     @Test

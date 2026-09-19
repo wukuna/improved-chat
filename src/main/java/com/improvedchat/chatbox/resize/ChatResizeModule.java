@@ -205,6 +205,7 @@ public class ChatResizeModule {
             // The resize script, not the plain re-wrap: it also re-fits an open dialog's mounted group
             ChatRebuild.now(client, RawScripts.RESIZES_CHAT);
             if (widthChanged || (bandChanged && mainModals.isModalOpen())) mainModals.relayout(); // Re-fit bank, restack inv tabs
+            if (bandChanged) resizable.consumeRelayoutNeeded(); // This pass already handled the changed interface band
         } else if (fixedChat.consumeRebuildNeeded()) {
             ChatRebuild.now(client, RawScripts.REWRAPS_CHAT); // Re-anchor lines this frame to avoid drawing stale anchors
         }
@@ -242,6 +243,7 @@ public class ChatResizeModule {
         apply(false);
         if (client.isResized()) { // Resizable-only re-fit + re-wrap; fixed mode is fully re-asserted within apply()
             mainModals.relayout();
+            resizable.consumeRelayoutNeeded(); // transition pass just re-fit the current band
             ChatRebuild.now(client, RawScripts.RESIZES_CHAT);
         } else if (!dragResizeActuator.isDragging() && fixedChat.consumeRelayoutNeeded()) {
             mainModals.relayout(); // Re-fit the open modal to the changed band in the same tick
@@ -384,6 +386,7 @@ public class ChatResizeModule {
                 if (wasDragging && client.isResized()) {
                     ChatRebuild.now(client, RawScripts.RESIZES_CHAT); // Single expensive re-wrap on drag-resize release
                     mainModals.relayout(); // Re-fit bank/overlays to the new chat size on release
+                    resizable.consumeRelayoutNeeded(); // release handled the pending live HUD-band change
                     scrollKeep.noteRewrap(); // Re-anchor scroll if that re-wrap was the drag's deferred width change
                 }
                 dragResizeActuator.setLastDragSize(null);
@@ -399,7 +402,7 @@ public class ChatResizeModule {
             // Fixed layout: re-anchor lines to the bottom after a height change; never mid-drag (see the drag branch)
             if (!client.isResized() && !dragging && fixedChat.consumeRebuildNeeded()) client.refreshChat();
             // Resizable layout: chat was collapsed or uncollapsed, re-fit the band and re-wrap at the new height
-            if (client.isResized() && resizable.consumeRelayoutNeeded()) {
+            if (client.isResized() && !dragging && resizable.consumeRelayoutNeeded()) {
                 ChatRebuild.now(client, RawScripts.RESIZES_CHAT);
                 mainModals.relayout();
             }
