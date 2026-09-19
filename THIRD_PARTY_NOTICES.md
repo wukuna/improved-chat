@@ -1,5 +1,7 @@
 # Third-party notices
 
+Names and repositories listed here are included solely for license attribution and do not imply affiliation, endorsement, partnership, or a runtime relationship with Improved Chat.
+
 Improved Chat is derived in part from the open-source **Chat Widgets** RuneLite plugin:
 
 - Repository: `https://github.com/cnnnr/chat-widgets`
