@@ -64,7 +64,7 @@ import java.util.regex.Pattern;
  * that each filter and render a subset of the pool based on their {@link OverlayConfig}.
  */
 @PluginDescriptor(
-        name = "Improved Chat",
+        name = "Improved Chat TEST",
         configName = "improvedchat",
         description = "Customizable chat overlays, native chat collapse/resize, modern styling, message rules, and alerts.",
         tags = {"chat", "message", "overlay", "color", "customize", "private", "clan", "resize", "ui"},
@@ -266,7 +266,7 @@ public class ImprovedChatPlugin extends Plugin {
             icon = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
         }
         navButton = NavigationButton.builder()
-                .tooltip("Improved Chat")
+                .tooltip("Improved Chat TEST")
                 .icon(icon)
                 .priority(10)
                 .panel(panel)
