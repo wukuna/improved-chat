@@ -12,6 +12,7 @@ import javax.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.gameval.VarbitID;
+import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.plugins.timestamp.TimestampConfig;
@@ -23,7 +24,7 @@ public class ChatTimestampOverlay extends BaseCleanChatOverlay
 {
 
 	@Inject
-	private TimestampConfig timestampConfig;
+	private ConfigManager configManager;
 
 	@Inject
 	private CleanChatModule plugin;
@@ -114,6 +115,7 @@ public class ChatTimestampOverlay extends BaseCleanChatOverlay
 
 	private void updateTemplate()
 	{
+		TimestampConfig timestampConfig = timestampConfig();
 		FormatterExtractor.ExtractionResult newTemplate = FormatterExtractor.createFromFormatString(timestampConfig.timestampFormat());
 
 		plugin.setTimestampTemplateWidth(0);
@@ -139,10 +141,17 @@ public class ChatTimestampOverlay extends BaseCleanChatOverlay
 		client.refreshChat();
 	}
 
+
+	private TimestampConfig timestampConfig()
+	{
+		return configManager.getConfig(TimestampConfig.class);
+	}
+
 	private Color getTimestampColour()
 	{
 		boolean isChatboxTransparent = client.isResized() && client.getVarbitValue(VarbitID.CHATBOX_TRANSPARENCY) == 1;
 
+		TimestampConfig timestampConfig = timestampConfig();
 		Color color = isChatboxTransparent ? timestampConfig.transparentTimestamp() : timestampConfig.opaqueTimestamp();
 
 		if (color == null)
