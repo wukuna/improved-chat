@@ -10,6 +10,7 @@ import java.awt.Rectangle;
 import net.runelite.api.Client;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.gameval.SpriteID;
+import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
@@ -42,9 +43,14 @@ public class ModernChatOverlay extends Overlay {
         Rectangle chatBounds = null;
         if (background != null && !background.isHidden()) {
             chatBounds = background.getBounds();
-            Color bg = config.modernBackgroundColor();
-            graphics.setColor(bg);
-            graphics.fillRoundRect(chatBounds.x, chatBounds.y, chatBounds.width, chatBounds.height, 10, 10);
+            // RuneLite uses dark text on its opaque parchment and light text on its transparent
+            // resizable chat. Only replace the message background when the active color set is
+            // already intended for a transparent/dark surface.
+            if (usesTransparentChatColors()) {
+                Color bg = config.modernBackgroundColor();
+                graphics.setColor(bg);
+                graphics.fillRoundRect(chatBounds.x, chatBounds.y, chatBounds.width, chatBounds.height, 10, 10);
+            }
         }
 
         for (ChatButton button : ChatButton.values()) {
@@ -86,6 +92,10 @@ public class ModernChatOverlay extends Overlay {
         }
 
         return chatBounds == null ? null : chatBounds.getSize();
+    }
+
+    private boolean usesTransparentChatColors() {
+        return client.isResized() && client.getVarbitValue(VarbitID.CHATBOX_TRANSPARENCY) == 1;
     }
 
     private boolean isSingleButtonCollapsed() {
