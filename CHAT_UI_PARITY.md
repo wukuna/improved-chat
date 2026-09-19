@@ -1,8 +1,8 @@
 # Native Chat UI parity
 
-This checklist is used to prevent Improved Chat's consolidated native-chat features from replacing a standalone plugin with a reduced feature set.
+This checklist tracks the behavior Improved Chat intends to preserve across its native-chat feature set.
 
-## Collapse Chat parity
+## Collapsible Chat
 
 - [x] Single-button collapsed mode
 - [x] Hide the other native chat buttons while collapsed
@@ -19,7 +19,7 @@ This checklist is used to prevent Improved Chat's consolidated native-chat featu
 - [x] Restore RuneLite's native hover/listener state on shutdown
 - [x] Modernized presentation can style the retained single button without removing collapse behavior
 
-## Chat Resizer parity
+## Resizable Chat
 
 ### Resizable layout
 
@@ -77,4 +77,3 @@ This checklist is used to prevent Improved Chat's consolidated native-chat featu
 - [x] Modernization handles the single-button collapsed state
 - [x] Existing saved overlay configuration, including per-overlay text alignment, is unchanged
 
-The standalone Collapse Chat, Chat Resizer/Resizable Chat, and Modern Chat plugins should be disabled before enabling the equivalent Improved Chat feature.
