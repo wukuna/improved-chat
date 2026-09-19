@@ -403,8 +403,8 @@ public interface ImprovedChatConfig extends Config {
     String DEFAULT_CUSTOM_CHANNEL_NAME = "[<col=0000ff>$$</col>]";
 
     @ConfigSection(
-        name = "Clean Chat",
-        description = "Clean up native chat messages and layout",
+        name = "General Chat Cleanup",
+        description = "General message and layout cleanup; each option works independently",
         position = 15,
         closedByDefault = true
     )
@@ -482,22 +482,19 @@ public interface ImprovedChatConfig extends Config {
     )
     String dialogueFontsSection = "dialogueFonts";
 
-    @ConfigItem(keyName = "enableCleanChat", name = "Enable Clean Chat", description = "Enable integrated Clean Chat features; disable the standalone Clean Chat plugin first", section = cleanChatSection, position = 0)
-    default boolean enableCleanChat() { return false; }
+        @ConfigItem(keyName = "removeWelcome", name = "Remove Welcome Message", description = "Remove the Welcome to Old School RuneScape message", section = cleanChatSection, position = 0)
+    default boolean removeWelcome() { return false; }
 
-    @ConfigItem(keyName = "removeWelcome", name = "Remove Welcome Message", description = "Remove the Welcome to Old School RuneScape message", section = cleanChatSection, position = 1)
-    default boolean removeWelcome() { return true; }
-
-    @ConfigItem(keyName = "lineBreakIndentationMode", name = "Indent Mode", description = "Choose where wrapped channel-message lines begin", section = cleanChatSection, position = 2)
+    @ConfigItem(keyName = "lineBreakIndentationMode", name = "Indent Mode", description = "Choose where wrapped channel-message lines begin", section = cleanChatSection, position = 1)
     default IndentMode indentationMode() { return IndentMode.MESSAGE; }
 
-    @ConfigItem(keyName = HIDE_SCROLLBAR_KEY, name = "Hide Scrollbar", description = "Hide the chat scrollbar while keeping mouse-wheel scrolling", section = cleanChatSection, position = 3)
+    @ConfigItem(keyName = HIDE_SCROLLBAR_KEY, name = "Hide Scrollbar", description = "Hide the chat scrollbar while keeping mouse-wheel scrolling", section = cleanChatSection, position = 2)
     default boolean hideScrollbar() { return false; }
 
-    @ConfigItem(keyName = "hideSpecs", name = "Remove Special Attack Text", description = "Remove Dragon and Crystal equipment special-attack chat text", section = cleanChatSection, position = 4)
-    default boolean hideSpecs() { return true; }
+    @ConfigItem(keyName = "hideSpecs", name = "Remove Special Attack Text", description = "Remove Dragon and Crystal equipment special-attack chat text", section = cleanChatSection, position = 3)
+    default boolean hideSpecs() { return false; }
 
-    @ConfigItem(keyName = "improvedTimestamps", name = "Fixed-width Timestamps", description = "Use equal-width timestamp digits when RuneLite Chat Timestamps is enabled", section = cleanChatSection, position = 5)
+    @ConfigItem(keyName = "improvedTimestamps", name = "Fixed-width Timestamps", description = "Use equal-width digits when chat timestamps are enabled", section = cleanChatSection, position = 4)
     default boolean isFixedWidthTimestampEnabled() { return false; }
 
     @ConfigItem(keyName = "colorBar", name = "Enable Color Bar", description = "Draw a thin channel-colored marker beside each native chat message", section = cleanColorBarSection, position = 0)
@@ -534,7 +531,7 @@ public interface ImprovedChatConfig extends Config {
     default Color guestClanChannelColor() { return new Color(0x00855E); }
 
     @ConfigItem(keyName = "removeClanInstruction", name = "Remove Startup Message", description = "Remove clan-channel usage instructions", section = cleanClanSection, position = 0)
-    default boolean removeClanInstruction() { return true; }
+    default boolean removeClanInstruction() { return false; }
 
     @ConfigItem(keyName = "removeClanName", name = "Remove Clan Name", description = "Remove the clan name prefix from clan messages", section = cleanClanSection, position = 1)
     default boolean removeClanName() { return false; }
@@ -546,7 +543,7 @@ public interface ImprovedChatConfig extends Config {
     default boolean removeClanRank() { return false; }
 
     @ConfigItem(keyName = "removeGuestClanInstruction", name = "Remove Startup Message", description = "Remove guest-clan usage instructions", section = cleanGuestClanSection, position = 0)
-    default boolean removeGuestClanInstruction() { return true; }
+    default boolean removeGuestClanInstruction() { return false; }
 
     @ConfigItem(keyName = "removeGuestClanReconnecting", name = "Remove Reconnecting Message", description = "Remove guest-clan automatic reconnect messages", section = cleanGuestClanSection, position = 1)
     default boolean removeGuestClanReconnecting() { return false; }
@@ -558,19 +555,19 @@ public interface ImprovedChatConfig extends Config {
     default String getShortGuestClanName() { return DEFAULT_CUSTOM_CHANNEL_NAME; }
 
     @ConfigItem(keyName = "removeGroupIronInstruction", name = "Remove Startup Message", description = "Remove Group Ironman channel usage instructions", section = cleanGimSection, position = 0)
-    default boolean removeGroupIronInstruction() { return true; }
+    default boolean removeGroupIronInstruction() { return false; }
 
     @ConfigItem(keyName = "removeGroupIronName", name = "Remove GIM Name", description = "Remove the Group Ironman channel name prefix", section = cleanGimSection, position = 1)
     default boolean removeGroupIronName() { return false; }
 
     @ConfigItem(keyName = "moveGroupIronBroadcasts", name = "Move GIM Broadcasts", description = "Keep GIM broadcasts out of the clan tab", section = cleanGimSection, position = 2)
-    default boolean removeGroupIronFromClan() { return true; }
+    default boolean removeGroupIronFromClan() { return false; }
 
     @ConfigItem(keyName = "shortGroupIronName", name = "Custom GIM Name", description = "Replacement GIM label; use $$ for the current group name", section = cleanGimSection, position = 3)
     default String getShortGroupIronName() { return DEFAULT_CUSTOM_CHANNEL_NAME; }
 
     @ConfigItem(keyName = "removeFriendsChatInstruction", name = "Remove Startup Message", description = "Remove friends-chat usage instructions", section = cleanFriendsSection, position = 0)
-    default boolean removeFriendsChatStartup() { return true; }
+    default boolean removeFriendsChatStartup() { return false; }
 
     @ConfigItem(keyName = "removeFriendsChatName", name = "Remove Friends Chat Name", description = "Remove the friends-chat channel prefix", section = cleanFriendsSection, position = 1)
     default boolean removeFriendsChatName() { return false; }
@@ -584,7 +581,7 @@ public interface ImprovedChatConfig extends Config {
     @ConfigItem(keyName = "shortFriendsName", name = "Custom Friends Chat Name", description = "Replacement friends-chat label; use $$ for the current channel name", section = cleanFriendsSection, position = 4)
     default String getShortFriendsName() { return DEFAULT_CUSTOM_CHANNEL_NAME; }
 
-    @ConfigItem(keyName = "enableChatboxOpacity", name = "Enable Chatbox Opacity", description = "Enable integrated transparent-chat opacity controls; disable standalone Chatbox Opacity first", section = chatboxOpacitySection, position = 0)
+    @ConfigItem(keyName = "enableChatboxOpacity", name = "Enable Chatbox Opacity", description = "Enable transparent-chat background and button opacity controls", section = chatboxOpacitySection, position = 0)
     default boolean enableChatboxOpacity() { return false; }
 
     @Range(min = -1, max = 255)
@@ -598,7 +595,7 @@ public interface ImprovedChatConfig extends Config {
     @ConfigItem(keyName = "enableRemoveChatOptions", name = "Remove Chat Options", description = "Remove chat-message context-menu options; hold Control to temporarily show them", section = chatMenuSection, position = 0)
     default boolean enableRemoveChatOptions() { return false; }
 
-    @ConfigItem(keyName = "enableOfflineChatStatus", name = "Enable Offline Clan Status", description = "Mark offline clan members in native clan chat; disable standalone Offline Chat Icon first", section = offlineClanSection, position = 0)
+    @ConfigItem(keyName = "enableOfflineChatStatus", name = "Enable Offline Clan Status", description = "Mark offline clan members in native clan chat", section = offlineClanSection, position = 0)
     default boolean enableOfflineChatStatus() { return false; }
 
     @ConfigItem(keyName = "enableOfflineIcon", name = "Show Offline Icon", description = "Show an Improved Chat offline-status icon beside offline clan members", section = offlineClanSection, position = 1)
@@ -611,7 +608,7 @@ public interface ImprovedChatConfig extends Config {
     @ConfigItem(keyName = "offlineColor", name = "Offline Color", description = "Name color for offline clan members", section = offlineClanSection, position = 3)
     default Color offlineColor() { return Color.DARK_GRAY; }
 
-    @ConfigItem(keyName = "enableDialogueFonts", name = "Enable Dialogue Fonts", description = "Replace supported OSRS dialogue bitmap text with configurable system fonts; disable standalone Dialogue Fonts first", section = dialogueFontsSection, position = 0)
+    @ConfigItem(keyName = "enableDialogueFonts", name = "Enable Dialogue Fonts", description = "Replace supported OSRS dialogue bitmap text with configurable system fonts", section = dialogueFontsSection, position = 0)
     default boolean enableDialogueFonts() { return false; }
 
     @ConfigItem(keyName = "fontFamily", name = "Font", description = "Font used for dialogue text", section = dialogueFontsSection, position = 1)
@@ -654,5 +651,31 @@ public interface ImprovedChatConfig extends Config {
 
     @ConfigItem(keyName = "replaceSprite", name = "Item/Action Dialogue", description = "Replace item and action dialogue text", section = dialogueFontsSection, position = 13)
     default boolean replaceSprite() { return true; }
+
+    default boolean anyChatCleanupEnabled() {
+        return removeWelcome()
+            || indentationMode() != IndentMode.MESSAGE
+            || hideScrollbar()
+            || hideSpecs()
+            || isFixedWidthTimestampEnabled()
+            || isColorBarEnabled()
+            || removeClanInstruction()
+            || removeClanName()
+            || removeClanRank()
+            || removeGuestClanInstruction()
+            || removeGuestClanReconnecting()
+            || removeGuestClanName()
+            || removeGroupIronInstruction()
+            || removeGroupIronName()
+            || removeGroupIronFromClan()
+            || removeFriendsChatStartup()
+            || removeFriendsChatName()
+            || removeFriendsAttempting()
+            || removeFriendsNowTalking()
+            || !DEFAULT_CUSTOM_CHANNEL_NAME.equals(getShortClanName())
+            || !DEFAULT_CUSTOM_CHANNEL_NAME.equals(getShortGuestClanName())
+            || !DEFAULT_CUSTOM_CHANNEL_NAME.equals(getShortGroupIronName())
+            || !DEFAULT_CUSTOM_CHANNEL_NAME.equals(getShortFriendsName());
+    }
 
 }
