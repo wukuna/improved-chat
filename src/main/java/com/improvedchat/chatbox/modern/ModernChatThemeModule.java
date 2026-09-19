@@ -91,12 +91,36 @@ public class ModernChatThemeModule {
             return;
         }
 
+        int liveChildren = 0;
+        boolean sameGeneration = true;
         for (Widget child : children) {
             if (child == null) {
                 continue;
             }
-            originalBackgroundOpacity.putIfAbsent(child, child.getOpacity());
-            child.setOpacity(255);
+            liveChildren++;
+            if (!originalBackgroundOpacity.containsKey(child)) {
+                sameGeneration = false;
+            }
+        }
+        if (originalBackgroundOpacity.size() != liveChildren) {
+            sameGeneration = false;
+        }
+
+        // The game rebuilds these dynamic children. Keep only the current generation so a
+        // long-running client cannot accumulate references to stale widget instances.
+        if (!sameGeneration) {
+            originalBackgroundOpacity.clear();
+            for (Widget child : children) {
+                if (child != null) {
+                    originalBackgroundOpacity.put(child, child.getOpacity());
+                }
+            }
+        }
+
+        for (Widget child : children) {
+            if (child != null) {
+                child.setOpacity(255);
+            }
         }
     }
 
