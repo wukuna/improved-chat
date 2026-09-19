@@ -3,6 +3,7 @@
  */
 package com.improvedchat.chatbox.resize;
 
+import com.improvedchat.chatbox.opacity.ChatboxOpacityModule;
 import com.improvedchat.chatbox.resize.internal.ChatRebuild;
 import com.improvedchat.chatbox.resize.internal.RawScripts;
 import com.improvedchat.chatbox.resize.internal.SizeClamps;
@@ -47,6 +48,7 @@ public class ChatResizeModule {
     @Inject private MouseManager mouseManager;
     @Inject private OverlayManager overlayManager;
     @Inject private EventBus eventBus;
+    @Inject private ChatboxOpacityModule chatboxOpacityModule;
 
     @Inject private RuneLiteHudAnchors hudAnchors;
     @Inject private TopLevelModals mainModals;
@@ -121,6 +123,7 @@ public class ChatResizeModule {
             if (dialogBoxes.isDialogOpen()) dialogBoxes.resetDialogPositions(); // Must reset position of open dialog
             rlInput.refit(); // Frame loop is off by now, so re-center an open input prompt on the restored width here
             scrollKeep.sync();
+            chatboxOpacityModule.reapplyAfterChatMutation();
         });
     }
 
@@ -416,6 +419,10 @@ public class ChatResizeModule {
             dragResizeActuator.update(bounds, !client.isResized(), client.getCanvasWidth(), client.getCanvasHeight());
 
             hudAnchors.presentAnchorHeight();
+
+            // Resizing and rebuild scripts can recreate or restyle the transparent chat widgets.
+            // Re-assert opacity last so the frame never falls back to the native default.
+            chatboxOpacityModule.reapplyAfterChatMutation();
         }
 
         @Subscribe
