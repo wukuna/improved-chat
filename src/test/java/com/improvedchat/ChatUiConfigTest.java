@@ -1,6 +1,7 @@
 package com.improvedchat;
 
 import com.improvedchat.chatbox.resize.internal.SizeClamps;
+import java.lang.reflect.Method;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.Keybind;
 import org.junit.Test;
@@ -11,6 +12,16 @@ import static org.junit.Assert.assertTrue;
 
 public class ChatUiConfigTest {
     private final ImprovedChatConfig config = new ImprovedChatConfig() {};
+
+    @Test
+    public void configInterfaceContainsOnlyConfigItems() {
+        for (Method method : ImprovedChatConfig.class.getDeclaredMethods()) {
+            assertTrue(
+                "ImprovedChatConfig method must be annotated @ConfigItem: " + method.getName(),
+                method.isSynthetic() || method.getAnnotation(ConfigItem.class) != null
+            );
+        }
+    }
 
     @Test
     public void consolidatedChatboxFeaturesAreOptIn() {
