@@ -21,8 +21,8 @@ import net.runelite.client.plugins.timestamp.TimestampPlugin;
 import net.runelite.client.ui.overlay.OverlayManager;
 
 /**
- * Integrated lifecycle for Clean Chat. Source behavior is kept in focused helpers so disabling
- * this feature restores native chat without taking down the rest of Improved Chat.
+ * Lifecycle for Improved Chat's native message and layout cleanup features.
+ * Individual cleanup settings can be enabled independently.
  */
 @Singleton
 public final class CleanChatModule {
