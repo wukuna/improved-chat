@@ -31,8 +31,10 @@ public class ResizableModeChat {
 
     private int lastOpenTab; // Tab open before the chat was hidden, reopened on unhide
     private boolean lastCollapsed; // Collapse state the last apply() sized the slot to
-    private boolean relayoutNeeded; // Collapse changed the band above the chat
-    private boolean enablePending; // onEnable ran before the layout swap handed the chatbox over
+    private boolean relayoutNeeded; // Chat dimensions changed and surrounding interfaces need a fresh fit
+    private boolean enablePending;
+    private int lastAppliedWidth = -1;
+    private int lastAppliedHeight = -1; // onEnable ran before the layout swap handed the chatbox over
 
     @Inject
     ResizableModeChat(
@@ -96,6 +98,14 @@ public class ResizableModeChat {
         int slotH = Math.max(0, ChatGeometry.CHATBOX_SLOT_H + heightChange);
         int backgroundH = Math.max(0, ChatGeometry.CHATBOX_SPRITE_H + heightChange);
 
+        // Do not rely on a collapse, canvas resize, or unrelated toplevel script to wake mounted interfaces.
+        // Any real chat dimension change alters the usable layout envelope and must trigger one fresh refit.
+        if (slotW != lastAppliedWidth || slotH != lastAppliedHeight) {
+            lastAppliedWidth = slotW;
+            lastAppliedHeight = slotH;
+            relayoutNeeded = true;
+        }
+
         hudAnchors.sync(heightChange); // Vertically shift RuneLite's HUD anchors
         if (hudAnchors.consumeLayoutChanged()) {
             relayoutNeeded = true; // Child modal slots changed height; re-run the toplevel fit once settled
@@ -144,6 +154,8 @@ public class ResizableModeChat {
         lastCollapsed = false;
         relayoutNeeded = false;
         enablePending = false;
+        lastAppliedWidth = -1;
+        lastAppliedHeight = -1;
 
         movedChat.restore(); // Before the slot goes back to stock height, which is what the point is handed back for
 
