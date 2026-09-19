@@ -9,7 +9,6 @@ import net.runelite.api.Client;
 import net.runelite.api.FontTypeFace;
 import net.runelite.api.annotations.Component;
 import net.runelite.api.gameval.InterfaceID;
-import net.runelite.api.gameval.SpriteID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetPositionMode;
 import net.runelite.api.widgets.WidgetSizeMode;
@@ -20,19 +19,11 @@ import javax.inject.Singleton;
 
 @Singleton
 public class ChatBackgroundGraphic {
-    // Manually-cobbled chat box border
-    private static final int CORNER_SIZE = 32;
-    private static final int BORDER_OFFSET = 12;
-    private static final int[] BORDER_SPRITES = {
-        SpriteID.V2StoneBorders.SIDE_PANEL_CORNER_TOP_LEFT,
-        SpriteID.V2StoneBorders.SIDE_PANEL_CORNER_TOP_RIGHT,
-        SpriteID.V2StoneBorders.SIDE_PANEL_CORNER_BOTTOM_LEFT,
-        SpriteID.V2StoneBorders.SIDE_PANEL_CORNER_BOTTOM_RIGHT,
-        SpriteID.V2StoneBorders.SIDE_PANEL_EDGE_TOP,
-        SpriteID.V2StoneBorders.SIDE_PANEL_EDGE_LEFT,
-        SpriteID.V2StoneBorders.SIDE_PANEL_EDGE_BOTTOM,
-        SpriteID.V2StoneBorders.SIDE_PANEL_EDGE_RIGHT,
-    };
+    // Improved Chat frame: deliberately not Chat Resizer's tiled stone border.
+    // Four slim rails plus two accent grips make the resized edge visually distinct.
+    private static final int FRAME_RAIL = 2;
+    private static final int FRAME_GRIP = 20;
+    private static final int FRAME_COLOR = 0x4B5563;
 
     // Chat tab bar, buttons, and stock layout values
     private static final int TAB_STOCK_W = 56;
@@ -173,39 +164,38 @@ public class ChatBackgroundGraphic {
         }
     }
 
-    // Add border pieces and position them as children of CHATAREA since CHAT_BACKGROUND is finicky
+    // Add a slim custom frame as children of CHATAREA since CHAT_BACKGROUND is finicky.
+    // This intentionally uses flat rectangle rails rather than Chat Resizer's stone sprite pieces.
     private void drawBorder(Widget chatArea, Widget parchment) {
         if (!borderPresent(chatArea)) {
-            borderPieces = new Widget[BORDER_SPRITES.length];
-            for (int i = 0; i < BORDER_SPRITES.length; i++) {
-                Widget w = chatArea.createChild(-1, WidgetType.GRAPHIC);
-                w.setSpriteId(BORDER_SPRITES[i]);
-                w.setSpriteTiling(true);
-                borderPieces[i] = w;
+            borderPieces = new Widget[6];
+            for (int i = 0; i < borderPieces.length; i++) {
+                Widget piece = chatArea.createChild(-1, WidgetType.RECTANGLE);
+                piece.setFilled(true);
+                borderPieces[i] = piece;
             }
         }
 
-        int w = chatArea.getWidth();
-        int h = chatArea.getHeight();
-        int innerW = Math.max(0, w - 2 * CORNER_SIZE);
-        int innerH = Math.max(0, h - 2 * CORNER_SIZE);
+        int w = Math.max(1, chatArea.getWidth());
+        int h = Math.max(1, chatArea.getHeight());
+        int gripColor = config.indicatorColor().getRGB() & 0xFFFFFF;
+
         int[][] rects = {
-            //x                                y                                width        height
-            { 0,                               0,                               CORNER_SIZE, CORNER_SIZE }, // tl
-            { w - CORNER_SIZE,                 0,                               CORNER_SIZE, CORNER_SIZE }, // tr
-            { 0,                               h - CORNER_SIZE,                 CORNER_SIZE, CORNER_SIZE }, // bl
-            { w - CORNER_SIZE,                 h - CORNER_SIZE,                 CORNER_SIZE, CORNER_SIZE }, // br
-            { CORNER_SIZE,                    -BORDER_OFFSET - 1,               innerW,      CORNER_SIZE }, // top
-            {-BORDER_OFFSET - 1,               CORNER_SIZE,                     CORNER_SIZE, innerH      }, // left
-            { CORNER_SIZE,                     h - CORNER_SIZE + BORDER_OFFSET, innerW,  CORNER_SIZE     }, // bottom
-            { w - CORNER_SIZE + BORDER_OFFSET, CORNER_SIZE,                     CORNER_SIZE, innerH      }, // right
+            { 0, 0, w, FRAME_RAIL },                                  // top rail
+            { 0, Math.max(0, h - FRAME_RAIL), w, FRAME_RAIL },         // bottom rail
+            { 0, 0, FRAME_RAIL, h },                                   // left rail
+            { Math.max(0, w - FRAME_RAIL), 0, FRAME_RAIL, h },         // right rail
+            { Math.max(0, (w - FRAME_GRIP) / 2), 0, FRAME_GRIP, 4 },   // top grip
+            { Math.max(0, w - 4), Math.max(0, (h - FRAME_GRIP) / 2), 4, FRAME_GRIP }, // side grip
         };
 
         for (int i = 0; i < rects.length; i++) {
-            borderPieces[i].setOriginalX(rects[i][0]);
-            borderPieces[i].setOriginalY(rects[i][1]);
-            borderPieces[i].setSize(rects[i][2], rects[i][3]);
-            borderPieces[i].revalidate();
+            Widget piece = borderPieces[i];
+            piece.setTextColor(i < 4 ? FRAME_COLOR : gripColor);
+            piece.setOriginalX(rects[i][0]);
+            piece.setOriginalY(rects[i][1]);
+            piece.setSize(Math.max(1, rects[i][2]), Math.max(1, rects[i][3]));
+            piece.revalidate();
         }
 
         syncBorderVisibility(parchment);
