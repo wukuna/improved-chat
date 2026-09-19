@@ -251,7 +251,7 @@ public interface ImprovedChatConfig extends Config {
     String NO_BORDERS = "noBorders";
     String NO_BACKGROUND_ZOOM = "noBackgroundZoom";
 
-    @ConfigItem(keyName = "enableCollapsibleChat", name = "Enable Collapsible Chat", description = "Collapse native chat tabs to one button when chat is hidden; disable standalone Collapse Chat before enabling", section = collapseChatSection, position = 0)
+    @ConfigItem(keyName = "enableCollapsibleChat", name = "Enable Collapsible Chat", description = "Collapse native chat tabs to one button when chat is hidden", section = collapseChatSection, position = 0)
     default boolean enableCollapsibleChat() { return false; }
 
     @ConfigItem(keyName = "collapsedButtonContent", name = "Button Content", description = "Content shown on the single collapsed chat button", section = collapseChatSection, position = 1)
@@ -281,7 +281,7 @@ public interface ImprovedChatConfig extends Config {
     @ConfigItem(keyName = "collapseUnreadTrade", name = "Unread Trade", description = "Highlight the collapsed button for unread trade messages", section = collapseChatSection, position = 14)
     default boolean highlightOnUnreadTradeMessages() { return false; }
 
-    @ConfigItem(keyName = "enableResizableChat", name = "Enable Resizable Chat", description = "Enable advanced native chat resizing; disable standalone Chat Resizer/Resizable Chat before enabling", section = resizeChatSection, position = 0)
+    @ConfigItem(keyName = "enableResizableChat", name = "Enable Resizable Chat", description = "Enable advanced native chat resizing", section = resizeChatSection, position = 0)
     default boolean enableResizableChat() { return false; }
 
     @Range(min = -165, max = 10000)
