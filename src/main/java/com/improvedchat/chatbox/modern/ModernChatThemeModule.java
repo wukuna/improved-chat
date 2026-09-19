@@ -12,6 +12,7 @@ import javax.inject.Singleton;
 import net.runelite.api.Client;
 import net.runelite.api.events.BeforeRender;
 import net.runelite.api.gameval.InterfaceID;
+import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
@@ -70,7 +71,11 @@ public class ModernChatThemeModule {
     private void applyNativeStyle() {
         styled = true;
 
-        hideNativeBackground();
+        if (usesTransparentChatColors()) {
+            hideNativeBackground();
+        } else {
+            restoreNativeBackground();
+        }
 
         for (ChatButton button : ChatButton.values()) {
             rememberAndSetOpacity(button.graphicID, 255);
@@ -124,6 +129,29 @@ public class ModernChatThemeModule {
         }
     }
 
+    private void restoreNativeBackground() {
+        Widget background = client.getWidget(InterfaceID.Chatbox.CHAT_BACKGROUND);
+        if (background != null) {
+            Widget[] children = background.getDynamicChildren();
+            if (children != null) {
+                for (Widget child : children) {
+                    if (child == null) {
+                        continue;
+                    }
+                    Integer opacity = originalBackgroundOpacity.get(child);
+                    if (opacity != null) {
+                        child.setOpacity(opacity);
+                    }
+                }
+            }
+        }
+        originalBackgroundOpacity.clear();
+    }
+
+    private boolean usesTransparentChatColors() {
+        return client.isResized() && client.getVarbitValue(VarbitID.CHATBOX_TRANSPARENCY) == 1;
+    }
+
     private void rememberAndSetOpacity(int widgetId, int opacity) {
         Widget w = client.getWidget(widgetId);
         if (w == null) {
@@ -143,21 +171,7 @@ public class ModernChatThemeModule {
     }
 
     private void restoreNativeWidgets() {
-        Widget background = client.getWidget(InterfaceID.Chatbox.CHAT_BACKGROUND);
-        if (background != null) {
-            Widget[] children = background.getDynamicChildren();
-            if (children != null) {
-                for (Widget child : children) {
-                    if (child == null) {
-                        continue;
-                    }
-                    Integer opacity = originalBackgroundOpacity.get(child);
-                    if (opacity != null) {
-                        child.setOpacity(opacity);
-                    }
-                }
-            }
-        }
+        restoreNativeBackground();
 
         for (Map.Entry<Integer, Integer> e : originalOpacity.entrySet()) {
             Widget w = client.getWidget(e.getKey());
@@ -171,7 +185,6 @@ public class ModernChatThemeModule {
                 w.setTextColor(e.getValue());
             }
         }
-        originalBackgroundOpacity.clear();
         originalOpacity.clear();
         originalTextColor.clear();
         styled = false;
