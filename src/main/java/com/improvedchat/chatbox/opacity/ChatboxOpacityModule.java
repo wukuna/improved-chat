@@ -34,6 +34,7 @@ public final class ChatboxOpacityModule {
 
     private final Map<Widget, Integer> backgroundOpacity = new IdentityHashMap<>();
     private boolean started;
+    private boolean deferredApplyQueued;
     private int buttonSprite = -1;
     private int buttonOpacity = -1;
     private boolean buttonFilled;
@@ -49,6 +50,7 @@ public final class ChatboxOpacityModule {
     public synchronized void shutDown() {
         if (!started) return;
         started = false;
+        deferredApplyQueued = false;
         eventBus.unregister(this);
         clientThread.invoke(() -> {
             restoreBackground();
@@ -73,8 +75,16 @@ public final class ChatboxOpacityModule {
 
     public void reapplyAfterChatMutation() {
         if (!started) return;
+
         apply();
-        clientThread.invokeLater(this::apply);
+
+        if (!deferredApplyQueued) {
+            deferredApplyQueued = true;
+            clientThread.invokeLater(() -> {
+                deferredApplyQueued = false;
+                apply();
+            });
+        }
     }
 
     private void apply() {
