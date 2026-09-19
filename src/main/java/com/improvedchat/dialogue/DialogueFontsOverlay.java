@@ -405,14 +405,10 @@ public class DialogueFontsOverlay extends Overlay
 		}
 
 		Font font = fontRenderer.getFont();
-		g.setFont(font);
-		FontMetrics fm = g.getFontMetrics(font);
-
-		int textX = cb.x + (cb.width  - fm.stringWidth(text)) / 2;
-		int textY = cb.y + (cb.height - fm.getHeight())        / 2;
-
-		g.setColor(NAME_COLOR);
-		g.drawString(text, textX, textY + fm.getAscent());
+		fontRenderer.drawCenteredString(
+			g, text, cb,
+			centreY(g, cb, font),
+			NAME_COLOR, font);
 	}
 
 	// -------------------------------------------------------------------------
