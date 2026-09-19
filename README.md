@@ -28,7 +28,7 @@ Improved Chat is not only a widget-layout variant. In addition to configurable c
 
 Resizable Chat retains Chat Resizer's compatibility controls: **Don't Draw Resize Borders** and **Don't Zoom Background**. These can be enabled when a Resource Pack supplies chatbox art that should not be stretched or framed by Improved Chat.
 
-**Modernize Chat intentionally replaces the visible native/resource-pack chat background and tab artwork while Modernize Chat is enabled.** It does not replace the underlying sprite IDs or Resource Pack files. When Modernize Chat is disabled or Improved Chat shuts down, the original live widget opacity/text colors are restored so the Resource Pack can resume drawing normally.
+**Modernize Chat intentionally replaces native/resource-pack tab artwork while it is enabled.** The dark modern message background is only substituted when RuneLite is using its transparent resizable-chat color set; opaque/fixed chat keeps the native or Resource Pack message background so RuneLite's darker opaque-chat text remains readable. Improved Chat does not replace the underlying sprite IDs or Resource Pack files. When Modernize Chat is disabled or Improved Chat shuts down, the original live widget opacity/text colors are restored so the Resource Pack can resume drawing normally.
 
 Collapsible Chat continues to use RuneLite's native chat-tab sprite IDs and state changes rather than installing replacement assets.
 
