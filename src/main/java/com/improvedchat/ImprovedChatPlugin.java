@@ -1,5 +1,8 @@
 package com.improvedchat;
 
+import com.improvedchat.chatbox.collapse.ChatCollapseModule;
+import com.improvedchat.chatbox.modern.ModernChatThemeModule;
+import com.improvedchat.chatbox.resize.ChatResizeModule;
 import com.improvedchat.model.MessageCategory;
 import com.improvedchat.model.MessageMergeRule;
 import com.improvedchat.model.OverlayMessage;
@@ -63,8 +66,8 @@ import java.util.regex.Pattern;
 @PluginDescriptor(
         name = "Improved Chat",
         configName = "improvedchat",
-        description = "Customizable chat overlays with message color rules, flashing alerts, and RuneLite Chat Color integration.",
-        tags = {"chat", "message", "overlay", "color", "customize", "private", "clan"},
+        description = "Customizable chat overlays, native chat collapse/resize, modern styling, message rules, and alerts.",
+        tags = {"chat", "message", "overlay", "color", "customize", "private", "clan", "resize", "ui"},
         conflicts = {"Chat Widgets", "Force Recolor"})
 public class ImprovedChatPlugin extends Plugin {
 
@@ -171,6 +174,15 @@ public class ImprovedChatPlugin extends Plugin {
     @Inject
     private PluginManager pluginManager;
 
+    @Inject
+    private ChatResizeModule chatResizeModule;
+
+    @Inject
+    private ChatCollapseModule chatCollapseModule;
+
+    @Inject
+    private ModernChatThemeModule modernChatThemeModule;
+
 
     // Shared message pool
     private final CopyOnWriteArrayList<OverlayMessage> messages = new CopyOnWriteArrayList<>();
@@ -242,6 +254,10 @@ public class ImprovedChatPlugin extends Plugin {
 
         updatePmWidgetVisibility();
 
+        chatResizeModule.startUp();
+        chatCollapseModule.startUp();
+        modernChatThemeModule.startUp(this);
+
         panel = new ImprovedChatPanel(this);
         BufferedImage icon;
         try {
@@ -262,6 +278,10 @@ public class ImprovedChatPlugin extends Plugin {
 
     @Override
     protected void shutDown() {
+        modernChatThemeModule.shutDown();
+        chatCollapseModule.shutDown();
+        chatResizeModule.shutDown();
+
         for (DynamicChatOverlay overlay : overlays) {
             overlayManager.remove(overlay);
         }
@@ -728,6 +748,20 @@ public class ImprovedChatPlugin extends Plugin {
         }
         if ("hidePrivateChat".equals(event.getKey())) {
             updatePmWidgetVisibility();
+        }
+        if ("enableResizableChat".equals(event.getKey())) {
+            if (config.enableResizableChat()) {
+                chatResizeModule.startUp();
+            } else {
+                chatResizeModule.shutDown();
+            }
+        }
+        if ("enableCollapsibleChat".equals(event.getKey())) {
+            if (config.enableCollapsibleChat()) {
+                chatCollapseModule.startUp();
+            } else {
+                chatCollapseModule.shutDown();
+            }
         }
     }
 

@@ -5,9 +5,14 @@ import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.ConfigSection;
+import net.runelite.client.config.Keybind;
+import net.runelite.client.config.Range;
+import net.runelite.client.config.Units;
+import net.runelite.client.config.Alpha;
 
-@ConfigGroup("improvedchat")
+@ConfigGroup(ImprovedChatConfig.GROUP)
 public interface ImprovedChatConfig extends Config {
+    String GROUP = "improvedchat";
     @ConfigSection(
         name = "General",
         description = "Global Improved Chat settings",
@@ -151,4 +156,228 @@ public interface ImprovedChatConfig extends Config {
 
     @ConfigItem(keyName = "rainbowStyle", name = "Rainbow Style", description = "Color by word or visible character", section = overlayRulesSection, position = 2)
     default RainbowStyle rainbowStyle() { return RainbowStyle.PER_WORD; }
+    @ConfigSection(
+        name = "Collapsible Chat",
+        description = "Collapse RuneLite chat to a single customizable button",
+        position = 10,
+        closedByDefault = true
+    )
+    String collapseChatSection = "collapseChat";
+
+    @ConfigSection(
+        name = "Resizable Chat",
+        description = "Resize RuneLite chat in resizable and fixed layouts",
+        position = 11,
+        closedByDefault = true
+    )
+    String resizeChatSection = "resizeChat";
+
+    @ConfigSection(
+        name = "Drag Resizing",
+        description = "Resize chat by dragging its border",
+        position = 12,
+        closedByDefault = true
+    )
+    String dragResizeSection = "dragResize";
+
+    @ConfigSection(
+        name = "Secondary Chat Size",
+        description = "Swap to a second chat size with a keybind",
+        position = 13,
+        closedByDefault = true
+    )
+    String secondarySizeSection = "secondarySize";
+
+    @ConfigSection(
+        name = "Modernize Chat",
+        description = "Optional modern styling for RuneLite's native chatbox",
+        position = 14,
+        closedByDefault = true
+    )
+    String modernChatSection = "modernChat";
+
+    enum CollapsedButtonContent {
+        STATIC_TEXT("Static text"),
+        REPORT_BUTTON_TEXT("Report button text");
+
+        private final String label;
+
+        CollapsedButtonContent(String label) {
+            this.label = label;
+        }
+
+        @Override
+        public String toString() {
+            return label;
+        }
+    }
+
+    enum Revert {
+        UNGROW, UNSHRINK, BOTH, NEITHER;
+
+        public boolean ungrows() {
+            return this == UNGROW || this == BOTH;
+        }
+
+        public boolean unshrinks() {
+            return this == UNSHRINK || this == BOTH;
+        }
+    }
+
+    enum Mode {
+        HOLD, TOGGLE
+    }
+
+    String HEIGHT_CHANGE = "heightChange";
+    String WIDTH_CHANGE = "widthChange";
+    String REWRAP_PRIVATE_CHAT = "rewrapPrivateChat";
+    String RESIZE_TAB_BUTTONS = "resizeTabButtons";
+    String GROW_INTERFACES = "growInterfaces";
+    String FIXED_HEIGHT_CHANGE = "fixedHeightChange";
+    String FIXED_TAB_COLLAPSE = "fixedTabCollapse";
+    String FIXED_ADJUST_VIEWPORT = "fixedAdjustViewport";
+    String REVERT_FOR_DIALOGS = "revertForDialogs";
+    String REVERT_FOR_MODALS = "revertForModals";
+    String TOGGLE_SHOW_CHAT = "toggleShowChat";
+    String INDICATOR_COLOR = "indicatorColor";
+    String DRAG_MODIFIER = "dragModifier";
+    String LIVE_REWRAP = "liveRewrap";
+    String SWAP_HEIGHT_CHANGE = "swapHeightChange";
+    String SWAP_WIDTH_CHANGE = "swapWidthChange";
+    String SWAP_SIZE_KEYBIND = "swapSizeKeybind";
+    String SWAP_SIZE_MODE = "swapSizeMode";
+    String NO_BORDERS = "noBorders";
+    String NO_BACKGROUND_ZOOM = "noBackgroundZoom";
+
+    @ConfigItem(keyName = "enableCollapsibleChat", name = "Enable Collapsible Chat", description = "Collapse native chat tabs to one button when chat is hidden; disable standalone Collapse Chat before enabling", section = collapseChatSection, position = 0)
+    default boolean enableCollapsibleChat() { return false; }
+
+    @ConfigItem(keyName = "collapsedButtonContent", name = "Button Content", description = "Content shown on the single collapsed chat button", section = collapseChatSection, position = 1)
+    default CollapsedButtonContent collapsedButtonContent() { return CollapsedButtonContent.STATIC_TEXT; }
+
+    @ConfigItem(keyName = "collapsedButtonTransparent", name = "Transparent Button", description = "Make the collapsed button transparent", section = collapseChatSection, position = 2)
+    default boolean collapsedButtonTransparent() { return false; }
+
+    @ConfigItem(keyName = "collapsedButtonText", name = "Button Text", description = "Text shown while chat is collapsed", section = collapseChatSection, position = 3)
+    default String collapsedButtonContentCustomText() { return "-"; }
+
+    @ConfigItem(keyName = "collapsedButtonHoverText", name = "Hover Text", description = "Text shown while hovering the collapsed button", section = collapseChatSection, position = 4)
+    default String collapsedButtonContentCustomTextHovered() { return "+"; }
+
+    @ConfigItem(keyName = "collapseUnreadPublic", name = "Unread Public", description = "Highlight the collapsed button for unread public messages", section = collapseChatSection, position = 10)
+    default boolean highlightOnUnreadPublicMessages() { return false; }
+
+    @ConfigItem(keyName = "collapseUnreadPrivate", name = "Unread Private", description = "Highlight the collapsed button for unread private messages", section = collapseChatSection, position = 11)
+    default boolean highlightOnUnreadPrivateMessages() { return false; }
+
+    @ConfigItem(keyName = "collapseUnreadFriends", name = "Unread Friends Chat", description = "Highlight the collapsed button for unread friends chat messages", section = collapseChatSection, position = 12)
+    default boolean highlightOnUnreadFriendsChatMessages() { return false; }
+
+    @ConfigItem(keyName = "collapseUnreadClan", name = "Unread Clan", description = "Highlight the collapsed button for unread clan messages", section = collapseChatSection, position = 13)
+    default boolean highlightOnUnreadClanChatMessages() { return false; }
+
+    @ConfigItem(keyName = "collapseUnreadTrade", name = "Unread Trade", description = "Highlight the collapsed button for unread trade messages", section = collapseChatSection, position = 14)
+    default boolean highlightOnUnreadTradeMessages() { return false; }
+
+    @ConfigItem(keyName = "enableResizableChat", name = "Enable Resizable Chat", description = "Enable advanced native chat resizing; disable standalone Chat Resizer/Resizable Chat before enabling", section = resizeChatSection, position = 0)
+    default boolean enableResizableChat() { return false; }
+
+    @Range(min = -165, max = 10000)
+    @Units(Units.PIXELS)
+    @ConfigItem(keyName = HEIGHT_CHANGE, name = "Resizable Height Change", description = "Add or subtract native chat height in resizable layout", section = resizeChatSection, position = 1)
+    default int heightChange() { return 28; }
+
+    @Range(min = -519, max = 10000)
+    @Units(Units.PIXELS)
+    @ConfigItem(keyName = WIDTH_CHANGE, name = "Resizable Width Change", description = "Add or subtract native chat width in resizable layout", section = resizeChatSection, position = 2)
+    default int widthChange() { return 80; }
+
+    @ConfigItem(keyName = REWRAP_PRIVATE_CHAT, name = "Adjust Private Split Width", description = "Match split-private-message width to resized chat", section = resizeChatSection, position = 3)
+    default boolean rewrapPrivateChat() { return true; }
+
+    @ConfigItem(keyName = RESIZE_TAB_BUTTONS, name = "Resize Chat Tab Buttons", description = "Stretch chat tabs to match adjusted width", section = resizeChatSection, position = 4)
+    default boolean resizeTabButtons() { return false; }
+
+    @ConfigItem(keyName = GROW_INTERFACES, name = "Grow Interface Height", description = "Let interfaces reclaim space freed by a smaller chatbox", section = resizeChatSection, position = 5)
+    default boolean growInterfaces() { return true; }
+
+    @Range(min = -165, max = 10000)
+    @Units(Units.PIXELS)
+    @ConfigItem(keyName = FIXED_HEIGHT_CHANGE, name = "Fixed Height Change", description = "Add or subtract native chat height in fixed layout", section = resizeChatSection, position = 10)
+    default int fixedHeightChange() { return 0; }
+
+    @ConfigItem(keyName = FIXED_TAB_COLLAPSE, name = "Hideable Fixed Chat", description = "Allow fixed-layout chat to be hidden like resizable chat", section = resizeChatSection, position = 11)
+    default boolean fixedTabCollapse() { return true; }
+
+    @ConfigItem(keyName = FIXED_ADJUST_VIEWPORT, name = "Adjust Camera On Grow", description = "Keep the player centered when fixed chat grows", section = resizeChatSection, position = 12)
+    default boolean fixedAdjustViewport() { return false; }
+
+    @ConfigItem(keyName = REVERT_FOR_DIALOGS, name = "Revert For Dialogs", description = "Temporarily return adjusted dimensions toward stock while chat dialogs are open", section = resizeChatSection, position = 20)
+    default Revert revertForDialogs() { return Revert.BOTH; }
+
+    @ConfigItem(keyName = REVERT_FOR_MODALS, name = "Revert For Interfaces", description = "Temporarily return adjusted dimensions toward stock while top-level interfaces are open", section = resizeChatSection, position = 21)
+    default Revert revertForModals() { return Revert.UNGROW; }
+
+    @ConfigItem(keyName = TOGGLE_SHOW_CHAT, name = "Show/Hide Chat Keybind", description = "Hide or unhide the native chatbox", section = resizeChatSection, position = 22)
+    default Keybind toggleShowChat() { return Keybind.NOT_SET; }
+
+    @ConfigItem(keyName = NO_BORDERS, name = "Don't Draw Resize Borders", description = "Avoid drawing replacement resize borders for Resource Pack compatibility", section = resizeChatSection, position = 30)
+    default boolean noBorders() { return false; }
+
+    @ConfigItem(keyName = NO_BACKGROUND_ZOOM, name = "Don't Zoom Background", description = "Avoid zooming the opaque native chat background", section = resizeChatSection, position = 31)
+    default boolean noBackgroundZoom() { return false; }
+
+    @ConfigItem(keyName = DRAG_MODIFIER, name = "Drag-Resize Modifier", description = "Hold this key while dragging a chat border to resize; unset disables drag resizing", section = dragResizeSection, position = 0)
+    default Keybind dragModifier() { return Keybind.NOT_SET; }
+
+    @ConfigItem(keyName = LIVE_REWRAP, name = "Live Re-wrap", description = "Re-wrap chat continuously while drag-resizing", section = dragResizeSection, position = 1)
+    default boolean liveRewrap() { return true; }
+
+    @Alpha
+    @ConfigItem(keyName = INDICATOR_COLOR, name = "Drag Indicator Color", description = "Color of the active drag-resize border", section = dragResizeSection, position = 2)
+    default Color indicatorColor() { return Color.GREEN; }
+
+    @Range(min = -165, max = 10000)
+    @Units(Units.PIXELS)
+    @ConfigItem(keyName = SWAP_HEIGHT_CHANGE, name = "Secondary Height Change", description = "Height change while the secondary size is active", section = secondarySizeSection, position = 0)
+    default int secondaryHeightChange() { return 0; }
+
+    @Range(min = -519, max = 10000)
+    @Units(Units.PIXELS)
+    @ConfigItem(keyName = SWAP_WIDTH_CHANGE, name = "Secondary Width Change", description = "Width change while the secondary size is active", section = secondarySizeSection, position = 1)
+    default int secondaryWidthChange() { return 0; }
+
+    @ConfigItem(keyName = SWAP_SIZE_MODE, name = "Secondary Size Mode", description = "Hold or toggle the secondary chat size", section = secondarySizeSection, position = 2)
+    default Mode secondaryMode() { return Mode.HOLD; }
+
+    @ConfigItem(keyName = SWAP_SIZE_KEYBIND, name = "Secondary Size Keybind", description = "Switch to the secondary chat size", section = secondarySizeSection, position = 3)
+    default Keybind secondaryKeybind() { return Keybind.NOT_SET; }
+
+    @ConfigItem(keyName = "modernizeChat", name = "Modernize Chat", description = "Apply optional modern styling to RuneLite's native chatbox; disable standalone Modern Chat before enabling", section = modernChatSection, position = 0)
+    default boolean modernizeChat() { return false; }
+
+    @Alpha
+    @ConfigItem(keyName = "modernBackgroundColor", name = "Background", description = "Modernized chat background color", section = modernChatSection, position = 1)
+    default Color modernBackgroundColor() { return new Color(18, 18, 18, 185); }
+
+    @Alpha
+    @ConfigItem(keyName = "modernTabColor", name = "Tab Color", description = "Modernized inactive tab color", section = modernChatSection, position = 2)
+    default Color modernTabColor() { return new Color(35, 35, 35, 210); }
+
+    @Alpha
+    @ConfigItem(keyName = "modernSelectedTabColor", name = "Selected Tab", description = "Modernized selected tab color", section = modernChatSection, position = 3)
+    default Color modernSelectedTabColor() { return new Color(68, 68, 68, 230); }
+
+    @Alpha
+    @ConfigItem(keyName = "modernTextColor", name = "Tab Text", description = "Modernized chat tab text color", section = modernChatSection, position = 4)
+    default Color modernTextColor() { return Color.WHITE; }
+
+    @Alpha
+    @ConfigItem(keyName = "modernUnreadColor", name = "Unread Highlight", description = "Color used when a modernized chat tab has unread activity", section = modernChatSection, position = 5)
+    default Color modernUnreadColor() { return new Color(255, 180, 60); }
+
+    @ConfigItem(keyName = "modernCompactTabs", name = "Compact Tabs", description = "Use a flatter, tighter visual treatment for native chat tabs", section = modernChatSection, position = 6)
+    default boolean modernCompactTabs() { return true; }
+
+
 }
