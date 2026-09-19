@@ -59,6 +59,33 @@ public class ChatWidgetEditor
 	@Inject
 	private CleanChatModule plugin;
 
+	private boolean anyChatCleanupEnabled()
+	{
+		return config.removeWelcome()
+			|| config.indentationMode() != com.improvedchat.chatbox.clean.data.IndentMode.MESSAGE
+			|| config.hideScrollbar()
+			|| config.hideSpecs()
+			|| config.isFixedWidthTimestampEnabled()
+			|| config.isColorBarEnabled()
+			|| config.removeClanInstruction()
+			|| config.removeClanName()
+			|| config.removeClanRank()
+			|| config.removeGuestClanInstruction()
+			|| config.removeGuestClanReconnecting()
+			|| config.removeGuestClanName()
+			|| config.removeGroupIronInstruction()
+			|| config.removeGroupIronName()
+			|| config.removeGroupIronFromClan()
+			|| config.removeFriendsChatStartup()
+			|| config.removeFriendsChatName()
+			|| config.removeFriendsAttempting()
+			|| config.removeFriendsNowTalking()
+			|| !ImprovedChatConfig.DEFAULT_CUSTOM_CHANNEL_NAME.equals(config.getShortClanName())
+			|| !ImprovedChatConfig.DEFAULT_CUSTOM_CHANNEL_NAME.equals(config.getShortGuestClanName())
+			|| !ImprovedChatConfig.DEFAULT_CUSTOM_CHANNEL_NAME.equals(config.getShortGroupIronName())
+			|| !ImprovedChatConfig.DEFAULT_CUSTOM_CHANNEL_NAME.equals(config.getShortFriendsName());
+	}
+
 	private int lastScrollDiff = -1;
 	private int lastChatTab = ChatTab.CLOSED.getValue();
 	private boolean chatboxScrolled = false;
@@ -80,7 +107,7 @@ public class ChatWidgetEditor
 	@Subscribe
 	public void onScriptPreFired(ScriptPreFired event)
 	{
-		if (!config.anyChatCleanupEnabled())
+		if (!anyChatCleanupEnabled())
 		{
 			return;
 		}
@@ -146,7 +173,7 @@ public class ChatWidgetEditor
 	@Subscribe
 	public void onScriptPostFired(ScriptPostFired event)
 	{
-		if (!config.anyChatCleanupEnabled())
+		if (!anyChatCleanupEnabled())
 		{
 			chatWidgetGroups = List.of();
 			return;
@@ -171,7 +198,7 @@ public class ChatWidgetEditor
 
 	public void checkReplacements()
 	{
-		if (!config.anyChatCleanupEnabled())
+		if (!anyChatCleanupEnabled())
 		{
 			chatWidgetGroups = List.of();
 			return;
