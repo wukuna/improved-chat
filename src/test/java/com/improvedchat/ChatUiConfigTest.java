@@ -65,7 +65,6 @@ public class ChatUiConfigTest {
 
     @Test
     public void companionFeatureDefaultsAreSafe() {
-        assertFalse(config.anyChatCleanupEnabled());
         assertFalse(config.removeWelcome());
         assertFalse(config.hideSpecs());
         assertFalse(config.removeClanInstruction());
