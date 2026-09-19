@@ -1,6 +1,7 @@
 /* Derived from Chat Resizer by shanktank under BSD 2-Clause. See THIRD_PARTY_NOTICES.md. */
 package com.improvedchat.chatbox.resize;
 
+import com.improvedchat.chatbox.resize.internal.RawScripts;
 import net.runelite.api.Client;
 import net.runelite.api.ScriptID;
 import net.runelite.api.gameval.InterfaceID;
@@ -46,6 +47,14 @@ public final class ChatScrollRetainer {
     }
 
     void sync() {
+        // A collapsed resizable chat deliberately reduces the native chat band to the tab strip.
+        // Its tiny viewport is not meaningful message geometry; anchoring rows against it can shift
+        // the existing message widgets down and leave a large blank band when the chat reopens.
+        if (client.getVarcIntValue(VarClientID.CHAT_VIEW) == RawScripts.COLLAPSED_TAB) {
+            reset();
+            return;
+        }
+
         Widget scrollArea = client.getWidget(InterfaceID.Chatbox.SCROLLAREA);
         if (scrollArea == null || scrollArea.getHeight() <= 0 || scrollArea.getScrollHeight() <= 0) {
             lastViewport = null; // Chat not live (hop/relog)
