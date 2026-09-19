@@ -53,14 +53,14 @@ public class ModernChatOverlay extends Overlay {
 
         if (chatBounds != null) {
             if (usesTransparentChatColors()) {
-                graphics.setColor(config.modernBackgroundColor());
+                graphics.setColor(chatSurface(config.modernBackgroundColor()));
                 graphics.fillRoundRect(
                     chatBounds.x + 1, chatBounds.y + 1,
                     Math.max(1, chatBounds.width - 2), Math.max(1, chatBounds.height - 2),
                     PANEL_ARC, PANEL_ARC);
             }
 
-            graphics.setColor(config.modernBorderColor());
+            graphics.setColor(chatSurface(config.modernBorderColor()));
             graphics.drawRoundRect(
                 chatBounds.x, chatBounds.y,
                 Math.max(1, chatBounds.width - 1), Math.max(1, chatBounds.height - 1),
@@ -69,13 +69,13 @@ public class ModernChatOverlay extends Overlay {
 
         Rectangle rail = tabRailBounds();
         if (rail != null) {
-            Color railColor = withAlpha(config.modernTabColor(), Math.min(235, Math.max(110, config.modernTabColor().getAlpha())));
+            Color railColor = buttonSurface(withAlpha(config.modernTabColor(), Math.min(235, Math.max(110, config.modernTabColor().getAlpha()))));
             graphics.setColor(railColor);
             graphics.fillRoundRect(
                 rail.x, rail.y + 1,
                 rail.width, Math.max(1, rail.height - 2),
                 TAB_ARC, TAB_ARC);
-            graphics.setColor(withAlpha(config.modernBorderColor(), Math.min(150, config.modernBorderColor().getAlpha())));
+            graphics.setColor(buttonSurface(withAlpha(config.modernBorderColor(), Math.min(150, config.modernBorderColor().getAlpha()))));
             graphics.drawRoundRect(
                 rail.x, rail.y + 1,
                 Math.max(1, rail.width - 1), Math.max(1, rail.height - 3),
@@ -108,21 +108,21 @@ public class ModernChatOverlay extends Overlay {
             int h = Math.max(1, b.height - insetY * 2);
 
             if (selected) {
-                graphics.setColor(config.modernSelectedTabColor());
+                graphics.setColor(buttonSurface(config.modernSelectedTabColor()));
                 graphics.fillRoundRect(x, y, w, h, TAB_ARC, TAB_ARC);
 
-                graphics.setColor(config.modernAccentColor());
+                graphics.setColor(buttonSurface(config.modernAccentColor()));
                 int underlineW = Math.max(12, w - 14);
                 int underlineX = x + (w - underlineW) / 2;
                 graphics.fillRoundRect(underlineX, y + h - 3, underlineW, 3, 3, 3);
             } else if (!config.modernCompactTabs()) {
-                graphics.setColor(withAlpha(config.modernTabColor(), Math.min(190, config.modernTabColor().getAlpha())));
+                graphics.setColor(buttonSurface(withAlpha(config.modernTabColor(), Math.min(190, config.modernTabColor().getAlpha()))));
                 graphics.fillRoundRect(x, y, w, h, TAB_ARC, TAB_ARC);
             }
 
             if (unread) {
                 int dot = 6;
-                graphics.setColor(config.modernUnreadColor());
+                graphics.setColor(buttonSurface(config.modernUnreadColor()));
                 graphics.fillOval(x + w - dot - 4, y + 4, dot, dot);
             }
         }
@@ -144,13 +144,13 @@ public class ModernChatOverlay extends Overlay {
         int w = b.width + 14;
         int h = b.height + 8;
 
-        graphics.setColor(config.modernInputColor());
+        graphics.setColor(chatSurface(config.modernInputColor()));
         graphics.fillRoundRect(x, y, w, h, 8, 8);
 
-        graphics.setColor(config.modernBorderColor());
+        graphics.setColor(chatSurface(config.modernBorderColor()));
         graphics.drawRoundRect(x, y, Math.max(1, w - 1), Math.max(1, h - 1), 8, 8);
 
-        graphics.setColor(config.modernAccentColor());
+        graphics.setColor(buttonSurface(config.modernAccentColor()));
         graphics.fillRoundRect(x + 2, y + 4, 3, Math.max(4, h - 8), 3, 3);
     }
 
@@ -193,6 +193,22 @@ public class ModernChatOverlay extends Overlay {
             }
         }
         return true;
+    }
+
+    private Color chatSurface(Color color) {
+        return opacityAdjusted(color, config.enableChatboxOpacity() ? config.chatboxOpacity() : -1);
+    }
+
+    private Color buttonSurface(Color color) {
+        return opacityAdjusted(color, config.enableChatboxOpacity() ? config.buttonOpacity() : -1);
+    }
+
+    private static Color opacityAdjusted(Color color, int runeLiteOpacity) {
+        if (runeLiteOpacity < 0) {
+            return color;
+        }
+        // RuneLite widget opacity is inverted: 0 = opaque, 255 = transparent.
+        return withAlpha(color, 255 - Math.max(0, Math.min(255, runeLiteOpacity)));
     }
 
     private static Color withAlpha(Color color, int alpha) {
