@@ -116,7 +116,7 @@ public final class CleanChatModule {
     @Subscribe
     public void onConfigChanged(ConfigChanged event) {
         if (ImprovedChatConfig.GROUP.equals(event.getGroup())) {
-            if (!started) {
+            if (!started || !isCleanupConfigKey(event.getKey())) {
                 return;
             }
             clientThread.invokeLater(() -> {
@@ -138,6 +138,48 @@ public final class CleanChatModule {
     public void onWidgetLoaded(WidgetLoaded event) {
         if (started && event.getGroupId() == InterfaceID.CHATBOX) {
             handleScrollbarVisibility(config.hideScrollbar());
+        }
+    }
+
+    private static boolean isCleanupConfigKey(String key) {
+        if (key == null) {
+            return false;
+        }
+
+        switch (key) {
+            case "removeWelcome":
+            case "lineBreakIndentationMode":
+            case ImprovedChatConfig.HIDE_SCROLLBAR_KEY:
+            case "hideSpecs":
+            case "improvedTimestamps":
+            case "colorBar":
+            case "colorBarOffset":
+            case "colorBarWidth":
+            case "noChannelColor":
+            case "clanColor":
+            case "friendColor":
+            case "groupIronColor":
+            case "guestClanColor":
+            case "removeClanInstruction":
+            case "removeClanName":
+            case "shortClanName":
+            case "removeClanRank":
+            case "removeGuestClanInstruction":
+            case "removeGuestClanReconnecting":
+            case "removeGuestClanName":
+            case "shortGuestClanName":
+            case "removeGroupIronInstruction":
+            case "removeGroupIronName":
+            case "moveGroupIronBroadcasts":
+            case "shortGroupIronName":
+            case "removeFriendsChatInstruction":
+            case "removeFriendsChatName":
+            case "removeFriendsAttempting":
+            case "removeFriendsNowTalking":
+            case "shortFriendsName":
+                return true;
+            default:
+                return false;
         }
     }
 
