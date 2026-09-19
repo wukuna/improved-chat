@@ -62,8 +62,10 @@ public class FontRenderer
 	// Font cache — invalidated when any config key that affects the font changes
 	// -------------------------------------------------------------------------
 
-	private Font   cachedFont    = null;
-	private String lastFontKey   = null;
+	private Font   cachedFont       = null;
+	private String lastFontKey      = null;
+	private Font   cachedOptionFont = null;
+	private String lastOptionFontKey = null;
 
 	// -------------------------------------------------------------------------
 	// Font access
@@ -96,7 +98,17 @@ public class FontRenderer
 	 */
 	public Font getOptionFont()
 	{
-		return getFont();
+		String key = config.fontFamily().getJavaName()
+			+ "_" + config.dialogueOptionFontSize()
+			+ "_" + config.boldText();
+
+		if (!key.equals(lastOptionFontKey))
+		{
+			int style = config.boldText() ? Font.BOLD : Font.PLAIN;
+			cachedOptionFont = new Font(config.fontFamily().getJavaName(), style, config.dialogueOptionFontSize());
+			lastOptionFontKey = key;
+		}
+		return cachedOptionFont;
 	}
 
 	// -------------------------------------------------------------------------
@@ -139,10 +151,9 @@ public class FontRenderer
 			return y;
 		}
 		g.setFont(font);
-		g.setColor(color);
 		FontMetrics fm = g.getFontMetrics(font);
 		int x = bounds.x + (bounds.width - fm.stringWidth(text)) / 2;
-		g.drawString(text, x, y + fm.getAscent());
+		drawString(g, text, x, y + fm.getAscent(), color);
 		return y + fm.getHeight();
 	}
 
@@ -182,7 +193,7 @@ public class FontRenderer
 		FontMetrics fm = g.getFontMetrics(font);
 
 		int maxWidth  = bounds.width - 8; // 4 px horizontal padding each side
-		int lineHeight = fm.getHeight();
+		int lineHeight = Math.max(1, fm.getHeight() + config.dialogueLineSpacing());
 		int y = startY;
 
 		List<WordToken> tokens = tokenise(segments);
@@ -203,12 +214,9 @@ public class FontRenderer
 			{
 				if (!firstToken)
 				{
-					g.setColor(tok.color);
-					g.drawString(" ", x, y + fm.getAscent());
 					x += fm.stringWidth(" ");
 				}
-				g.setColor(tok.color);
-				g.drawString(tok.word, x, y + fm.getAscent());
+				drawString(g, tok.word, x, y + fm.getAscent(), tok.color);
 				x += fm.stringWidth(tok.word);
 				firstToken = false;
 			}
@@ -216,6 +224,17 @@ public class FontRenderer
 		}
 
 		return y;
+	}
+
+	private void drawString(Graphics2D g, String text, int x, int baselineY, Color color)
+	{
+		if (config.dialogueTextShadow())
+		{
+			g.setColor(config.dialogueShadowColor());
+			g.drawString(text, x + 1, baselineY + 1);
+		}
+		g.setColor(color);
+		g.drawString(text, x, baselineY);
 	}
 
 	// -------------------------------------------------------------------------
