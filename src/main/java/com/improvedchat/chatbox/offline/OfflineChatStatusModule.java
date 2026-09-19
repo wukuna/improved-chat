@@ -29,9 +29,8 @@ import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.Text;
 
 /**
- * Offline-clan marker inspired by Offline Chat Icon. The status icon is drawn by Improved Chat
- * rather than copying the standalone plugin's asset, and original message-node names are retained
- * verbatim for clean restoration.
+ * Improved Chat offline-clan status marker. The status glyph is generated internally and
+ * original message-node names are retained verbatim for clean restoration.
  */
 @Singleton
 public final class OfflineChatStatusModule {
