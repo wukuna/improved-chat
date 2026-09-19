@@ -355,7 +355,7 @@ public interface ImprovedChatConfig extends Config {
     @ConfigItem(keyName = SWAP_SIZE_KEYBIND, name = "Secondary Size Keybind", description = "Switch to the secondary chat size", section = secondarySizeSection, position = 3)
     default Keybind secondaryKeybind() { return Keybind.NOT_SET; }
 
-    @ConfigItem(keyName = "modernizeChat", name = "Modernize Chat", description = "Apply optional modern styling to RuneLite's native chatbox; disable standalone Modern Chat before enabling", section = modernChatSection, position = 0)
+    @ConfigItem(keyName = "modernizeChat", name = "Modernize Chat", description = "Apply optional modern styling to the native chatbox", section = modernChatSection, position = 0)
     default boolean modernizeChat() { return false; }
 
     @Alpha
