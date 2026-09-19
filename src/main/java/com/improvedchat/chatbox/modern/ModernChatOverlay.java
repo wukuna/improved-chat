@@ -17,16 +17,14 @@ import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 
 /**
- * Modern chrome for RuneLite's native chatbox.
+ * Improved Chat's native-widget modernization layer.
  *
- * Unlike Modern Chat's replacement overlay, this deliberately leaves RuneLite's native message,
- * input, tab click, menu and collapse behavior in place. The visual language is Improved Chat's:
- * a restrained glass surface, thin accent rail, segmented tab dock, selected-tab accent and
- * compact unread dot.
+ * This intentionally keeps RuneLite's native chat behavior and only supplies visual chrome:
+ * a unified tab rail, selected-tab accent, unread dot, framed message surface and input composer.
  */
 public class ModernChatOverlay extends Overlay {
-    private static final int PANEL_ARC = 12;
-    private static final int TAB_ARC = 7;
+    private static final int PANEL_ARC = 10;
+    private static final int TAB_ARC = 8;
 
     private final Client client;
     private final ImprovedChatConfig config;
@@ -51,85 +49,38 @@ public class ModernChatOverlay extends Overlay {
         }
 
         Widget background = client.getWidget(InterfaceID.Chatbox.CHAT_BACKGROUND);
-        Rectangle chatBounds = background != null && !background.isHidden() ? background.getBounds() : null;
+        Rectangle chatBounds = background == null || background.isHidden() ? null : background.getBounds();
 
-        if (chatBounds != null && usesTransparentChatColors()) {
-            drawMessageSurface(graphics, chatBounds);
-        }
-
-        Rectangle tabRail = visibleTabRail();
-        if (tabRail != null) {
-            drawTabRail(graphics, tabRail);
-            drawTabs(graphics);
-        }
-
-        Widget input = client.getWidget(InterfaceID.Chatbox.INPUT);
-        if (input != null && !input.isHidden()) {
-            drawInputDock(graphics, input.getBounds(), chatBounds);
-        }
-
-        return chatBounds == null ? null : chatBounds.getSize();
-    }
-
-    private void drawMessageSurface(Graphics2D g, Rectangle b) {
-        Color background = applyOpacity(config.modernBackgroundColor(), config.chatboxOpacity());
-        Color accent = config.modernAccentColor();
-
-        g.setColor(background);
-        g.fillRoundRect(b.x, b.y, b.width, b.height, PANEL_ARC, PANEL_ARC);
-
-        // Fine outline plus a short top rail gives the surface definition without a heavy neon box.
-        g.setColor(alpha(accent, Math.min(130, Math.max(55, accent.getAlpha() / 2))));
-        g.drawRoundRect(b.x, b.y, Math.max(0, b.width - 1), Math.max(0, b.height - 1), PANEL_ARC, PANEL_ARC);
-
-        int railW = Math.max(18, b.width / 5);
-        int railX = b.x + (b.width - railW) / 2;
-        g.setColor(alpha(accent, Math.max(120, accent.getAlpha())));
-        g.fillRoundRect(railX, b.y + 2, railW, 2, 2, 2);
-    }
-
-    private Rectangle visibleTabRail() {
-        Rectangle rail = null;
-        boolean singleCollapsed = isSingleButtonCollapsed();
-
-        for (ChatButton button : ChatButton.values()) {
-            Widget container = client.getWidget(button.containerID);
-            if (container == null || container.isHidden()) {
-                continue;
-            }
-            if (singleCollapsed && button == ChatButton.ALL && config.collapsedButtonTransparent()) {
-                continue;
+        if (chatBounds != null) {
+            if (usesTransparentChatColors()) {
+                graphics.setColor(config.modernBackgroundColor());
+                graphics.fillRoundRect(
+                    chatBounds.x + 1, chatBounds.y + 1,
+                    Math.max(1, chatBounds.width - 2), Math.max(1, chatBounds.height - 2),
+                    PANEL_ARC, PANEL_ARC);
             }
 
-            Rectangle b = container.getBounds();
-            if (b.width <= 0 || b.height <= 0) {
-                continue;
-            }
-            rail = rail == null ? new Rectangle(b) : rail.union(b);
+            graphics.setColor(config.modernBorderColor());
+            graphics.drawRoundRect(
+                chatBounds.x, chatBounds.y,
+                Math.max(1, chatBounds.width - 1), Math.max(1, chatBounds.height - 1),
+                PANEL_ARC, PANEL_ARC);
         }
-        return rail;
-    }
 
-    private void drawTabRail(Graphics2D g, Rectangle rail) {
-        Color tab = applyOpacity(config.modernTabColor(), config.buttonOpacity());
-        int inset = config.modernCompactTabs() ? 1 : 0;
-        Rectangle r = new Rectangle(
-            rail.x + inset,
-            rail.y + inset,
-            Math.max(1, rail.width - inset * 2),
-            Math.max(1, rail.height - inset * 2)
-        );
-
-        g.setColor(alpha(tab, Math.max(85, Math.min(190, tab.getAlpha() / 2 + 45))));
-        g.fillRoundRect(r.x, r.y, r.width, r.height, TAB_ARC + 2, TAB_ARC + 2);
-
-        Color accent = config.modernAccentColor();
-        g.setColor(alpha(accent, Math.min(105, Math.max(45, accent.getAlpha() / 3))));
-        g.drawRoundRect(r.x, r.y, Math.max(0, r.width - 1), Math.max(0, r.height - 1), TAB_ARC + 2, TAB_ARC + 2);
-    }
-
-    private void drawTabs(Graphics2D g) {
-        boolean singleCollapsed = isSingleButtonCollapsed();
+        Rectangle rail = tabRailBounds();
+        if (rail != null) {
+            Color railColor = withAlpha(config.modernTabColor(), Math.min(235, Math.max(110, config.modernTabColor().getAlpha())));
+            graphics.setColor(railColor);
+            graphics.fillRoundRect(
+                rail.x, rail.y + 1,
+                rail.width, Math.max(1, rail.height - 2),
+                TAB_ARC, TAB_ARC);
+            graphics.setColor(withAlpha(config.modernBorderColor(), Math.min(150, config.modernBorderColor().getAlpha())));
+            graphics.drawRoundRect(
+                rail.x, rail.y + 1,
+                Math.max(1, rail.width - 1), Math.max(1, rail.height - 3),
+                TAB_ARC, TAB_ARC);
+        }
 
         for (ChatButton button : ChatButton.values()) {
             Widget container = client.getWidget(button.containerID);
@@ -138,69 +89,93 @@ public class ModernChatOverlay extends Overlay {
                 continue;
             }
 
-            if (singleCollapsed && button == ChatButton.ALL && config.collapsedButtonTransparent()) {
+            boolean collapsedSingleButton = button == ChatButton.ALL && isSingleButtonCollapsed();
+            if (collapsedSingleButton && config.collapsedButtonTransparent()) {
                 continue;
             }
 
             Rectangle b = container.getBounds();
-            if (b.width <= 0 || b.height <= 0) {
-                continue;
-            }
-
             int sprite = graphic == null ? -1 : graphic.getSpriteId();
             boolean selected = sprite == SpriteID.ChatTabButton.SELECTED
                 || sprite == SpriteID.ChatTabButton.SELECTED_HOVERED;
             boolean unread = sprite == SpriteID.ChatTabButton.NEW_MESSAGES;
 
-            int padX = config.modernCompactTabs() ? 3 : 1;
-            int padY = config.modernCompactTabs() ? 3 : 1;
-            Rectangle face = new Rectangle(
-                b.x + padX,
-                b.y + padY,
-                Math.max(1, b.width - padX * 2),
-                Math.max(1, b.height - padY * 2)
-            );
-
-            Color fill = selected ? config.modernSelectedTabColor() : config.modernTabColor();
-            fill = applyOpacity(fill, config.buttonOpacity());
-            g.setColor(fill);
-            g.fillRoundRect(face.x, face.y, face.width, face.height, TAB_ARC, TAB_ARC);
+            int insetX = config.modernCompactTabs() ? 3 : 1;
+            int insetY = config.modernCompactTabs() ? 3 : 2;
+            int x = b.x + insetX;
+            int y = b.y + insetY;
+            int w = Math.max(1, b.width - insetX * 2);
+            int h = Math.max(1, b.height - insetY * 2);
 
             if (selected) {
-                Color accent = config.modernAccentColor();
-                int lineW = Math.max(10, face.width - 12);
-                int lineX = face.x + (face.width - lineW) / 2;
-                g.setColor(alpha(accent, Math.max(145, accent.getAlpha())));
-                g.fillRoundRect(lineX, face.y + 1, lineW, 2, 2, 2);
+                graphics.setColor(config.modernSelectedTabColor());
+                graphics.fillRoundRect(x, y, w, h, TAB_ARC, TAB_ARC);
+
+                graphics.setColor(config.modernAccentColor());
+                int underlineW = Math.max(12, w - 14);
+                int underlineX = x + (w - underlineW) / 2;
+                graphics.fillRoundRect(underlineX, y + h - 3, underlineW, 3, 3, 3);
+            } else if (!config.modernCompactTabs()) {
+                graphics.setColor(withAlpha(config.modernTabColor(), Math.min(190, config.modernTabColor().getAlpha())));
+                graphics.fillRoundRect(x, y, w, h, TAB_ARC, TAB_ARC);
             }
 
             if (unread) {
-                Color unreadColor = config.modernUnreadColor();
-                int dot = Math.max(5, Math.min(7, face.height / 4));
-                g.setColor(unreadColor);
-                g.fillOval(face.x + face.width - dot - 5, face.y + 4, dot, dot);
+                int dot = 6;
+                graphics.setColor(config.modernUnreadColor());
+                graphics.fillOval(x + w - dot - 4, y + 4, dot, dot);
             }
         }
+
+        drawInputComposer(graphics);
+
+        return chatBounds == null ? null : chatBounds.getSize();
     }
 
-    private void drawInputDock(Graphics2D g, Rectangle input, Rectangle chatBounds) {
-        Color tab = applyOpacity(config.modernTabColor(), config.buttonOpacity());
-        Color accent = config.modernAccentColor();
+    private void drawInputComposer(Graphics2D graphics) {
+        Widget input = client.getWidget(InterfaceID.Chatbox.INPUT);
+        if (input == null || input.isHidden()) {
+            return;
+        }
 
-        int x = chatBounds == null ? input.x - 5 : chatBounds.x + 8;
-        int width = chatBounds == null ? input.width + 10 : Math.max(1, chatBounds.width - 16);
-        int y = input.y - 3;
-        int height = Math.max(18, input.height + 6);
+        Rectangle b = input.getBounds();
+        int x = b.x - 7;
+        int y = b.y - 4;
+        int w = b.width + 14;
+        int h = b.height + 8;
 
-        g.setColor(alpha(tab, Math.max(130, tab.getAlpha())));
-        g.fillRoundRect(x, y, width, height, 8, 8);
+        graphics.setColor(config.modernInputColor());
+        graphics.fillRoundRect(x, y, w, h, 8, 8);
 
-        g.setColor(alpha(accent, Math.min(115, Math.max(55, accent.getAlpha() / 2))));
-        g.drawRoundRect(x, y, Math.max(0, width - 1), Math.max(0, height - 1), 8, 8);
+        graphics.setColor(config.modernBorderColor());
+        graphics.drawRoundRect(x, y, Math.max(1, w - 1), Math.max(1, h - 1), 8, 8);
 
-        // Short left prompt marker instead of copying Modern Chat's boxed input chrome.
-        g.setColor(alpha(accent, Math.max(145, accent.getAlpha())));
-        g.fillRoundRect(x + 3, y + 4, 3, Math.max(6, height - 8), 3, 3);
+        graphics.setColor(config.modernAccentColor());
+        graphics.fillRoundRect(x + 2, y + 4, 3, Math.max(4, h - 8), 3, 3);
+    }
+
+    private Rectangle tabRailBounds() {
+        Rectangle rail = null;
+        for (ChatButton button : ChatButton.values()) {
+            Widget container = client.getWidget(button.containerID);
+            if (container == null || container.isHidden()) {
+                continue;
+            }
+
+            if (button == ChatButton.ALL && isSingleButtonCollapsed() && config.collapsedButtonTransparent()) {
+                continue;
+            }
+
+            Rectangle b = container.getBounds();
+            rail = rail == null ? new Rectangle(b) : rail.union(b);
+        }
+
+        if (rail == null) {
+            return null;
+        }
+
+        rail.grow(2, 0);
+        return rail;
     }
 
     private boolean usesTransparentChatColors() {
@@ -220,24 +195,7 @@ public class ModernChatOverlay extends Overlay {
         return true;
     }
 
-    private Color applyOpacity(Color color, int widgetOpacity) {
-        if (!config.enableChatboxOpacity() || widgetOpacity < 0) {
-            return color;
-        }
-        // RuneLite widget opacity is inverted: 0 = opaque, 255 = transparent.
-        // Preserve the user's chosen modern-color alpha and apply the opacity control as
-        // an additional transparency factor rather than letting the two settings fight.
-        int visible = 255 - Math.max(0, Math.min(255, widgetOpacity));
-        int combinedAlpha = color.getAlpha() * visible / 255;
-        return alpha(color, combinedAlpha);
-    }
-
-    private static Color alpha(Color color, int alpha) {
-        return new Color(
-            color.getRed(),
-            color.getGreen(),
-            color.getBlue(),
-            Math.max(0, Math.min(255, alpha))
-        );
+    private static Color withAlpha(Color color, int alpha) {
+        return new Color(color.getRed(), color.getGreen(), color.getBlue(), Math.max(0, Math.min(255, alpha)));
     }
 }
