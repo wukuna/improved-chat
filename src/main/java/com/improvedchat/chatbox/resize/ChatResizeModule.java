@@ -1,6 +1,4 @@
-/* Integrated and adapted from Chat Resizer by shanktank under BSD 2-Clause.
- * See THIRD_PARTY_NOTICES.md. This module is hosted by ImprovedChatPlugin and is not a standalone plugin.
- */
+/* Improved Chat native chat resizing module. See THIRD_PARTY_NOTICES.md for required attribution. */
 package com.improvedchat.chatbox.resize;
 
 import com.improvedchat.chatbox.opacity.ChatboxOpacityModule;
