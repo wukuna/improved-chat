@@ -24,6 +24,14 @@ The project is derived in part from the BSD-2-Clause **Chat Widgets** plugin, bu
 
 Improved Chat is not only a widget-layout variant. In addition to configurable chat overlays, it adds chatbox message recoloring rules, overlay-only rainbow rules, attention/flash rules, border and background attention effects, richer text styling, native chat collapse/resize controls, and an optional modernized native-chat presentation. The plugin keeps its existing hard conflicts with Chat Widgets and Force Recolor. The optional Collapse, Resize, and Modernize features are off by default; users should disable the corresponding standalone chatbox plugin before enabling an overlapping Improved Chat feature.
 
+## Resource Packs compatibility
+
+Resizable Chat retains Chat Resizer's compatibility controls: **Don't Draw Resize Borders** and **Don't Zoom Background**. These can be enabled when a Resource Pack supplies chatbox art that should not be stretched or framed by Improved Chat.
+
+**Modernize Chat intentionally replaces the visible native/resource-pack chat background and tab artwork while Modernize Chat is enabled.** It does not replace the underlying sprite IDs or Resource Pack files. When Modernize Chat is disabled or Improved Chat shuts down, the original live widget opacity/text colors are restored so the Resource Pack can resume drawing normally.
+
+Collapsible Chat continues to use RuneLite's native chat-tab sprite IDs and state changes rather than installing replacement assets.
+
 ## Rule syntax
 
 ### Message Color Rules
