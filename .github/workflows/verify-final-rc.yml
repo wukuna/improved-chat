@@ -1,0 +1,26 @@
+name: Verify Improved Chat final RC
+
+on:
+  push:
+    branches:
+      - chat-ui-final-verify2
+    paths:
+      - '.github/workflows/verify-final-rc.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '11'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+      - name: Full clean test
+        run: gradle clean test --no-daemon
