@@ -362,7 +362,12 @@ public class ImprovedChatPanel extends PluginPanel {
         combo.setSelectedItem(selected);
         combo.setPreferredSize(new Dimension(112, 24));
         combo.setMaximumSize(new Dimension(112, 24));
-        combo.addActionListener(e -> setter.accept((T) combo.getSelectedItem()));
+        combo.addActionListener(e -> {
+            int index = combo.getSelectedIndex();
+            if (index >= 0 && index < values.length) {
+                setter.accept(values[index]);
+            }
+        });
         return controlRow(name, combo);
     }
 
