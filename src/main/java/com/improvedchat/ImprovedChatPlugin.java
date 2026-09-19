@@ -77,7 +77,7 @@ public class ImprovedChatPlugin extends Plugin {
 
     public static final boolean DEBUG = false;
 
-    // Separate Plugin Hub identity; do not share configuration with Chat Widgets.
+    // Independent Plugin Hub identity and configuration namespace.
     private static final String CONFIG_GROUP = "improvedchat";
     private static final String OVERLAY_CONFIGS_KEY = "overlayConfigs";
     private static final int MAX_POOL_SIZE = 200;
