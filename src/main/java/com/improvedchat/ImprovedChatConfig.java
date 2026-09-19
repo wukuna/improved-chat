@@ -375,14 +375,22 @@ public interface ImprovedChatConfig extends Config {
     default Color modernAccentColor() { return new Color(88, 166, 255, 235); }
 
     @Alpha
-    @ConfigItem(keyName = "modernTextColor", name = "Tab Text", description = "Modernized chat tab text color", section = modernChatSection, position = 5)
+    @ConfigItem(keyName = "modernBorderColor", name = "Panel Border", description = "Border color for the modern chat panel and input composer", section = modernChatSection, position = 5)
+    default Color modernBorderColor() { return new Color(104, 116, 132, 190); }
+
+    @Alpha
+    @ConfigItem(keyName = "modernInputColor", name = "Input Background", description = "Background color behind the native chat input", section = modernChatSection, position = 6)
+    default Color modernInputColor() { return new Color(24, 27, 32, 235); }
+
+    @Alpha
+    @ConfigItem(keyName = "modernTextColor", name = "Tab Text", description = "Modernized chat tab text color", section = modernChatSection, position = 7)
     default Color modernTextColor() { return Color.WHITE; }
 
     @Alpha
-    @ConfigItem(keyName = "modernUnreadColor", name = "Unread Highlight", description = "Color used when a modernized chat tab has unread activity", section = modernChatSection, position = 6)
+    @ConfigItem(keyName = "modernUnreadColor", name = "Unread Highlight", description = "Color used when a modernized chat tab has unread activity", section = modernChatSection, position = 8)
     default Color modernUnreadColor() { return new Color(255, 180, 60); }
 
-    @ConfigItem(keyName = "modernCompactTabs", name = "Compact Tabs", description = "Use a flatter, tighter visual treatment for native chat tabs", section = modernChatSection, position = 7)
+    @ConfigItem(keyName = "modernCompactTabs", name = "Compact Tabs", description = "Use a tighter tab rail while retaining the modern selected-tab indicator", section = modernChatSection, position = 9)
     default boolean modernCompactTabs() { return true; }
 
 
