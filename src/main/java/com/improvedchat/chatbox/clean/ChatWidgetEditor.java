@@ -80,6 +80,11 @@ public class ChatWidgetEditor
 	@Subscribe
 	public void onScriptPreFired(ScriptPreFired event)
 	{
+		if (!config.anyChatCleanupEnabled())
+		{
+			return;
+		}
+
 		if (event.getScriptId() >= SCRIPT_SCROLLBAR_MIN && event.getScriptId() <= SCRIPT_SCROLLBAR_MAX && event.getScriptEvent() != null)
 		{
 			Object[] args = event.getScriptEvent().getArguments();
@@ -141,6 +146,12 @@ public class ChatWidgetEditor
 	@Subscribe
 	public void onScriptPostFired(ScriptPostFired event)
 	{
+		if (!config.anyChatCleanupEnabled())
+		{
+			chatWidgetGroups = List.of();
+			return;
+		}
+
 		if (event.getScriptId() == SCRIPT_REBUILD_CHATBOX)
 		{
 			checkReplacements();
@@ -160,6 +171,12 @@ public class ChatWidgetEditor
 
 	public void checkReplacements()
 	{
+		if (!config.anyChatCleanupEnabled())
+		{
+			chatWidgetGroups = List.of();
+			return;
+		}
+
 		// FriendsChatManager is null at the first FriendsChatChanged after login so we have to add this check later
 		channelNameManager.updateFriendsChatName();
 
