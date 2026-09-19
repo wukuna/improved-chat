@@ -72,8 +72,7 @@ import java.util.regex.Pattern;
         name = "Improved Chat TEST",
         configName = "improvedchat",
         description = "Customizable chat overlays, native chat collapse/resize, modern styling, message rules, and alerts.",
-        tags = {"chat", "message", "overlay", "color", "customize", "private", "clan", "resize", "ui"},
-        conflicts = {"Chat Widgets", "Force Recolor", "Clean Chat", "Chatbox Opacity", "Remove Chat Options", "Offline Chat Icon", "Dialogue Fonts"})
+        tags = {"chat", "message", "overlay", "color", "customize", "private", "clan", "resize", "ui"})
 public class ImprovedChatPlugin extends Plugin {
 
     public static final boolean DEBUG = false;
@@ -792,9 +791,6 @@ public class ImprovedChatPlugin extends Plugin {
             } else {
                 chatCollapseModule.shutDown();
             }
-        }
-        if ("enableCleanChat".equals(event.getKey())) {
-            if (config.enableCleanChat()) cleanChatModule.startUp(); else cleanChatModule.shutDown();
         }
         if ("enableChatboxOpacity".equals(event.getKey())) {
             if (config.enableChatboxOpacity()) chatboxOpacityModule.startUp(); else chatboxOpacityModule.shutDown();
