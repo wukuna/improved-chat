@@ -33,6 +33,7 @@ public class ChatUiConfigTest {
         assertFalse(config.enableResizableChat());
         assertFalse(config.enableChatboxOpacity());
         assertFalse(config.enableRemoveChatOptions());
+        assertFalse(config.removeLookupChatOption());
         assertFalse(config.enableOfflineChatStatus());
         assertFalse(config.enableDialogueFonts());
     }
