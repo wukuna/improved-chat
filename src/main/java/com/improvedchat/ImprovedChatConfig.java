@@ -73,7 +73,7 @@ public interface ImprovedChatConfig extends Config {
     @ConfigItem(keyName = "showChannelName", name = "Show Channel Names", description = "Show the channel name prefix for friends and clan chat messages", section = appearanceSection, position = 6)
     default boolean showChannelName() { return true; }
 
-    @ConfigItem(keyName = "useChatFilter", name = "Use Chat Filter", description = "Hide/censor messages using RuneLite's Chat Filter plugin's word & regex lists and Filter Type", section = appearanceSection, position = 7)
+    @ConfigItem(keyName = "useChatFilter", name = "Use Chat Filter", description = "Apply the current chat-filter word, regex, and filter-type settings", section = appearanceSection, position = 7)
     default boolean useChatFilter() { return false; }
 
     @ConfigItem(keyName = "timestampFormat", name = "Timestamp Format", description = "Timestamp format used by overlays", section = appearanceSection, position = 8)
