@@ -315,10 +315,10 @@ public interface ImprovedChatConfig extends Config {
     @ConfigItem(keyName = TOGGLE_SHOW_CHAT, name = "Show/Hide Chat Keybind", description = "Hide or unhide the native chatbox", section = resizeChatSection, position = 6)
     default Keybind toggleShowChat() { return Keybind.NOT_SET; }
 
-    @ConfigItem(keyName = NO_BORDERS, name = "Don't Draw Resize Borders", description = "Avoid drawing replacement resize borders for Resource Pack compatibility", section = resizeChatSection, position = 30)
+    @ConfigItem(keyName = NO_BORDERS, name = "Don't Draw Resize Borders", description = "Hide Improved Chat's resize frame; native dialogue and option-menu borders remain untouched", section = resizeChatSection, position = 30)
     default boolean noBorders() { return false; }
 
-    @ConfigItem(keyName = NO_BACKGROUND_ZOOM, name = "Don't Zoom Background", description = "Avoid zooming the opaque native chat background", section = resizeChatSection, position = 31)
+    @ConfigItem(keyName = NO_BACKGROUND_ZOOM, name = "Don't Zoom Background", description = "Keep the normal opaque chat background at its native artwork scale", section = resizeChatSection, position = 31)
     default boolean noBackgroundZoom() { return false; }
 
     @ConfigItem(keyName = DRAG_MODIFIER, name = "Drag-Resize Modifier", description = "Hold this key while dragging a chat border to resize; unset disables drag resizing", section = dragResizeSection, position = 0)
