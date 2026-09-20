@@ -11,6 +11,7 @@ import net.runelite.api.ScriptID;
 import net.runelite.api.events.ScriptPostFired;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.Widget;
+import net.runelite.api.widgets.WidgetType;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
@@ -67,7 +68,7 @@ public final class ChatboxOpacityModule {
     public void onConfigChanged(ConfigChanged event) {
         if (!ImprovedChatConfig.GROUP.equals(event.getGroup())) return;
         String key = event.getKey();
-        if ("chatboxOpacity".equals(key) || "buttonOpacity".equals(key)) {
+        if ("chatboxOpacity".equals(key) || "buttonOpacity".equals(key) || "opacityDialogueMenus".equals(key)) {
             clientThread.invokeLater(this::apply);
         }
     }
@@ -100,6 +101,12 @@ public final class ChatboxOpacityModule {
         Widget background = client.getWidget(net.runelite.api.gameval.InterfaceID.Chatbox.CHAT_BACKGROUND);
         Widget[] children = background == null ? null : background.getDynamicChildren();
         if (children != null) {
+            // Transparent chat normally uses rectangle/gradient children. Dialogue and option menus
+            // temporarily replace that surface with the opaque parchment graphic even while the
+            // transparent-chat varbit remains enabled. Allow users to keep those surfaces native.
+            if (!config.opacityDialogueMenus() && isDialogueOrMenuSurface(children)) {
+                restoreBackground();
+            } else {
             boolean generationChanged = backgroundOpacity.size() != liveCount(children);
             if (!generationChanged) {
                 for (Widget child : children) {
@@ -119,6 +126,7 @@ public final class ChatboxOpacityModule {
             } else {
                 for (Widget child : children) if (child != null) child.setOpacity(config.chatboxOpacity());
             }
+            }
         }
 
         Widget button = client.getWidget(CHATBOX_GROUP_ID, BUTTON_BACKGROUND_CHILD);
@@ -137,6 +145,15 @@ public final class ChatboxOpacityModule {
             button.setFilled(true);
             button.setOpacity(config.buttonOpacity());
         }
+    }
+
+    private static boolean isDialogueOrMenuSurface(Widget[] widgets) {
+        for (Widget widget : widgets) {
+            if (widget != null) {
+                return widget.getType() == WidgetType.GRAPHIC;
+            }
+        }
+        return false;
     }
 
     private static int liveCount(Widget[] widgets) {
