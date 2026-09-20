@@ -107,25 +107,33 @@ public final class ChatboxOpacityModule {
             if (!config.opacityDialogueMenus() && isDialogueOrMenuSurface(children)) {
                 restoreBackground();
             } else {
-            boolean generationChanged = backgroundOpacity.size() != liveCount(children);
-            if (!generationChanged) {
-                for (Widget child : children) {
-                    if (child != null && !backgroundOpacity.containsKey(child)) {
-                        generationChanged = true;
-                        break;
+                boolean generationChanged = backgroundOpacity.size() != liveCount(children);
+                if (!generationChanged) {
+                    for (Widget child : children) {
+                        if (child != null && !backgroundOpacity.containsKey(child)) {
+                            generationChanged = true;
+                            break;
+                        }
                     }
                 }
-            }
-            if (generationChanged) {
-                backgroundOpacity.clear();
-                for (Widget child : children) if (child != null) backgroundOpacity.put(child, child.getOpacity());
-            }
+                if (generationChanged) {
+                    backgroundOpacity.clear();
+                    for (Widget child : children) {
+                        if (child != null) {
+                            backgroundOpacity.put(child, child.getOpacity());
+                        }
+                    }
+                }
 
-            if (config.chatboxOpacity() == -1) {
-                restoreBackground();
-            } else {
-                for (Widget child : children) if (child != null) child.setOpacity(config.chatboxOpacity());
-            }
+                if (config.chatboxOpacity() == -1) {
+                    restoreBackground();
+                } else {
+                    for (Widget child : children) {
+                        if (child != null) {
+                            child.setOpacity(config.chatboxOpacity());
+                        }
+                    }
+                }
             }
         }
 
