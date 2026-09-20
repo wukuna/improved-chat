@@ -499,7 +499,6 @@ public class ImprovedChatPlugin extends Plugin {
             && !overlayConfig.isBackgroundEnabled()
             && !overlayConfig.isBorderEnabled();
     }
-    }
 
     public void saveOverlayConfigs() {
         String json = gson.toJson(overlayConfigs);
