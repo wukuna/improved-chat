@@ -42,27 +42,34 @@ public final class RemoveChatOptionsModule {
     @Inject private EventBus eventBus;
 
     private boolean started;
+    private boolean chatMenuContext;
 
     public synchronized void startUp() {
         if (started || !config.enableRemoveChatOptions()) return;
         started = true;
+        chatMenuContext = false;
         eventBus.register(this);
     }
 
     public synchronized void shutDown() {
         if (!started) return;
         started = false;
+        chatMenuContext = false;
         eventBus.unregister(this);
     }
 
 
     @Subscribe
     public void onMenuOpened(MenuOpened event) {
-        if (!started || !config.removeLookupChatOption() || client.isKeyPressed(KeyCode.KC_CONTROL)) return;
+        boolean wasChatMenu = chatMenuContext;
+        chatMenuContext = false;
+
+        if (!started || !wasChatMenu || !config.removeLookupChatOption()
+            || client.isKeyPressed(KeyCode.KC_CONTROL)) {
+            return;
+        }
 
         MenuEntry[] entries = event.getMenuEntries();
-        if (!isChatMessageMenu(entries)) return;
-
         List<MenuEntry> kept = new LinkedList<>();
         for (MenuEntry entry : entries) {
             if (entry.getType() == MenuAction.RUNELITE && "Lookup".equals(entry.getOption())) {
@@ -76,23 +83,18 @@ public final class RemoveChatOptionsModule {
         client.setMenuEntries(filtered);
     }
 
-    private static boolean isChatMessageMenu(MenuEntry[] entries) {
-        for (MenuEntry entry : entries) {
-            int componentId = entry.getParam1();
-            int groupId = WidgetUtil.componentToInterface(componentId);
-            if (groupId == InterfaceID.PRIVATE_CHAT) {
-                return true;
-            }
-            if (groupId == InterfaceID.CHATBOX && !PRESERVED_CHAT_COMPONENTS.contains(componentId)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     @Subscribe
     public void onMenuEntryAdded(MenuEntryAdded event) {
-        if (!started || client.isKeyPressed(KeyCode.KC_CONTROL)) return;
+        if (!started) return;
+
+        int sourceComponentId = event.getActionParam1();
+        int sourceGroupId = WidgetUtil.componentToInterface(sourceComponentId);
+        if (sourceGroupId == InterfaceID.PRIVATE_CHAT
+            || (sourceGroupId == InterfaceID.CHATBOX && !PRESERVED_CHAT_COMPONENTS.contains(sourceComponentId))) {
+            chatMenuContext = true;
+        }
+
+        if (client.isKeyPressed(KeyCode.KC_CONTROL)) return;
 
         MenuEntry[] entries = client.getMenuEntries();
         List<MenuEntry> kept = new LinkedList<>();
