@@ -17,8 +17,7 @@ import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 
 /**
- * Integrated Chatbox Opacity behavior. Native widget mutation is used only for RuneLite's
- * transparent chatbox; Modernize Chat consumes the same config in its own overlay instead.
+ * Improved Chat native chatbox opacity handling for transparent resizable chat.
  */
 @Singleton
 public final class ChatboxOpacityModule {
@@ -68,7 +67,7 @@ public final class ChatboxOpacityModule {
     public void onConfigChanged(ConfigChanged event) {
         if (!ImprovedChatConfig.GROUP.equals(event.getGroup())) return;
         String key = event.getKey();
-        if ("chatboxOpacity".equals(key) || "buttonOpacity".equals(key) || "modernizeChat".equals(key)) {
+        if ("chatboxOpacity".equals(key) || "buttonOpacity".equals(key)) {
             clientThread.invokeLater(this::apply);
         }
     }
@@ -89,14 +88,6 @@ public final class ChatboxOpacityModule {
 
     private void apply() {
         if (!started) return;
-
-        // Modernize Chat owns these surfaces while enabled; it maps the same opacity values to
-        // its glass/chat-tab colors so two systems never fight over native widget opacity.
-        if (config.modernizeChat()) {
-            restoreBackground();
-            restoreButton();
-            return;
-        }
 
         if (client.getGameState() != GameState.LOGGED_IN
             || !client.isResized()
