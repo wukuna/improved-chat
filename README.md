@@ -16,13 +16,10 @@ Improved Chat is a RuneLite Plugin Hub plugin for configurable chat overlays, na
 - Collapse duplicate messages, preserve contextual colors, show channel names, and optionally hide RuneLite's default split private-chat widget.
 - Optionally collapse RuneLite's native chat to a single customizable button, including hover text, transparency, and per-channel unread highlighting.
 - Resize native chat in resizable and fixed layouts, including private-chat rewrapping, tab resizing, interface growth, dialog/interface reversion, drag-resizing, and a keybound secondary size.
-- Enable **Modernize Chat** for a flat modern native-chat presentation with configurable background, tab, selected-tab, unread, and text colors.
 
 ## Resource Packs compatibility
 
 Resizable Chat includes **Don't Draw Resize Borders** and **Don't Zoom Background** controls for custom chatbox artwork that should not be stretched or framed by Improved Chat.
-
-**Modernize Chat intentionally replaces native tab artwork while it is enabled.** The modern message background is only substituted when RuneLite is using its transparent resizable-chat color set; opaque/fixed chat keeps the native message background so darker opaque-chat text remains readable. Improved Chat restores original live widget opacity and text colors when modernization is disabled or the plugin shuts down.
 
 Collapsible Chat uses RuneLite's native chat-tab states rather than installing replacement assets.
 
