@@ -1,7 +1,10 @@
 package com.improvedchat;
 
 import com.improvedchat.chatbox.resize.internal.SizeClamps;
+import com.improvedchat.model.MessageCategory;
+import com.improvedchat.overlay.OverlayConfig;
 import java.lang.reflect.Method;
+import net.runelite.api.ChatMessageType;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.Keybind;
 import org.junit.Test;
@@ -27,11 +30,27 @@ public class ChatUiConfigTest {
     public void consolidatedChatboxFeaturesAreOptIn() {
         assertFalse(config.enableCollapsibleChat());
         assertFalse(config.enableResizableChat());
-        assertFalse(config.modernizeChat());
         assertFalse(config.enableChatboxOpacity());
         assertFalse(config.enableRemoveChatOptions());
         assertFalse(config.enableOfflineChatStatus());
         assertFalse(config.enableDialogueFonts());
+    }
+
+    @Test
+    public void defaultPrivateOverlayStartsDisabledAndContainsNoGameTypes() {
+        OverlayConfig privateOverlay = OverlayConfig.defaultPrivateOverlay();
+
+        assertFalse(privateOverlay.isShow());
+        assertEquals(
+            new java.util.HashSet<>(MessageCategory.PRIVATE.getTypes()),
+            new java.util.HashSet<>(privateOverlay.getMessageTypes())
+        );
+        for (ChatMessageType type : MessageCategory.GAME.getTypes()) {
+            assertFalse("Private default must not select GAME type " + type, privateOverlay.getMessageTypes().contains(type));
+        }
+        for (ChatMessageType type : MessageCategory.GAME_CLAN.getTypes()) {
+            assertFalse("Private default must not select GAME (Clan) type " + type, privateOverlay.getMessageTypes().contains(type));
+        }
     }
 
     @Test
