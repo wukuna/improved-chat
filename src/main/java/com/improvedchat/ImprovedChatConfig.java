@@ -544,6 +544,9 @@ public interface ImprovedChatConfig extends Config {
     @ConfigItem(keyName = "buttonOpacity", name = "Button Opacity", description = "-1 keeps RuneLite default; 0 is opaque and 255 is fully transparent", section = chatboxOpacitySection, position = 2)
     default int buttonOpacity() { return -1; }
 
+    @ConfigItem(keyName = "opacityDialogueMenus", name = "Dialogue & Menus", description = "Apply chatbox opacity to dialogue boxes and option menus shown in the chat area", section = chatboxOpacitySection, position = 3)
+    default boolean opacityDialogueMenus() { return true; }
+
     @ConfigItem(keyName = "enableRemoveChatOptions", name = "Remove Chat Options", description = "Remove chat-message context-menu options; hold Control to temporarily show them", section = chatMenuSection, position = 0)
     default boolean enableRemoveChatOptions() { return false; }
 
