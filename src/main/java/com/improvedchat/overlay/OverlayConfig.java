@@ -92,6 +92,7 @@ public final class OverlayConfig {
         EnumSet<ChatMessageType> types = EnumSet.noneOf(ChatMessageType.class);
         types.addAll(MessageCategory.PRIVATE.getTypes());
         OverlayConfig config = createDefault("Private Chat", types, true);
+        config.show = false;
         config.contextualColours = true;
         return config;
     }

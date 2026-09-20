@@ -31,8 +31,10 @@ public class ResizableModeChat {
 
     private int lastOpenTab; // Tab open before the chat was hidden, reopened on unhide
     private boolean lastCollapsed; // Collapse state the last apply() sized the slot to
-    private boolean relayoutNeeded; // Collapse changed the band above the chat
-    private boolean enablePending; // onEnable ran before the layout swap handed the chatbox over
+    private boolean relayoutNeeded; // Chat dimensions changed and surrounding interfaces need a fresh fit
+    private boolean enablePending;
+    private int lastAppliedWidth = -1;
+    private int lastAppliedHeight = -1; // onEnable ran before the layout swap handed the chatbox over
 
     @Inject
     ResizableModeChat(
@@ -59,6 +61,7 @@ public class ResizableModeChat {
         } else {
             ChatRebuild.now(client, RawScripts.RESIZES_CHAT); // Re-fits an already-open dialog group too, not just the text
             mainModals.relayout();
+            consumeRelayoutNeeded(); // onEnable handled the fresh interface band immediately
         }
     }
 
@@ -95,7 +98,18 @@ public class ResizableModeChat {
         int slotH = Math.max(0, ChatGeometry.CHATBOX_SLOT_H + heightChange);
         int backgroundH = Math.max(0, ChatGeometry.CHATBOX_SPRITE_H + heightChange);
 
+        // Do not rely on a collapse, canvas resize, or unrelated toplevel script to wake mounted interfaces.
+        // Any real chat dimension change alters the usable layout envelope and must trigger one fresh refit.
+        if (slotW != lastAppliedWidth || slotH != lastAppliedHeight) {
+            lastAppliedWidth = slotW;
+            lastAppliedHeight = slotH;
+            relayoutNeeded = true;
+        }
+
         hudAnchors.sync(heightChange); // Vertically shift RuneLite's HUD anchors
+        if (hudAnchors.consumeLayoutChanged()) {
+            relayoutNeeded = true; // Child modal slots changed height; re-run the toplevel fit once settled
+        }
         movedChat.sync(slot, slotW, slotH); // Hold a RuneLite-moved chat's bottom edge still through the resize
 
         if (!force &&
@@ -105,9 +119,9 @@ public class ResizableModeChat {
             bgGraphic.tabBarMatches(widthChange)
         ) { // Short-circuit but still make some assurances
             bgGraphic.resizeTabBar(widthChange);
-            bgGraphic.syncBackground(slotW, backgroundH);
+            bgGraphic.syncBackground(slotW, backgroundH, dialogOpen);
             if (dialogOpen) dialogBoxes.centerDialogs();
-            bgGraphic.syncBorder(chatArea, false); // Recreate if dropped, else re-sync visibility
+            bgGraphic.syncBorder(chatArea, false, dialogOpen); // Recreate if dropped, else re-sync visibility
             pmSplit.resizePmBox(slotW);
             sizeHpBarBand(slotH);
             return new Dimension(slotW, slotH);
@@ -126,8 +140,8 @@ public class ResizableModeChat {
 
         bgGraphic.resizeTabBar(widthChange); // Must resize before cascading revalidate
         Widgets.revalidateChildren(universe);
-        bgGraphic.syncBorder(chatArea, true);
-        bgGraphic.syncBackground(slotW, backgroundH);
+        bgGraphic.syncBorder(chatArea, true, dialogOpen);
+        bgGraphic.syncBackground(slotW, backgroundH, dialogOpen);
         if (dialogOpen) dialogBoxes.centerDialogs(); // Mounted dialog groups need placing by hand
         pmSplit.resizePmBox(slotW);
         sizeHpBarBand(slotH);
@@ -140,6 +154,8 @@ public class ResizableModeChat {
         lastCollapsed = false;
         relayoutNeeded = false;
         enablePending = false;
+        lastAppliedWidth = -1;
+        lastAppliedHeight = -1;
 
         movedChat.restore(); // Before the slot goes back to stock height, which is what the point is handed back for
 
@@ -168,6 +184,7 @@ public class ResizableModeChat {
         bgGraphic.revertBackground(); // After the cascade, so the container resolves against a settled chat area
         dialogBoxes.resetDialogPositions();
         hudAnchors.restore();
+        hudAnchors.consumeLayoutChanged(); // shutdown/layout-swap caller performs its own stock relayout
 
         // Only the literal height was overridden, so a plain revalidate recomputes the stock MINUS reserve
         Widget dodger = client.getWidget(InterfaceID.HpbarHud.HPDODGER);

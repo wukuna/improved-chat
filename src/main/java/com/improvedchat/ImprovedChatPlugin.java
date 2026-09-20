@@ -1,8 +1,12 @@
 package com.improvedchat;
 
+import com.improvedchat.chatbox.clean.CleanChatModule;
 import com.improvedchat.chatbox.collapse.ChatCollapseModule;
-import com.improvedchat.chatbox.modern.ModernChatThemeModule;
+import com.improvedchat.chatbox.menu.RemoveChatOptionsModule;
+import com.improvedchat.chatbox.offline.OfflineChatStatusModule;
+import com.improvedchat.chatbox.opacity.ChatboxOpacityModule;
 import com.improvedchat.chatbox.resize.ChatResizeModule;
+import com.improvedchat.dialogue.DialogueFontsModule;
 import com.improvedchat.model.MessageCategory;
 import com.improvedchat.model.MessageMergeRule;
 import com.improvedchat.model.OverlayMessage;
@@ -66,16 +70,17 @@ import java.util.regex.Pattern;
 @PluginDescriptor(
         name = "Improved Chat",
         configName = "improvedchat",
-        description = "Customizable chat overlays, native chat collapse/resize, modern styling, message rules, and alerts.",
-        tags = {"chat", "message", "overlay", "color", "customize", "private", "clan", "resize", "ui"},
-        conflicts = {"Chat Widgets", "Force Recolor"})
+        description = "Customizable chat overlays, native chat controls, message styling, cleanup, and alerts.",
+        tags = {"chat", "message", "overlay", "color", "customize", "private", "clan", "resize", "ui"})
 public class ImprovedChatPlugin extends Plugin {
 
     public static final boolean DEBUG = false;
 
-    // Separate Plugin Hub identity; do not share configuration with Chat Widgets.
+    // Independent Plugin Hub identity and configuration namespace.
     private static final String CONFIG_GROUP = "improvedchat";
     private static final String OVERLAY_CONFIGS_KEY = "overlayConfigs";
+    private static final String OVERLAY_DEFAULTS_VERSION_KEY = "overlayDefaultsVersion";
+    private static final int OVERLAY_DEFAULTS_VERSION = 1;
     private static final int MAX_POOL_SIZE = 200;
 
     private static final Pattern BOSS_KC_PATTERN = Pattern.compile("Your .+ count is:");
@@ -181,7 +186,19 @@ public class ImprovedChatPlugin extends Plugin {
     private ChatCollapseModule chatCollapseModule;
 
     @Inject
-    private ModernChatThemeModule modernChatThemeModule;
+    private CleanChatModule cleanChatModule;
+
+    @Inject
+    private ChatboxOpacityModule chatboxOpacityModule;
+
+    @Inject
+    private RemoveChatOptionsModule removeChatOptionsModule;
+
+    @Inject
+    private OfflineChatStatusModule offlineChatStatusModule;
+
+    @Inject
+    private DialogueFontsModule dialogueFontsModule;
 
 
     // Shared message pool
@@ -256,7 +273,11 @@ public class ImprovedChatPlugin extends Plugin {
 
         chatResizeModule.startUp();
         chatCollapseModule.startUp();
-        modernChatThemeModule.startUp(this);
+        cleanChatModule.startUp();
+        chatboxOpacityModule.startUp();
+        removeChatOptionsModule.startUp();
+        offlineChatStatusModule.startUp();
+        dialogueFontsModule.startUp();
 
         panel = new ImprovedChatPanel(this);
         BufferedImage icon;
@@ -278,7 +299,11 @@ public class ImprovedChatPlugin extends Plugin {
 
     @Override
     protected void shutDown() {
-        modernChatThemeModule.shutDown();
+        dialogueFontsModule.shutDown();
+        offlineChatStatusModule.shutDown();
+        removeChatOptionsModule.shutDown();
+        chatboxOpacityModule.shutDown();
+        cleanChatModule.shutDown();
         chatCollapseModule.shutDown();
         chatResizeModule.shutDown();
 
@@ -406,6 +431,7 @@ public class ImprovedChatPlugin extends Plugin {
 
     private void loadOverlayConfigs() {
         overlayConfigs.clear();
+        boolean loadedExisting = false;
         String json = configManager.getConfiguration(CONFIG_GROUP, OVERLAY_CONFIGS_KEY);
         if (json != null && !json.isEmpty()) {
             try {
@@ -417,18 +443,61 @@ public class ImprovedChatPlugin extends Plugin {
                             overlayConfigs.add(overlayConfig);
                         }
                     }
-                    if (!overlayConfigs.isEmpty()) {
-                        return;
-                    }
+                    loadedExisting = !overlayConfigs.isEmpty();
                 }
             } catch (Exception e) {
                 // Fall through to defaults
             }
         }
-        // First run — create defaults
-        overlayConfigs.add(OverlayConfig.defaultPrivateOverlay());
-        overlayConfigs.add(OverlayConfig.defaultAllOverlay());
-        saveOverlayConfigs();
+
+        if (!loadedExisting) {
+            overlayConfigs.add(OverlayConfig.defaultPrivateOverlay());
+            overlayConfigs.add(OverlayConfig.defaultAllOverlay());
+        }
+
+        boolean migrated = migrateBuiltInOverlayDefaults();
+        if (!loadedExisting || migrated) {
+            saveOverlayConfigs();
+        }
+        configManager.setConfiguration(CONFIG_GROUP, OVERLAY_DEFAULTS_VERSION_KEY, OVERLAY_DEFAULTS_VERSION);
+    }
+
+    private boolean migrateBuiltInOverlayDefaults() {
+        int version = 0;
+        String rawVersion = configManager.getConfiguration(CONFIG_GROUP, OVERLAY_DEFAULTS_VERSION_KEY);
+        if (rawVersion != null) {
+            try {
+                version = Integer.parseInt(rawVersion);
+            } catch (NumberFormatException ignored) {
+                version = 0;
+            }
+        }
+        if (version >= OVERLAY_DEFAULTS_VERSION) {
+            return false;
+        }
+
+        boolean changed = false;
+        for (OverlayConfig overlayConfig : overlayConfigs) {
+            if (looksLikeLegacyPrivateDefault(overlayConfig)) {
+                EnumSet<ChatMessageType> privateTypes = EnumSet.noneOf(ChatMessageType.class);
+                privateTypes.addAll(MessageCategory.PRIVATE.getTypes());
+                overlayConfig.setMessageTypes(privateTypes);
+                overlayConfig.setShow(false);
+                changed = true;
+            }
+        }
+        return changed;
+    }
+
+    private static boolean looksLikeLegacyPrivateDefault(OverlayConfig overlayConfig) {
+        return "Private Chat".equals(overlayConfig.getName())
+            && overlayConfig.isAlwaysVisible()
+            && overlayConfig.getPlacementMode() == com.improvedchat.model.PlacementMode.FREE
+            && overlayConfig.getMaxMessages() == 10
+            && overlayConfig.getFadeOutDuration() == 0
+            && !overlayConfig.isShowInputPreview()
+            && !overlayConfig.isBackgroundEnabled()
+            && !overlayConfig.isBorderEnabled();
     }
 
     public void saveOverlayConfigs() {
@@ -762,6 +831,18 @@ public class ImprovedChatPlugin extends Plugin {
             } else {
                 chatCollapseModule.shutDown();
             }
+        }
+        if ("enableChatboxOpacity".equals(event.getKey())) {
+            if (config.enableChatboxOpacity()) chatboxOpacityModule.startUp(); else chatboxOpacityModule.shutDown();
+        }
+        if ("enableRemoveChatOptions".equals(event.getKey())) {
+            if (config.enableRemoveChatOptions()) removeChatOptionsModule.startUp(); else removeChatOptionsModule.shutDown();
+        }
+        if ("enableOfflineChatStatus".equals(event.getKey())) {
+            if (config.enableOfflineChatStatus()) offlineChatStatusModule.startUp(); else offlineChatStatusModule.shutDown();
+        }
+        if ("enableDialogueFonts".equals(event.getKey())) {
+            if (config.enableDialogueFonts()) dialogueFontsModule.startUp(); else dialogueFontsModule.shutDown();
         }
     }
 

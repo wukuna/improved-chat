@@ -1,0 +1,37 @@
+package com.improvedchat.chatbox.clean.overlay;
+
+import com.improvedchat.chatbox.clean.ChatWidgetGroup;
+import java.awt.Graphics2D;
+import javax.inject.Singleton;
+import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.gameval.InterfaceID;
+import net.runelite.api.widgets.Widget;
+
+@Slf4j
+@Singleton
+public class ChatColorBarOverlay extends BaseCleanChatOverlay
+{
+
+	@Override
+	void render(Graphics2D graphics, int x, int y, ChatWidgetGroup group)
+	{
+		Widget chatbox = client.getWidget(InterfaceID.Chatbox.SCROLLAREA);
+
+		x = Math.min(
+			Math.max(
+				x + config.colorBarOffset(),
+				chatbox != null ? chatbox.getCanvasLocation().getX() : 0
+			),
+			chatbox != null ? chatbox.getCanvasLocation().getX() + chatbox.getWidth() - 1 : 0
+		);
+
+		graphics.setColor(group.getColor(config));
+		graphics.fillRect(x, y, config.colorBarWidth(), 16);
+	}
+
+	@Override
+	boolean isEnabled()
+	{
+		return config.isColorBarEnabled();
+	}
+}
