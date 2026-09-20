@@ -190,14 +190,6 @@ public interface ImprovedChatConfig extends Config {
     )
     String secondarySizeSection = "secondarySize";
 
-    @ConfigSection(
-        name = "Modernize Chat",
-        description = "Optional modern styling for RuneLite's native chatbox",
-        position = 14,
-        closedByDefault = true
-    )
-    String modernChatSection = "modernChat";
-
     enum CollapsedButtonContent {
         STATIC_TEXT("Static text"),
         REPORT_BUTTON_TEXT("Report button text");
@@ -355,46 +347,6 @@ public interface ImprovedChatConfig extends Config {
     @ConfigItem(keyName = SWAP_SIZE_KEYBIND, name = "Secondary Size Keybind", description = "Switch to the secondary chat size", section = secondarySizeSection, position = 3)
     default Keybind secondaryKeybind() { return Keybind.NOT_SET; }
 
-    @ConfigItem(keyName = "modernizeChat", name = "Modernize Chat", description = "Apply optional modern styling to the native chatbox", section = modernChatSection, position = 0)
-    default boolean modernizeChat() { return false; }
-
-    @Alpha
-    @ConfigItem(keyName = "modernBackgroundColor", name = "Background", description = "Modernized chat background color", section = modernChatSection, position = 1)
-    default Color modernBackgroundColor() { return new Color(18, 18, 18, 185); }
-
-    @Alpha
-    @ConfigItem(keyName = "modernTabColor", name = "Tab Color", description = "Modernized inactive tab color", section = modernChatSection, position = 2)
-    default Color modernTabColor() { return new Color(35, 35, 35, 210); }
-
-    @Alpha
-    @ConfigItem(keyName = "modernSelectedTabColor", name = "Selected Tab", description = "Modernized selected tab color", section = modernChatSection, position = 3)
-    default Color modernSelectedTabColor() { return new Color(68, 68, 68, 230); }
-
-    @Alpha
-    @ConfigItem(keyName = "modernAccentColor", name = "Accent", description = "Accent rail and selected-tab highlight color", section = modernChatSection, position = 4)
-    default Color modernAccentColor() { return new Color(88, 166, 255, 235); }
-
-    @Alpha
-    @ConfigItem(keyName = "modernBorderColor", name = "Panel Border", description = "Border color for the modern chat panel and input composer", section = modernChatSection, position = 5)
-    default Color modernBorderColor() { return new Color(104, 116, 132, 190); }
-
-    @Alpha
-    @ConfigItem(keyName = "modernInputColor", name = "Input Background", description = "Background color behind the native chat input", section = modernChatSection, position = 6)
-    default Color modernInputColor() { return new Color(24, 27, 32, 235); }
-
-    @Alpha
-    @ConfigItem(keyName = "modernTextColor", name = "Tab Text", description = "Modernized chat tab text color", section = modernChatSection, position = 7)
-    default Color modernTextColor() { return Color.WHITE; }
-
-    @Alpha
-    @ConfigItem(keyName = "modernUnreadColor", name = "Unread Highlight", description = "Color used when a modernized chat tab has unread activity", section = modernChatSection, position = 8)
-    default Color modernUnreadColor() { return new Color(255, 180, 60); }
-
-    @ConfigItem(keyName = "modernCompactTabs", name = "Compact Tabs", description = "Use a tighter tab rail while retaining the modern selected-tab indicator", section = modernChatSection, position = 9)
-    default boolean modernCompactTabs() { return true; }
-
-
-
     // ---------------------------------------------------------------------
     // Consolidated companion chat features
     // ---------------------------------------------------------------------
@@ -405,7 +357,7 @@ public interface ImprovedChatConfig extends Config {
     @ConfigSection(
         name = "General Chat Cleanup",
         description = "General message and layout cleanup; each option works independently",
-        position = 15,
+        position = 14,
         closedByDefault = true
     )
     String cleanChatSection = "cleanChat";
@@ -413,7 +365,7 @@ public interface ImprovedChatConfig extends Config {
     @ConfigSection(
         name = "Chat Color Bar",
         description = "Optional per-message channel color marker",
-        position = 16,
+        position = 15,
         closedByDefault = true
     )
     String cleanColorBarSection = "cleanColorBar";
@@ -421,7 +373,7 @@ public interface ImprovedChatConfig extends Config {
     @ConfigSection(
         name = "Clan Cleanup",
         description = "Clean up clan chat presentation",
-        position = 17,
+        position = 16,
         closedByDefault = true
     )
     String cleanClanSection = "cleanClan";
@@ -429,7 +381,7 @@ public interface ImprovedChatConfig extends Config {
     @ConfigSection(
         name = "Guest Clan Cleanup",
         description = "Clean up guest clan chat presentation",
-        position = 18,
+        position = 17,
         closedByDefault = true
     )
     String cleanGuestClanSection = "cleanGuestClan";
@@ -437,7 +389,7 @@ public interface ImprovedChatConfig extends Config {
     @ConfigSection(
         name = "GIM Cleanup",
         description = "Clean up Group Ironman chat presentation",
-        position = 19,
+        position = 18,
         closedByDefault = true
     )
     String cleanGimSection = "cleanGim";
@@ -445,7 +397,7 @@ public interface ImprovedChatConfig extends Config {
     @ConfigSection(
         name = "Friends Chat Cleanup",
         description = "Clean up friends chat presentation",
-        position = 20,
+        position = 19,
         closedByDefault = true
     )
     String cleanFriendsSection = "cleanFriends";
@@ -453,7 +405,7 @@ public interface ImprovedChatConfig extends Config {
     @ConfigSection(
         name = "Chatbox Opacity",
         description = "Fine tune native transparent chatbox and button opacity",
-        position = 21,
+        position = 20,
         closedByDefault = true
     )
     String chatboxOpacitySection = "chatboxOpacity";
@@ -461,7 +413,7 @@ public interface ImprovedChatConfig extends Config {
     @ConfigSection(
         name = "Chat Menu",
         description = "Simplify right-click options in the chatbox",
-        position = 22,
+        position = 21,
         closedByDefault = true
     )
     String chatMenuSection = "chatMenu";
@@ -469,15 +421,15 @@ public interface ImprovedChatConfig extends Config {
     @ConfigSection(
         name = "Offline Clan Status",
         description = "Mark offline clan members in chat",
-        position = 23,
+        position = 22,
         closedByDefault = true
     )
     String offlineClanSection = "offlineClan";
 
     @ConfigSection(
-        name = "Dialogue Fonts",
-        description = "Replace OSRS dialogue bitmap text with configurable system fonts",
-        position = 24,
+        name = "Dialogue Text Styling",
+        description = "Customize supported dialogue text appearance and readability",
+        position = 23,
         closedByDefault = true
     )
     String dialogueFontsSection = "dialogueFonts";
@@ -608,7 +560,7 @@ public interface ImprovedChatConfig extends Config {
     @ConfigItem(keyName = "offlineColor", name = "Offline Color", description = "Name color for offline clan members", section = offlineClanSection, position = 3)
     default Color offlineColor() { return Color.DARK_GRAY; }
 
-    @ConfigItem(keyName = "enableDialogueFonts", name = "Enable Dialogue Fonts", description = "Replace supported OSRS dialogue bitmap text with configurable system fonts", section = dialogueFontsSection, position = 0)
+    @ConfigItem(keyName = "enableDialogueFonts", name = "Enable Dialogue Text Styling", description = "Customize supported dialogue text with configurable fonts and readability controls", section = dialogueFontsSection, position = 0)
     default boolean enableDialogueFonts() { return false; }
 
     @ConfigItem(keyName = "fontFamily", name = "Font", description = "Font used for dialogue text", section = dialogueFontsSection, position = 1)
