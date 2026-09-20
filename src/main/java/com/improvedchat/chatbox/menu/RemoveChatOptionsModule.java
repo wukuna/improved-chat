@@ -87,7 +87,7 @@ public final class RemoveChatOptionsModule {
             return true;
         }
 
-        Widget privateChat = client.getWidget(InterfaceID.PM_CHAT, 0);
+        Widget privateChat = client.getWidget(net.runelite.api.gameval.InterfaceID.PM_CHAT, 0);
         return privateChat != null && !privateChat.isHidden()
             && privateChat.getBounds().contains(mouse.getX(), mouse.getY());
     }
