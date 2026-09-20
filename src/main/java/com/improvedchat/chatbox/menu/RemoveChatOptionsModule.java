@@ -10,10 +10,12 @@ import net.runelite.api.Client;
 import net.runelite.api.KeyCode;
 import net.runelite.api.MenuAction;
 import net.runelite.api.MenuEntry;
+import net.runelite.api.Point;
 import net.runelite.api.events.MenuEntryAdded;
 import net.runelite.api.events.MenuOpened;
 import net.runelite.api.widgets.ComponentID;
 import net.runelite.api.widgets.InterfaceID;
+import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetUtil;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
@@ -42,29 +44,24 @@ public final class RemoveChatOptionsModule {
     @Inject private EventBus eventBus;
 
     private boolean started;
-    private boolean chatMenuContext;
 
     public synchronized void startUp() {
         if (started || !config.enableRemoveChatOptions()) return;
         started = true;
-        chatMenuContext = false;
         eventBus.register(this);
     }
 
     public synchronized void shutDown() {
         if (!started) return;
         started = false;
-        chatMenuContext = false;
         eventBus.unregister(this);
     }
 
     @Subscribe
     public void onMenuOpened(MenuOpened event) {
-        boolean wasChatMenu = chatMenuContext;
-        chatMenuContext = false;
-
-        if (!started || !wasChatMenu || !config.removeLookupChatOption()
-            || client.isKeyPressed(KeyCode.KC_CONTROL)) {
+        if (!started || !config.removeLookupChatOption()
+            || client.isKeyPressed(KeyCode.KC_CONTROL)
+            || !isMouseOverChatMessages()) {
             return;
         }
 
@@ -82,16 +79,22 @@ public final class RemoveChatOptionsModule {
         client.setMenuEntries(filtered);
     }
 
+    private boolean isMouseOverChatMessages() {
+        Point mouse = client.getMouseCanvasPosition();
+        Widget chatLines = client.getWidget(ComponentID.CHATBOX_MESSAGE_LINES);
+        if (chatLines != null && !chatLines.isHidden()
+            && chatLines.getBounds().contains(mouse.getX(), mouse.getY())) {
+            return true;
+        }
+
+        Widget privateChat = client.getWidget(InterfaceID.PM_CHAT, 0);
+        return privateChat != null && !privateChat.isHidden()
+            && privateChat.getBounds().contains(mouse.getX(), mouse.getY());
+    }
+
     @Subscribe
     public void onMenuEntryAdded(MenuEntryAdded event) {
         if (!started) return;
-
-        int sourceComponentId = event.getActionParam1();
-        int sourceGroupId = WidgetUtil.componentToInterface(sourceComponentId);
-        if (sourceGroupId == InterfaceID.PRIVATE_CHAT
-            || (sourceGroupId == InterfaceID.CHATBOX && !PRESERVED_CHAT_COMPONENTS.contains(sourceComponentId))) {
-            chatMenuContext = true;
-        }
 
         if (client.isKeyPressed(KeyCode.KC_CONTROL)) return;
 
