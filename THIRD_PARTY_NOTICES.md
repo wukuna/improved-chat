@@ -23,7 +23,7 @@ Improved Chat's single-button native chat collapse behavior is derived from the 
 - Copyright: Copyright (c) 2025, stutify
 - License: BSD 2-Clause
 
-The implementation is integrated into Improved Chat's own configuration and lifecycle and adds compatibility with the consolidated resize and modernization systems.
+The implementation is integrated into Improved Chat's own configuration and lifecycle and adds compatibility with the consolidated resize system.
 
 ## Chat Resizer
 
@@ -34,17 +34,6 @@ Improved Chat's advanced native chat resizing module is derived from the BSD-2-C
 - License: BSD 2-Clause
 
 The integrated module retains resizable/fixed layout sizing, private-chat rewrapping, tab resizing, interface growth, dialog/interface reversion, drag resizing, secondary sizes, and compatibility controls.
-
-## Modern Chat design reference
-
-The optional Modernize Chat presentation was designed independently for Improved Chat after reviewing the UX of **Modern Chat**:
-
-- Repository: `https://github.com/BenDol/Modern-Chat`
-- Copyright: Copyright 2023 BenDol
-- License: BSD 2-Clause
-
-Improved Chat does not import Modern Chat's feature framework; the modernization layer styles RuneLite's native chatbox while preserving native behavior.
-
 
 ## Clean Chat
 
@@ -64,7 +53,7 @@ Improved Chat's optional native transparent-chat opacity controls are derived fr
 - Copyright: Copyright (c) 2019, Trevor
 - License: BSD 2-Clause
 
-The implementation is adapted to coexist with Improved Chat's Modernize Chat surfaces and restores native widget state when disabled.
+The implementation restores native widget state when disabled.
 
 ## Remove Chat Options
 
