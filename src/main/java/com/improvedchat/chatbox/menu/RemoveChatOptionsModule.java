@@ -18,7 +18,7 @@ import net.runelite.api.widgets.WidgetUtil;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 
-/** Integrated Remove Chat Options behavior. Hold Control to expose the original menu. */
+/** Simplifies chat-message context menus. Hold Control to expose the original menu. */
 @Singleton
 public final class RemoveChatOptionsModule {
     private static final int REPORT_BUTTON_COMPONENT_ID = 10616863;
@@ -57,7 +57,6 @@ public final class RemoveChatOptionsModule {
         chatMenuContext = false;
         eventBus.unregister(this);
     }
-
 
     @Subscribe
     public void onMenuOpened(MenuOpened event) {
