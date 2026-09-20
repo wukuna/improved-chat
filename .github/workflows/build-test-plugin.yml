@@ -1,9 +1,9 @@
-name: Build Improved Chat TEST
+name: Build Improved Chat Release
 
 on:
   push:
     branches:
-      - test-build-improved-chat-name
+      - release-plugin-hub-2026-09-20
 
 jobs:
   build:
@@ -45,9 +45,9 @@ jobs:
             echo "RuneLite never confirmed ImprovedChatPlugin loaded (process exit: $smoke_rc)"
             exit 1
           fi
-      - name: Upload TEST JAR
+      - name: Upload release JAR
         uses: actions/upload-artifact@v4
         with:
-          name: Improved-Chat-TEST
+          name: Improved-Chat-Release
           path: build/libs/*.jar
           if-no-files-found: error
