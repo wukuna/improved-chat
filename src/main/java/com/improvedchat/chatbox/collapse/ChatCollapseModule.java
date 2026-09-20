@@ -80,12 +80,6 @@ public class ChatCollapseModule {
         chatboxOpacityModule.reapplyAfterChatMutation();
     }
 
-    public void refreshAfterExternalStyleChange() {
-        if (started) {
-            clientThread.invokeLater(this::refreshChatWidgets);
-        }
-    }
-
     @Subscribe
     void onScriptPostFired(ScriptPostFired event) {
         if (event.getScriptId() == ScriptID.CHAT_PROMPT_INIT) {
