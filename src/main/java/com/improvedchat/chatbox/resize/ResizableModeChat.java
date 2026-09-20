@@ -119,9 +119,9 @@ public class ResizableModeChat {
             bgGraphic.tabBarMatches(widthChange)
         ) { // Short-circuit but still make some assurances
             bgGraphic.resizeTabBar(widthChange);
-            bgGraphic.syncBackground(slotW, backgroundH);
+            bgGraphic.syncBackground(slotW, backgroundH, dialogOpen);
             if (dialogOpen) dialogBoxes.centerDialogs();
-            bgGraphic.syncBorder(chatArea, false); // Recreate if dropped, else re-sync visibility
+            bgGraphic.syncBorder(chatArea, false, dialogOpen); // Recreate if dropped, else re-sync visibility
             pmSplit.resizePmBox(slotW);
             sizeHpBarBand(slotH);
             return new Dimension(slotW, slotH);
@@ -140,8 +140,8 @@ public class ResizableModeChat {
 
         bgGraphic.resizeTabBar(widthChange); // Must resize before cascading revalidate
         Widgets.revalidateChildren(universe);
-        bgGraphic.syncBorder(chatArea, true);
-        bgGraphic.syncBackground(slotW, backgroundH);
+        bgGraphic.syncBorder(chatArea, true, dialogOpen);
+        bgGraphic.syncBackground(slotW, backgroundH, dialogOpen);
         if (dialogOpen) dialogBoxes.centerDialogs(); // Mounted dialog groups need placing by hand
         pmSplit.resizePmBox(slotW);
         sizeHpBarBand(slotH);
