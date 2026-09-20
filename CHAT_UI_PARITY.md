@@ -17,7 +17,6 @@ This checklist tracks the behavior Improved Chat intends to preserve across its 
 - [x] Unread clan-chat highlighting
 - [x] Unread trade-message highlighting
 - [x] Restore RuneLite's native hover/listener state on shutdown
-- [x] Modernized presentation can style the retained single button without removing collapse behavior
 
 ## Resizable Chat
 
@@ -72,8 +71,5 @@ This checklist tracks the behavior Improved Chat intends to preserve across its 
 
 - [x] Collapse and resize are independent opt-in modules under one plugin/config namespace
 - [x] Existing Improved Chat overlays and message rules remain independent
-- [x] Modernize Chat is independently opt-in and off by default
-- [x] Modernize Chat keeps RuneLite's native chat behavior while applying a dark flat presentation
-- [x] Modernization handles the single-button collapsed state
 - [x] Existing saved overlay configuration, including per-overlay text alignment, is unchanged
 
