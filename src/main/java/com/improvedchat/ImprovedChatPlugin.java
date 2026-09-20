@@ -478,7 +478,7 @@ public class ImprovedChatPlugin extends Plugin {
 
         boolean changed = false;
         for (OverlayConfig overlayConfig : overlayConfigs) {
-            if ("Private Chat".equals(overlayConfig.getName())) {
+            if (looksLikeLegacyPrivateDefault(overlayConfig)) {
                 EnumSet<ChatMessageType> privateTypes = EnumSet.noneOf(ChatMessageType.class);
                 privateTypes.addAll(MessageCategory.PRIVATE.getTypes());
                 overlayConfig.setMessageTypes(privateTypes);
@@ -487,6 +487,18 @@ public class ImprovedChatPlugin extends Plugin {
             }
         }
         return changed;
+    }
+
+    private static boolean looksLikeLegacyPrivateDefault(OverlayConfig overlayConfig) {
+        return "Private Chat".equals(overlayConfig.getName())
+            && overlayConfig.isAlwaysVisible()
+            && overlayConfig.getPlacementMode() == com.improvedchat.model.PlacementMode.FREE
+            && overlayConfig.getMaxMessages() == 10
+            && overlayConfig.getFadeOutDuration() == 0
+            && !overlayConfig.isShowInputPreview()
+            && !overlayConfig.isBackgroundEnabled()
+            && !overlayConfig.isBorderEnabled();
+    }
     }
 
     public void saveOverlayConfigs() {
