@@ -71,11 +71,21 @@ public class ChatBackgroundGraphic {
         this.config = config;
     }
 
-    // Fit the background to the box: zoom an opaque chat's parchment, re-stack a transparent one's gradient
-    void syncBackground(int targetW, int targetH) {
+    // Fit the normal chat background to the box. Dialogue/options temporarily reuse this surface
+    // for their own bordered parchment and must retain complete ownership of that native artwork.
+    void syncBackground(int targetW, int targetH, boolean dialogOpen) {
         Widget background = client.getWidget(InterfaceID.Chatbox.CHAT_BACKGROUND);
         if (background == null) return;
         Widget body = getBackgroundBody(background);
+
+        if (dialogOpen) {
+            untrimBackground(background);
+            if (isParchment(body)) {
+                unzoomBakedSprite(body);
+            }
+            return;
+        }
+
         if (!isParchment(body)) { // Nothing to clip, so the zoom comes off entirely
             untrimBackground(background);
             stackGradientBands(background, targetH);
@@ -231,9 +241,9 @@ public class ChatBackgroundGraphic {
         return true;
     }
 
-    // Draw, refresh, or tear down chat border, keyed on how the engine has built the background this frame
-    void syncBorder(Widget chatArea, boolean reposition) {
-        if (config.noBorders()) {
+    // Draw, refresh, or tear down the resize frame. Dialogue/options keep their native border untouched.
+    void syncBorder(Widget chatArea, boolean reposition, boolean dialogOpen) {
+        if (dialogOpen || config.noBorders()) {
             destroyBorder();
             return;
         }
