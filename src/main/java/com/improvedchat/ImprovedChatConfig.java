@@ -550,6 +550,9 @@ public interface ImprovedChatConfig extends Config {
     @ConfigItem(keyName = "enableRemoveChatOptions", name = "Remove Chat Options", description = "Remove chat-message context-menu options; hold Control to temporarily show them", section = chatMenuSection, position = 0)
     default boolean enableRemoveChatOptions() { return false; }
 
+    @ConfigItem(keyName = "removeLookupChatOption", name = "Remove Lookup", description = "Also remove the player Lookup entry from chat-message menus", section = chatMenuSection, position = 1)
+    default boolean removeLookupChatOption() { return false; }
+
     @ConfigItem(keyName = "enableOfflineChatStatus", name = "Enable Offline Clan Status", description = "Mark offline clan members in native clan chat", section = offlineClanSection, position = 0)
     default boolean enableOfflineChatStatus() { return false; }
 
