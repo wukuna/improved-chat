@@ -6,6 +6,7 @@ import com.improvedchat.overlay.OverlayConfig;
 import java.lang.reflect.Method;
 import net.runelite.api.ChatMessageType;
 import net.runelite.client.config.ConfigItem;
+import net.runelite.client.config.ConfigSection;
 import net.runelite.client.config.Keybind;
 import org.junit.Test;
 
@@ -104,6 +105,7 @@ public class ChatUiConfigTest {
         assertFalse(config.removeFriendsChatStartup());
         assertEquals(150, config.chatboxOpacity());
         assertEquals(-1, config.buttonOpacity());
+        assertTrue(config.opacityDialogueMenus());
         assertTrue(config.enableOfflineIcon());
         assertTrue(config.enableOfflineColor());
         assertEquals(14, config.fontSize());
@@ -116,6 +118,15 @@ public class ChatUiConfigTest {
         assertTrue(config.replacePlayer());
         assertTrue(config.replaceOptions());
         assertTrue(config.replaceSprite());
+    }
+
+    @Test
+    public void dialogueSectionUsesTextStylingName() throws Exception {
+        ConfigSection section = ImprovedChatConfig.class
+            .getField("dialogueFontsSection")
+            .getAnnotation(ConfigSection.class);
+
+        assertEquals("Dialogue Text Styling", section.name());
     }
 
     @Test
