@@ -73,7 +73,7 @@ Improved Chat's optional offline-clan status formatting is derived from **Offlin
 - Copyright: Copyright (c) 2022, Bailey Townsend
 - License: BSD 2-Clause
 
-Improved Chat draws its own status glyph instead of copying the standalone plugin's image asset and preserves each message node's original name for restoration.
+Improved Chat draws its own status glyph rather than copying the original image asset and preserves each message node's original name for restoration.
 
 ## Dialogue Fonts
 
