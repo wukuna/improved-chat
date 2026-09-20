@@ -8,8 +8,10 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import net.runelite.api.Client;
 import net.runelite.api.KeyCode;
+import net.runelite.api.MenuAction;
 import net.runelite.api.MenuEntry;
 import net.runelite.api.events.MenuEntryAdded;
+import net.runelite.api.events.MenuOpened;
 import net.runelite.api.widgets.ComponentID;
 import net.runelite.api.widgets.InterfaceID;
 import net.runelite.api.widgets.WidgetUtil;
@@ -51,6 +53,41 @@ public final class RemoveChatOptionsModule {
         if (!started) return;
         started = false;
         eventBus.unregister(this);
+    }
+
+
+    @Subscribe
+    public void onMenuOpened(MenuOpened event) {
+        if (!started || !config.removeLookupChatOption() || client.isKeyPressed(KeyCode.KC_CONTROL)) return;
+
+        MenuEntry[] entries = event.getMenuEntries();
+        if (!isChatMessageMenu(entries)) return;
+
+        List<MenuEntry> kept = new LinkedList<>();
+        for (MenuEntry entry : entries) {
+            if (entry.getType() == MenuAction.RUNELITE && "Lookup".equals(entry.getOption())) {
+                continue;
+            }
+            kept.add(entry);
+        }
+
+        MenuEntry[] filtered = kept.toArray(new MenuEntry[0]);
+        event.setMenuEntries(filtered);
+        client.setMenuEntries(filtered);
+    }
+
+    private static boolean isChatMessageMenu(MenuEntry[] entries) {
+        for (MenuEntry entry : entries) {
+            int componentId = entry.getParam1();
+            int groupId = WidgetUtil.componentToInterface(componentId);
+            if (groupId == InterfaceID.PRIVATE_CHAT) {
+                return true;
+            }
+            if (groupId == InterfaceID.CHATBOX && !PRESERVED_CHAT_COMPONENTS.contains(componentId)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Subscribe
