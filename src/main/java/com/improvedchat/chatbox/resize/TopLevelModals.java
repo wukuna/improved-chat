@@ -84,7 +84,7 @@ public class TopLevelModals {
     // Re-fit the UI to current available space. The toplevel ID can flip a cycle before the swap completes,
     // so it is used for relayout target selection only; modal detection stays the scan-all above.
     void relayout() {
-        int controlId, layoutEnum;
+        int controlId = -1, layoutEnum = -1;
         switch (client.getTopLevelInterfaceId()) {
             case InterfaceID.TOPLEVEL:
                 controlId = InterfaceID.Toplevel.CONTROL;
@@ -99,10 +99,15 @@ public class TopLevelModals {
                 layoutEnum = RawScripts.LAYOUT_ENUM_PRE_EOC;
                 break;
             default:
-                return; // Display/OSM/Spectator toplevels: nothing to re-fit here (the old probe matched none either)
+                // Some temporary/fullscreen toplevels have no matching 904 layout enum. Their child
+                // slots may still have been resized by the HUD-band change, so mounted roots still
+                // need the direct realign/refit pass below.
+                break;
         }
 
-        client.runScript(RawScripts.TOPLEVEL_ONRESIZE, controlId, layoutEnum);
+        if (controlId >= 0) {
+            client.runScript(RawScripts.TOPLEVEL_ONRESIZE, controlId, layoutEnum);
+        }
         realignMounted();
         // Must follow the realign: the own-root pollers measure a root only that call re-aligns
         for (RefitSpec spec : refits) if (spec.captured != null && client.getWidget(spec.universe) != null) client.runScript(spec.captured);
