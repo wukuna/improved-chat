@@ -1,6 +1,4 @@
-/* Integrated and adapted from Chat Resizer by shanktank under BSD 2-Clause.
- * See THIRD_PARTY_NOTICES.md. This module is hosted by ImprovedChatPlugin and is not a standalone plugin.
- */
+/* Improved Chat native chat resizing module. See THIRD_PARTY_NOTICES.md for required attribution. */
 package com.improvedchat.chatbox.resize;
 
 import com.improvedchat.chatbox.resize.internal.ChatRebuild;
@@ -205,6 +203,7 @@ public class ChatResizeModule {
             // The resize script, not the plain re-wrap: it also re-fits an open dialog's mounted group
             ChatRebuild.now(client, RawScripts.RESIZES_CHAT);
             if (widthChanged || (bandChanged && mainModals.isModalOpen())) mainModals.relayout(); // Re-fit bank, restack inv tabs
+            if (bandChanged) resizable.consumeRelayoutNeeded(); // This pass already handled the changed interface band
         } else if (fixedChat.consumeRebuildNeeded()) {
             ChatRebuild.now(client, RawScripts.REWRAPS_CHAT); // Re-anchor lines this frame to avoid drawing stale anchors
         }
@@ -242,6 +241,7 @@ public class ChatResizeModule {
         apply(false);
         if (client.isResized()) { // Resizable-only re-fit + re-wrap; fixed mode is fully re-asserted within apply()
             mainModals.relayout();
+            resizable.consumeRelayoutNeeded(); // transition pass just re-fit the current band
             ChatRebuild.now(client, RawScripts.RESIZES_CHAT);
         } else if (!dragResizeActuator.isDragging() && fixedChat.consumeRelayoutNeeded()) {
             mainModals.relayout(); // Re-fit the open modal to the changed band in the same tick
@@ -380,10 +380,11 @@ public class ChatResizeModule {
                 dragResizeActuator.setLastDragSize(size);
             } else {
                 adoptConfigEdits(); // Ahead of this frame's apply, or chat adopts the edit a frame before interfaces re-fit to it
-                apply(false); // Drift-correct: re-stretch the tab bar/border after a rebuild (e.g. world hop) reverts it
+                Dimension settledSize = apply(false); // Drift-correct: re-stretch the tab bar/border after a rebuild (e.g. world hop) reverts it
                 if (wasDragging && client.isResized()) {
                     ChatRebuild.now(client, RawScripts.RESIZES_CHAT); // Single expensive re-wrap on drag-resize release
                     mainModals.relayout(); // Re-fit bank/overlays to the new chat size on release
+                    resizable.consumeRelayoutNeeded(); // release handled the pending live HUD-band change
                     scrollKeep.noteRewrap(); // Re-anchor scroll if that re-wrap was the drag's deferred width change
                 }
                 dragResizeActuator.setLastDragSize(null);
@@ -399,7 +400,7 @@ public class ChatResizeModule {
             // Fixed layout: re-anchor lines to the bottom after a height change; never mid-drag (see the drag branch)
             if (!client.isResized() && !dragging && fixedChat.consumeRebuildNeeded()) client.refreshChat();
             // Resizable layout: chat was collapsed or uncollapsed, re-fit the band and re-wrap at the new height
-            if (client.isResized() && resizable.consumeRelayoutNeeded()) {
+            if (client.isResized() && !dragging && resizable.consumeRelayoutNeeded()) {
                 ChatRebuild.now(client, RawScripts.RESIZES_CHAT);
                 mainModals.relayout();
             }
@@ -413,6 +414,7 @@ public class ChatResizeModule {
             dragResizeActuator.update(bounds, !client.isResized(), client.getCanvasWidth(), client.getCanvasHeight());
 
             hudAnchors.presentAnchorHeight();
+
         }
 
         @Subscribe
