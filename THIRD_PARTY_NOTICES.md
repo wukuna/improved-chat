@@ -23,3 +23,7 @@ The resizable chat behavior includes BSD-2-Clause code derived from work by shan
 - Copyright: Copyright (c) 2026, shanktank
 
 The BSD 2-Clause terms in `LICENSE` apply to these derived portions.
+
+The chatbox opacity controls include BSD-2-Clause code derived from Trevor:
+- Repository: `https://github.com/Trevor159/runelite-chatbox-opacity`
+- Copyright: Copyright (c) 2019, Trevor
