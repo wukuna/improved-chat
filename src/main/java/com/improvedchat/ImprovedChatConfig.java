@@ -71,7 +71,7 @@ public interface ImprovedChatConfig extends Config {
     @ConfigItem(keyName = "showChannelName", name = "Show Channel Names", description = "Show the channel name prefix for friends and clan chat messages", section = appearanceSection, position = 6)
     default boolean showChannelName() { return true; }
 
-    @ConfigItem(keyName = "useChatFilter", name = "Use Chat Filter", description = "Hide/censor messages using RuneLite's Chat Filter plugin's word & regex lists and Filter Type", section = appearanceSection, position = 7)
+    @ConfigItem(keyName = "useChatFilter", name = "Use Chat Filter", description = "Apply the current chat-filter word, regex, and filter-type settings", section = appearanceSection, position = 7)
     default boolean useChatFilter() { return false; }
 
     @ConfigItem(keyName = "timestampFormat", name = "Timestamp Format", description = "Timestamp format used by overlays", section = appearanceSection, position = 8)
@@ -189,12 +189,12 @@ public interface ImprovedChatConfig extends Config {
     String secondarySizeSection = "secondarySize";
 
     @ConfigSection(
-        name = "Modernize Chat",
-        description = "Optional modern styling for RuneLite's native chatbox",
+        name = "Chatbox Opacity",
+        description = "Adjust transparent chatbox and button opacity",
         position = 14,
         closedByDefault = true
     )
-    String modernChatSection = "modernChat";
+    String chatboxOpacitySection = "chatboxOpacity";
 
     enum CollapsedButtonContent {
         STATIC_TEXT("Static text"),
@@ -249,7 +249,7 @@ public interface ImprovedChatConfig extends Config {
     String NO_BORDERS = "noBorders";
     String NO_BACKGROUND_ZOOM = "noBackgroundZoom";
 
-    @ConfigItem(keyName = "enableCollapsibleChat", name = "Enable Collapsible Chat", description = "Collapse native chat tabs to one button when chat is hidden; disable standalone Collapse Chat before enabling", section = collapseChatSection, position = 0)
+    @ConfigItem(keyName = "enableCollapsibleChat", name = "Enable Collapsible Chat", description = "Collapse native chat tabs to one button when chat is hidden", section = collapseChatSection, position = 0)
     default boolean enableCollapsibleChat() { return false; }
 
     @ConfigItem(keyName = "collapsedButtonContent", name = "Button Content", description = "Content shown on the single collapsed chat button", section = collapseChatSection, position = 1)
@@ -279,7 +279,7 @@ public interface ImprovedChatConfig extends Config {
     @ConfigItem(keyName = "collapseUnreadTrade", name = "Unread Trade", description = "Highlight the collapsed button for unread trade messages", section = collapseChatSection, position = 14)
     default boolean highlightOnUnreadTradeMessages() { return false; }
 
-    @ConfigItem(keyName = "enableResizableChat", name = "Enable Resizable Chat", description = "Enable advanced native chat resizing; disable standalone Chat Resizer/Resizable Chat before enabling", section = resizeChatSection, position = 0)
+    @ConfigItem(keyName = "enableResizableChat", name = "Enable Resizable Chat", description = "Enable advanced native chat resizing", section = resizeChatSection, position = 0)
     default boolean enableResizableChat() { return false; }
 
     @Range(min = -165, max = 10000)
@@ -318,13 +318,13 @@ public interface ImprovedChatConfig extends Config {
     @ConfigItem(keyName = REVERT_FOR_MODALS, name = "Revert For Interfaces", description = "Temporarily return adjusted dimensions toward stock while top-level interfaces are open", section = resizeChatSection, position = 21)
     default Revert revertForModals() { return Revert.UNGROW; }
 
-    @ConfigItem(keyName = TOGGLE_SHOW_CHAT, name = "Show/Hide Chat Keybind", description = "Hide or unhide the native chatbox", section = resizeChatSection, position = 22)
+    @ConfigItem(keyName = TOGGLE_SHOW_CHAT, name = "Show/Hide Chat Keybind", description = "Hide or unhide the native chatbox", section = resizeChatSection, position = 6)
     default Keybind toggleShowChat() { return Keybind.NOT_SET; }
 
-    @ConfigItem(keyName = NO_BORDERS, name = "Don't Draw Resize Borders", description = "Avoid drawing replacement resize borders for Resource Pack compatibility", section = resizeChatSection, position = 30)
+    @ConfigItem(keyName = NO_BORDERS, name = "Don't Draw Resize Borders", description = "Hide Improved Chat's resize frame; dialogue and option-menu borders remain native", section = resizeChatSection, position = 30)
     default boolean noBorders() { return false; }
 
-    @ConfigItem(keyName = NO_BACKGROUND_ZOOM, name = "Don't Zoom Background", description = "Avoid zooming the opaque native chat background", section = resizeChatSection, position = 31)
+    @ConfigItem(keyName = NO_BACKGROUND_ZOOM, name = "Don't Zoom Background", description = "Keep the normal opaque chat background at its native scale", section = resizeChatSection, position = 31)
     default boolean noBackgroundZoom() { return false; }
 
     @ConfigItem(keyName = DRAG_MODIFIER, name = "Drag-Resize Modifier", description = "Hold this key while dragging a chat border to resize; unset disables drag resizing", section = dragResizeSection, position = 0)
@@ -353,31 +353,18 @@ public interface ImprovedChatConfig extends Config {
     @ConfigItem(keyName = SWAP_SIZE_KEYBIND, name = "Secondary Size Keybind", description = "Switch to the secondary chat size", section = secondarySizeSection, position = 3)
     default Keybind secondaryKeybind() { return Keybind.NOT_SET; }
 
-    @ConfigItem(keyName = "modernizeChat", name = "Modernize Chat", description = "Apply optional modern styling to RuneLite's native chatbox; disable standalone Modern Chat before enabling", section = modernChatSection, position = 0)
-    default boolean modernizeChat() { return false; }
+    @ConfigItem(keyName = "enableChatboxOpacity", name = "Enable Chatbox Opacity", description = "Enable transparent-chat background and button opacity controls", section = chatboxOpacitySection, position = 0)
+    default boolean enableChatboxOpacity() { return false; }
 
-    @Alpha
-    @ConfigItem(keyName = "modernBackgroundColor", name = "Background", description = "Modernized chat background color", section = modernChatSection, position = 1)
-    default Color modernBackgroundColor() { return new Color(18, 18, 18, 185); }
+    @Range(min = -1, max = 255)
+    @ConfigItem(keyName = "chatboxOpacity", name = "Chatbox Opacity", description = "-1 keeps the default; 0 is opaque and 255 is fully transparent", section = chatboxOpacitySection, position = 1)
+    default int chatboxOpacity() { return 150; }
 
-    @Alpha
-    @ConfigItem(keyName = "modernTabColor", name = "Tab Color", description = "Modernized inactive tab color", section = modernChatSection, position = 2)
-    default Color modernTabColor() { return new Color(35, 35, 35, 210); }
+    @Range(min = -1, max = 255)
+    @ConfigItem(keyName = "buttonOpacity", name = "Button Opacity", description = "-1 keeps the default; 0 is opaque and 255 is fully transparent", section = chatboxOpacitySection, position = 2)
+    default int buttonOpacity() { return -1; }
 
-    @Alpha
-    @ConfigItem(keyName = "modernSelectedTabColor", name = "Selected Tab", description = "Modernized selected tab color", section = modernChatSection, position = 3)
-    default Color modernSelectedTabColor() { return new Color(68, 68, 68, 230); }
-
-    @Alpha
-    @ConfigItem(keyName = "modernTextColor", name = "Tab Text", description = "Modernized chat tab text color", section = modernChatSection, position = 4)
-    default Color modernTextColor() { return Color.WHITE; }
-
-    @Alpha
-    @ConfigItem(keyName = "modernUnreadColor", name = "Unread Highlight", description = "Color used when a modernized chat tab has unread activity", section = modernChatSection, position = 5)
-    default Color modernUnreadColor() { return new Color(255, 180, 60); }
-
-    @ConfigItem(keyName = "modernCompactTabs", name = "Compact Tabs", description = "Use a flatter, tighter visual treatment for native chat tabs", section = modernChatSection, position = 6)
-    default boolean modernCompactTabs() { return true; }
-
+    @ConfigItem(keyName = "opacityDialogueMenus", name = "Dialogue & Menus", description = "Apply chatbox opacity to dialogue boxes and option menus", section = chatboxOpacitySection, position = 3)
+    default boolean opacityDialogueMenus() { return true; }
 
 }
