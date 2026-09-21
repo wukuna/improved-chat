@@ -7,7 +7,6 @@ import com.improvedchat.chatbox.resize.internal.Widgets;
 import net.runelite.api.Client;
 import net.runelite.api.events.BeforeRender;
 import net.runelite.api.gameval.InterfaceID;
-import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.config.Keybind;
@@ -37,6 +36,8 @@ public final class RuneLiteHudAnchors {
 
     private boolean applied;
     private boolean swapped; // A snap-corner read is currently seeing a fake stock height, to be restored after
+    private int swappedHudId = -1; // Restore the exact HUD temporarily presented, even if the layout flips mid-frame
+    private boolean layoutChanged; // HUD reserve changed; mounted interfaces need one fresh toplevel re-fit
 
     // Hold that fake height in place for as long as a snap corner can be dragged against it
     private boolean dragHotkeyHeld; // RuneLite's hotkey for moving HUD items and HUD snap anchors
@@ -87,26 +88,38 @@ public final class RuneLiteHudAnchors {
         if (hud.getOriginalHeight() != target) {
             hud.setOriginalHeight(target);
             hud.revalidate();
+            // A plain parent revalidate updates the HUD itself but can leave its child modal slots
+            // at their previous height until some unrelated toplevel layout event occurs.
+            Widgets.revalidateChildren(hud);
+            layoutChanged = true;
         }
 
         applied = true;
+    }
+
+    // True once after the usable interface band changed. Consumers re-fit mounted windows exactly once.
+    boolean consumeLayoutChanged() {
+        boolean changed = layoutChanged;
+        layoutChanged = false;
+        return changed;
     }
 
     // Freeze the bottom-right snap corner: present the stock rendered height for both reads that place
     // it; OverlayRenderer's default-priority BeforeRender, then its indicator draw. Resizable only.
     void presentAnchorHeight() {
         // Gate on whether the band is actually overridden, not the toggle: a forced shrink (grow off) resizes it too
-        swapped = applied && client.isResized() && presentStockRendered();
+        int id = activeFrontId();
+        swapped = applied && client.isResized() && presentStockRendered(id);
+        swappedHudId = swapped ? id : -1;
     }
 
     // Present stock height for a modal's opening salvo, so it lays out against full space before the ungrow
     void forceStockRendered() {
-        presentStockRendered();
+        presentStockRendered(activeFrontId());
     }
 
     // Write the stock rendered height directly, bypassing the reserve. Returns whether it changed anything.
-    private boolean presentStockRendered() {
-        int id = activeFrontId();
+    private boolean presentStockRendered(int id) {
         Widget hud = client.getWidget(id);
         if (hud == null) return false;
         Integer base = stockReserve.get(id);
@@ -122,14 +135,17 @@ public final class RuneLiteHudAnchors {
     // down: a corner dragged in that mode is converted against the live container, on the AWT thread.
     private void restoreLayoutHeight() {
         if (!swapped || dragHotkeyHeld) return;
+        int id = swappedHudId;
         swapped = false;
-        Widget hud = client.getWidget(activeFrontId());
+        swappedHudId = -1;
+        Widget hud = id < 0 ? null : client.getWidget(id);
         if (hud != null) hud.revalidate(); // Recompute the rendered height from the (band) reserve
     }
 
     void restore() {
         applied = false;
         swapped = false;
+        swappedHudId = -1;
         restore(InterfaceID.ToplevelPreEoc.HUD_CONTAINER_FRONT);
         restore(InterfaceID.ToplevelOsrsStretch.HUD_CONTAINER_FRONT);
     }
@@ -141,11 +157,20 @@ public final class RuneLiteHudAnchors {
         if (w != null && w.getOriginalHeight() != base) {
             w.setOriginalHeight(base);
             w.revalidate();
+            Widgets.revalidateChildren(w);
+            layoutChanged = true;
         }
     }
 
     private int activeFrontId() {
-        return client.getVarbitValue(VarbitID.RESIZABLE_STONE_ARRANGEMENT) == 1
+        // Match RuneLite's own HUD-container selection. The stone-arrangement varbit can lag the
+        // active toplevel during layout changes, which would resize an inactive container and leave
+        // the visible mounted interface stuck at its old height.
+        return frontIdForTopLevel(client.getTopLevelInterfaceId());
+    }
+
+    static int frontIdForTopLevel(int topLevelId) {
+        return topLevelId == InterfaceID.TOPLEVEL_PRE_EOC
             ? InterfaceID.ToplevelPreEoc.HUD_CONTAINER_FRONT
             : InterfaceID.ToplevelOsrsStretch.HUD_CONTAINER_FRONT;
     }
