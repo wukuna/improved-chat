@@ -1,6 +1,7 @@
 package com.improvedchat;
 
 import com.improvedchat.chatbox.resize.internal.SizeClamps;
+import java.lang.reflect.Method;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.Keybind;
 import org.junit.Test;
@@ -11,6 +12,13 @@ import static org.junit.Assert.assertTrue;
 
 public class ChatUiConfigTest {
     private final ImprovedChatConfig config = new ImprovedChatConfig() {};
+
+    @Test
+    public void configInterfaceContainsOnlyConfigItems() {
+        for (Method method : ImprovedChatConfig.class.getDeclaredMethods()) {
+            assertTrue(method.isSynthetic() || method.getAnnotation(ConfigItem.class) != null);
+        }
+    }
 
     @Test
     public void consolidatedChatboxFeaturesAreOptIn() {
@@ -61,6 +69,20 @@ public class ChatUiConfigTest {
         assertEquals(150, config.chatboxOpacity());
         assertEquals(-1, config.buttonOpacity());
         assertTrue(config.opacityDialogueMenus());
+    }
+
+    @Test
+    public void cleanupAndMenuDefaultsAreOptIn() {
+        assertFalse(config.removeWelcome());
+        assertFalse(config.hideSpecs());
+        assertFalse(config.removeClanInstruction());
+        assertFalse(config.removeGuestClanInstruction());
+        assertFalse(config.removeGroupIronInstruction());
+        assertFalse(config.removeGroupIronFromClan());
+        assertFalse(config.removeFriendsChatStartup());
+        assertFalse(config.enableRemoveChatOptions());
+        assertFalse(config.removeLookupChatOption());
+        assertFalse(config.enableOfflineChatStatus());
     }
 
     @Test
