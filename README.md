@@ -19,6 +19,8 @@ The project is derived in part from the BSD-2-Clause **Chat Widgets** plugin, bu
 - Collapse native chat to a single customizable button with unread highlighting.
 - Resize native chat in fixed and resizable layouts, including drag resizing, interface reclaim, and secondary sizes.
 - Adjust transparent chatbox/button opacity while optionally preserving dialogue and menu opacity.
+- Clean up chat labels, startup text, wrapping, scrollbars, timestamps, and optional channel color bars.
+- Simplify chat-message menus and optionally mark offline clan members.
 
 ## How it differs from Chat Widgets
 
