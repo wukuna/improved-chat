@@ -1,5 +1,6 @@
 package com.improvedchat;
 
+import com.improvedchat.chatbox.clean.data.IndentMode;
 import java.awt.Color;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
@@ -188,14 +189,6 @@ public interface ImprovedChatConfig extends Config {
     )
     String secondarySizeSection = "secondarySize";
 
-    @ConfigSection(
-        name = "Chatbox Opacity",
-        description = "Adjust transparent chatbox and button opacity",
-        position = 14,
-        closedByDefault = true
-    )
-    String chatboxOpacitySection = "chatboxOpacity";
-
     enum CollapsedButtonContent {
         STATIC_TEXT("Static text"),
         REPORT_BUTTON_TEXT("Report button text");
@@ -321,10 +314,10 @@ public interface ImprovedChatConfig extends Config {
     @ConfigItem(keyName = TOGGLE_SHOW_CHAT, name = "Show/Hide Chat Keybind", description = "Hide or unhide the native chatbox", section = resizeChatSection, position = 6)
     default Keybind toggleShowChat() { return Keybind.NOT_SET; }
 
-    @ConfigItem(keyName = NO_BORDERS, name = "Don't Draw Resize Borders", description = "Hide Improved Chat's resize frame; dialogue and option-menu borders remain native", section = resizeChatSection, position = 30)
+    @ConfigItem(keyName = NO_BORDERS, name = "Don't Draw Resize Borders", description = "Hide Improved Chat's resize frame; native dialogue and option-menu borders remain untouched", section = resizeChatSection, position = 30)
     default boolean noBorders() { return false; }
 
-    @ConfigItem(keyName = NO_BACKGROUND_ZOOM, name = "Don't Zoom Background", description = "Keep the normal opaque chat background at its native scale", section = resizeChatSection, position = 31)
+    @ConfigItem(keyName = NO_BACKGROUND_ZOOM, name = "Don't Zoom Background", description = "Keep the normal opaque chat background at its native artwork scale", section = resizeChatSection, position = 31)
     default boolean noBackgroundZoom() { return false; }
 
     @ConfigItem(keyName = DRAG_MODIFIER, name = "Drag-Resize Modifier", description = "Hold this key while dragging a chat border to resize; unset disables drag resizing", section = dragResizeSection, position = 0)
@@ -353,18 +346,215 @@ public interface ImprovedChatConfig extends Config {
     @ConfigItem(keyName = SWAP_SIZE_KEYBIND, name = "Secondary Size Keybind", description = "Switch to the secondary chat size", section = secondarySizeSection, position = 3)
     default Keybind secondaryKeybind() { return Keybind.NOT_SET; }
 
+    // ---------------------------------------------------------------------
+    // Consolidated companion chat features
+    // ---------------------------------------------------------------------
+
+    String HIDE_SCROLLBAR_KEY = "hideScrollbar";
+    String DEFAULT_CUSTOM_CHANNEL_NAME = "[<col=0000ff>$$</col>]";
+
+    @ConfigSection(
+        name = "General Chat Cleanup",
+        description = "General message and layout cleanup; each option works independently",
+        position = 14,
+        closedByDefault = true
+    )
+    String cleanChatSection = "cleanChat";
+
+    @ConfigSection(
+        name = "Chat Color Bar",
+        description = "Optional per-message channel color marker",
+        position = 15,
+        closedByDefault = true
+    )
+    String cleanColorBarSection = "cleanColorBar";
+
+    @ConfigSection(
+        name = "Clan Cleanup",
+        description = "Clean up clan chat presentation",
+        position = 16,
+        closedByDefault = true
+    )
+    String cleanClanSection = "cleanClan";
+
+    @ConfigSection(
+        name = "Guest Clan Cleanup",
+        description = "Clean up guest clan chat presentation",
+        position = 17,
+        closedByDefault = true
+    )
+    String cleanGuestClanSection = "cleanGuestClan";
+
+    @ConfigSection(
+        name = "GIM Cleanup",
+        description = "Clean up Group Ironman chat presentation",
+        position = 18,
+        closedByDefault = true
+    )
+    String cleanGimSection = "cleanGim";
+
+    @ConfigSection(
+        name = "Friends Chat Cleanup",
+        description = "Clean up friends chat presentation",
+        position = 19,
+        closedByDefault = true
+    )
+    String cleanFriendsSection = "cleanFriends";
+
+    @ConfigSection(
+        name = "Chatbox Opacity",
+        description = "Fine tune native transparent chatbox and button opacity",
+        position = 20,
+        closedByDefault = true
+    )
+    String chatboxOpacitySection = "chatboxOpacity";
+
+    @ConfigSection(
+        name = "Chat Menu",
+        description = "Simplify right-click options in the chatbox",
+        position = 21,
+        closedByDefault = true
+    )
+    String chatMenuSection = "chatMenu";
+
+    @ConfigSection(
+        name = "Offline Clan Status",
+        description = "Mark offline clan members in chat",
+        position = 22,
+        closedByDefault = true
+    )
+    String offlineClanSection = "offlineClan";
+
+        @ConfigItem(keyName = "removeWelcome", name = "Remove Welcome Message", description = "Remove the Welcome to Old School RuneScape message", section = cleanChatSection, position = 0)
+    default boolean removeWelcome() { return false; }
+
+    @ConfigItem(keyName = "lineBreakIndentationMode", name = "Indent Mode", description = "Choose where wrapped channel-message lines begin", section = cleanChatSection, position = 1)
+    default IndentMode indentationMode() { return IndentMode.MESSAGE; }
+
+    @ConfigItem(keyName = HIDE_SCROLLBAR_KEY, name = "Hide Scrollbar", description = "Hide the chat scrollbar while keeping mouse-wheel scrolling", section = cleanChatSection, position = 2)
+    default boolean hideScrollbar() { return false; }
+
+    @ConfigItem(keyName = "hideSpecs", name = "Remove Special Attack Text", description = "Remove Dragon and Crystal equipment special-attack chat text", section = cleanChatSection, position = 3)
+    default boolean hideSpecs() { return false; }
+
+    @ConfigItem(keyName = "improvedTimestamps", name = "Fixed-width Timestamps", description = "Use equal-width digits when chat timestamps are enabled", section = cleanChatSection, position = 4)
+    default boolean isFixedWidthTimestampEnabled() { return false; }
+
+    @ConfigItem(keyName = "colorBar", name = "Enable Color Bar", description = "Draw a thin channel-colored marker beside each native chat message", section = cleanColorBarSection, position = 0)
+    default boolean isColorBarEnabled() { return false; }
+
+    @Units(Units.PIXELS)
+    @Range(min = -1000, max = 1000)
+    @ConfigItem(keyName = "colorBarOffset", name = "Color Bar Offset", description = "Horizontal offset of the message color bar", section = cleanColorBarSection, position = 1)
+    default int colorBarOffset() { return 0; }
+
+    @Units(Units.PIXELS)
+    @Range(min = 1, max = 20)
+    @ConfigItem(keyName = "colorBarWidth", name = "Color Bar Width", description = "Width of the message color bar", section = cleanColorBarSection, position = 2)
+    default int colorBarWidth() { return 1; }
+
+    @Alpha
+    @ConfigItem(keyName = "noChannelColor", name = "No Channel", description = "Color bar color for messages without a channel", section = cleanColorBarSection, position = 3)
+    default Color noChannelColor() { return new Color(0, true); }
+
+    @Alpha
+    @ConfigItem(keyName = "clanColor", name = "Clan", description = "Color bar color for clan chat", section = cleanColorBarSection, position = 4)
+    default Color clanChannelColor() { return new Color(0x0B3CC4); }
+
+    @Alpha
+    @ConfigItem(keyName = "friendColor", name = "Friends Chat", description = "Color bar color for friends chat", section = cleanColorBarSection, position = 5)
+    default Color friendsChannelColor() { return new Color(0xF8EC3B); }
+
+    @Alpha
+    @ConfigItem(keyName = "groupIronColor", name = "Group Iron", description = "Color bar color for Group Ironman chat", section = cleanColorBarSection, position = 6)
+    default Color groupIronChannelColor() { return new Color(0x195985); }
+
+    @Alpha
+    @ConfigItem(keyName = "guestClanColor", name = "Guest Clan", description = "Color bar color for guest clan chat", section = cleanColorBarSection, position = 7)
+    default Color guestClanChannelColor() { return new Color(0x00855E); }
+
+    @ConfigItem(keyName = "removeClanInstruction", name = "Remove Startup Message", description = "Remove clan-channel usage instructions", section = cleanClanSection, position = 0)
+    default boolean removeClanInstruction() { return false; }
+
+    @ConfigItem(keyName = "removeClanName", name = "Remove Clan Name", description = "Remove the clan name prefix from clan messages", section = cleanClanSection, position = 1)
+    default boolean removeClanName() { return false; }
+
+    @ConfigItem(keyName = "shortClanName", name = "Custom Clan Name", description = "Replacement clan label; use $$ for the current clan name", section = cleanClanSection, position = 2)
+    default String getShortClanName() { return DEFAULT_CUSTOM_CHANNEL_NAME; }
+
+    @ConfigItem(keyName = "removeClanRank", name = "Remove Clan Rank", description = "Remove clan-rank icons from usernames", section = cleanClanSection, position = 3)
+    default boolean removeClanRank() { return false; }
+
+    @ConfigItem(keyName = "removeGuestClanInstruction", name = "Remove Startup Message", description = "Remove guest-clan usage instructions", section = cleanGuestClanSection, position = 0)
+    default boolean removeGuestClanInstruction() { return false; }
+
+    @ConfigItem(keyName = "removeGuestClanReconnecting", name = "Remove Reconnecting Message", description = "Remove guest-clan automatic reconnect messages", section = cleanGuestClanSection, position = 1)
+    default boolean removeGuestClanReconnecting() { return false; }
+
+    @ConfigItem(keyName = "removeGuestClanName", name = "Remove Guest Clan Name", description = "Remove the guest clan name prefix", section = cleanGuestClanSection, position = 2)
+    default boolean removeGuestClanName() { return false; }
+
+    @ConfigItem(keyName = "shortGuestClanName", name = "Custom Guest Clan Name", description = "Replacement guest-clan label; use $$ for the current clan name", section = cleanGuestClanSection, position = 3)
+    default String getShortGuestClanName() { return DEFAULT_CUSTOM_CHANNEL_NAME; }
+
+    @ConfigItem(keyName = "removeGroupIronInstruction", name = "Remove Startup Message", description = "Remove Group Ironman channel usage instructions", section = cleanGimSection, position = 0)
+    default boolean removeGroupIronInstruction() { return false; }
+
+    @ConfigItem(keyName = "removeGroupIronName", name = "Remove GIM Name", description = "Remove the Group Ironman channel name prefix", section = cleanGimSection, position = 1)
+    default boolean removeGroupIronName() { return false; }
+
+    @ConfigItem(keyName = "moveGroupIronBroadcasts", name = "Move GIM Broadcasts", description = "Keep GIM broadcasts out of the clan tab", section = cleanGimSection, position = 2)
+    default boolean removeGroupIronFromClan() { return false; }
+
+    @ConfigItem(keyName = "shortGroupIronName", name = "Custom GIM Name", description = "Replacement GIM label; use $$ for the current group name", section = cleanGimSection, position = 3)
+    default String getShortGroupIronName() { return DEFAULT_CUSTOM_CHANNEL_NAME; }
+
+    @ConfigItem(keyName = "removeFriendsChatInstruction", name = "Remove Startup Message", description = "Remove friends-chat usage instructions", section = cleanFriendsSection, position = 0)
+    default boolean removeFriendsChatStartup() { return false; }
+
+    @ConfigItem(keyName = "removeFriendsChatName", name = "Remove Friends Chat Name", description = "Remove the friends-chat channel prefix", section = cleanFriendsSection, position = 1)
+    default boolean removeFriendsChatName() { return false; }
+
+    @ConfigItem(keyName = "removeFriendsAttempting", name = "Remove Attempting to Join", description = "Remove friends-chat join-attempt messages", section = cleanFriendsSection, position = 2)
+    default boolean removeFriendsAttempting() { return false; }
+
+    @ConfigItem(keyName = "removeFriendsNowTalking", name = "Remove Now Talking In", description = "Remove friends-chat now-talking messages", section = cleanFriendsSection, position = 3)
+    default boolean removeFriendsNowTalking() { return false; }
+
+    @ConfigItem(keyName = "shortFriendsName", name = "Custom Friends Chat Name", description = "Replacement friends-chat label; use $$ for the current channel name", section = cleanFriendsSection, position = 4)
+    default String getShortFriendsName() { return DEFAULT_CUSTOM_CHANNEL_NAME; }
+
     @ConfigItem(keyName = "enableChatboxOpacity", name = "Enable Chatbox Opacity", description = "Enable transparent-chat background and button opacity controls", section = chatboxOpacitySection, position = 0)
     default boolean enableChatboxOpacity() { return false; }
 
     @Range(min = -1, max = 255)
-    @ConfigItem(keyName = "chatboxOpacity", name = "Chatbox Opacity", description = "-1 keeps the default; 0 is opaque and 255 is fully transparent", section = chatboxOpacitySection, position = 1)
+    @ConfigItem(keyName = "chatboxOpacity", name = "Chatbox Opacity", description = "-1 keeps RuneLite default; 0 is opaque and 255 is fully transparent", section = chatboxOpacitySection, position = 1)
     default int chatboxOpacity() { return 150; }
 
     @Range(min = -1, max = 255)
-    @ConfigItem(keyName = "buttonOpacity", name = "Button Opacity", description = "-1 keeps the default; 0 is opaque and 255 is fully transparent", section = chatboxOpacitySection, position = 2)
+    @ConfigItem(keyName = "buttonOpacity", name = "Button Opacity", description = "-1 keeps RuneLite default; 0 is opaque and 255 is fully transparent", section = chatboxOpacitySection, position = 2)
     default int buttonOpacity() { return -1; }
 
-    @ConfigItem(keyName = "opacityDialogueMenus", name = "Dialogue & Menus", description = "Apply chatbox opacity to dialogue boxes and option menus", section = chatboxOpacitySection, position = 3)
+    @ConfigItem(keyName = "opacityDialogueMenus", name = "Dialogue & Menus", description = "Apply chatbox opacity to dialogue boxes and option menus shown in the chat area", section = chatboxOpacitySection, position = 3)
     default boolean opacityDialogueMenus() { return true; }
+
+    @ConfigItem(keyName = "enableRemoveChatOptions", name = "Remove Chat Options", description = "Remove chat-message context-menu options; hold Control to temporarily show them", section = chatMenuSection, position = 0)
+    default boolean enableRemoveChatOptions() { return false; }
+
+    @ConfigItem(keyName = "removeLookupChatOption", name = "Remove Lookup", description = "Also remove the player Lookup entry from chat-message menus", section = chatMenuSection, position = 1)
+    default boolean removeLookupChatOption() { return false; }
+
+    @ConfigItem(keyName = "enableOfflineChatStatus", name = "Enable Offline Clan Status", description = "Mark offline clan members in native clan chat", section = offlineClanSection, position = 0)
+    default boolean enableOfflineChatStatus() { return false; }
+
+    @ConfigItem(keyName = "enableOfflineIcon", name = "Show Offline Icon", description = "Show an Improved Chat offline-status icon beside offline clan members", section = offlineClanSection, position = 1)
+    default boolean enableOfflineIcon() { return true; }
+
+    @ConfigItem(keyName = "enableOfflineColor", name = "Color Offline Names", description = "Recolor offline clan member names", section = offlineClanSection, position = 2)
+    default boolean enableOfflineColor() { return true; }
+
+    @Alpha
+    @ConfigItem(keyName = "offlineColor", name = "Offline Color", description = "Name color for offline clan members", section = offlineClanSection, position = 3)
+    default Color offlineColor() { return Color.DARK_GRAY; }
 
 }
