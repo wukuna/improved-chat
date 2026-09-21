@@ -1,6 +1,9 @@
 package com.improvedchat;
 
+import com.improvedchat.chatbox.clean.CleanChatModule;
 import com.improvedchat.chatbox.collapse.ChatCollapseModule;
+import com.improvedchat.chatbox.menu.RemoveChatOptionsModule;
+import com.improvedchat.chatbox.offline.OfflineChatStatusModule;
 import com.improvedchat.chatbox.opacity.ChatboxOpacityModule;
 import com.improvedchat.chatbox.resize.ChatResizeModule;
 import com.improvedchat.model.MessageCategory;
@@ -182,6 +185,15 @@ public class ImprovedChatPlugin extends Plugin {
     @Inject
     private ChatboxOpacityModule chatboxOpacityModule;
 
+    @Inject
+    private CleanChatModule cleanChatModule;
+
+    @Inject
+    private RemoveChatOptionsModule removeChatOptionsModule;
+
+    @Inject
+    private OfflineChatStatusModule offlineChatStatusModule;
+
 
     // Shared message pool
     private final CopyOnWriteArrayList<OverlayMessage> messages = new CopyOnWriteArrayList<>();
@@ -255,7 +267,10 @@ public class ImprovedChatPlugin extends Plugin {
 
         chatResizeModule.startUp();
         chatCollapseModule.startUp();
+        cleanChatModule.startUp();
         chatboxOpacityModule.startUp();
+        removeChatOptionsModule.startUp();
+        offlineChatStatusModule.startUp();
 
         panel = new ImprovedChatPanel(this);
         BufferedImage icon;
@@ -277,7 +292,10 @@ public class ImprovedChatPlugin extends Plugin {
 
     @Override
     protected void shutDown() {
+        offlineChatStatusModule.shutDown();
+        removeChatOptionsModule.shutDown();
         chatboxOpacityModule.shutDown();
+        cleanChatModule.shutDown();
         chatCollapseModule.shutDown();
         chatResizeModule.shutDown();
 
@@ -767,6 +785,20 @@ public class ImprovedChatPlugin extends Plugin {
                 chatboxOpacityModule.startUp();
             } else {
                 chatboxOpacityModule.shutDown();
+            }
+        }
+        if ("enableRemoveChatOptions".equals(event.getKey())) {
+            if (config.enableRemoveChatOptions()) {
+                removeChatOptionsModule.startUp();
+            } else {
+                removeChatOptionsModule.shutDown();
+            }
+        }
+        if ("enableOfflineChatStatus".equals(event.getKey())) {
+            if (config.enableOfflineChatStatus()) {
+                offlineChatStatusModule.startUp();
+            } else {
+                offlineChatStatusModule.shutDown();
             }
         }
     }
