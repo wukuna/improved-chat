@@ -1,7 +1,6 @@
 package com.improvedchat;
 
 import com.improvedchat.chatbox.collapse.ChatCollapseModule;
-import com.improvedchat.chatbox.modern.ModernChatThemeModule;
 import com.improvedchat.chatbox.resize.ChatResizeModule;
 import com.improvedchat.model.MessageCategory;
 import com.improvedchat.model.MessageMergeRule;
@@ -66,14 +65,12 @@ import java.util.regex.Pattern;
 @PluginDescriptor(
         name = "Improved Chat",
         configName = "improvedchat",
-        description = "Customizable chat overlays, native chat collapse/resize, modern styling, message rules, and alerts.",
-        tags = {"chat", "message", "overlay", "color", "customize", "private", "clan", "resize", "ui"},
-        conflicts = {"Chat Widgets", "Force Recolor"})
+        description = "Customizable chat overlays, native chat controls, message rules, and alerts.",
+        tags = {"chat", "message", "overlay", "color", "customize", "private", "clan", "resize", "ui"})
 public class ImprovedChatPlugin extends Plugin {
 
     public static final boolean DEBUG = false;
 
-    // Separate Plugin Hub identity; do not share configuration with Chat Widgets.
     private static final String CONFIG_GROUP = "improvedchat";
     private static final String OVERLAY_CONFIGS_KEY = "overlayConfigs";
     private static final int MAX_POOL_SIZE = 200;
@@ -180,9 +177,6 @@ public class ImprovedChatPlugin extends Plugin {
     @Inject
     private ChatCollapseModule chatCollapseModule;
 
-    @Inject
-    private ModernChatThemeModule modernChatThemeModule;
-
 
     // Shared message pool
     private final CopyOnWriteArrayList<OverlayMessage> messages = new CopyOnWriteArrayList<>();
@@ -256,7 +250,6 @@ public class ImprovedChatPlugin extends Plugin {
 
         chatResizeModule.startUp();
         chatCollapseModule.startUp();
-        modernChatThemeModule.startUp(this);
 
         panel = new ImprovedChatPanel(this);
         BufferedImage icon;
@@ -278,7 +271,6 @@ public class ImprovedChatPlugin extends Plugin {
 
     @Override
     protected void shutDown() {
-        modernChatThemeModule.shutDown();
         chatCollapseModule.shutDown();
         chatResizeModule.shutDown();
 
