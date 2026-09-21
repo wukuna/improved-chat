@@ -1,8 +1,7 @@
-/* Integrated and adapted from Chat Resizer by shanktank under BSD 2-Clause.
- * See THIRD_PARTY_NOTICES.md. This module is hosted by ImprovedChatPlugin and is not a standalone plugin.
- */
+/* Improved Chat native chat resizing module. See THIRD_PARTY_NOTICES.md for required attribution. */
 package com.improvedchat.chatbox.resize;
 
+import com.improvedchat.chatbox.opacity.ChatboxOpacityModule;
 import com.improvedchat.chatbox.resize.internal.ChatRebuild;
 import com.improvedchat.chatbox.resize.internal.RawScripts;
 import com.improvedchat.chatbox.resize.internal.SizeClamps;
@@ -47,6 +46,7 @@ public class ChatResizeModule {
     @Inject private MouseManager mouseManager;
     @Inject private OverlayManager overlayManager;
     @Inject private EventBus eventBus;
+    @Inject private ChatboxOpacityModule chatboxOpacityModule;
 
     @Inject private RuneLiteHudAnchors hudAnchors;
     @Inject private TopLevelModals mainModals;
@@ -65,12 +65,14 @@ public class ChatResizeModule {
     private volatile Events events;
 
     private boolean started;
+    private Dimension lastOpacityTrackedSize;
 
     public synchronized void startUp() {
         if (started || !config.enableResizableChat()) {
             return;
         }
         started = true;
+        lastOpacityTrackedSize = null;
         keyManager.registerKeyListener(hideChatHotkey);
         keyManager.registerKeyListener(swapSizeHotkey);
         keyManager.registerKeyListener(dragResizeActuator.getKeyListener());
@@ -94,6 +96,7 @@ public class ChatResizeModule {
             return;
         }
         started = false;
+        lastOpacityTrackedSize = null;
         unregisterHandlers(); // Disarm first, so no event lands between here (EDT) and the queued restore
         keyManager.unregisterKeyListener(hideChatHotkey);
         keyManager.unregisterKeyListener(swapSizeHotkey);
@@ -111,6 +114,7 @@ public class ChatResizeModule {
             if (client.isResized()) {
                 resizable.restore();
                 ChatRebuild.now(client, RawScripts.RESIZES_CHAT); // Clean up sprite + re-wrap at stock width
+                chatboxOpacityModule.reapplyAfterChatMutation();
                 resizable.restoreBackground();
                 mainModals.relayout();
             } else {
@@ -121,6 +125,7 @@ public class ChatResizeModule {
             if (dialogBoxes.isDialogOpen()) dialogBoxes.resetDialogPositions(); // Must reset position of open dialog
             rlInput.refit(); // Frame loop is off by now, so re-center an open input prompt on the restored width here
             scrollKeep.sync();
+            chatboxOpacityModule.reapplyAfterChatMutation();
         });
     }
 
@@ -204,7 +209,9 @@ public class ChatResizeModule {
         if (client.isResized()) {
             // The resize script, not the plain re-wrap: it also re-fits an open dialog's mounted group
             ChatRebuild.now(client, RawScripts.RESIZES_CHAT);
+            chatboxOpacityModule.reapplyAfterChatMutation();
             if (widthChanged || (bandChanged && mainModals.isModalOpen())) mainModals.relayout(); // Re-fit bank, restack inv tabs
+            if (bandChanged) resizable.consumeRelayoutNeeded(); // This pass already handled the changed interface band
         } else if (fixedChat.consumeRebuildNeeded()) {
             ChatRebuild.now(client, RawScripts.REWRAPS_CHAT); // Re-anchor lines this frame to avoid drawing stale anchors
         }
@@ -242,7 +249,9 @@ public class ChatResizeModule {
         apply(false);
         if (client.isResized()) { // Resizable-only re-fit + re-wrap; fixed mode is fully re-asserted within apply()
             mainModals.relayout();
+            resizable.consumeRelayoutNeeded(); // transition pass just re-fit the current band
             ChatRebuild.now(client, RawScripts.RESIZES_CHAT);
+            chatboxOpacityModule.reapplyAfterChatMutation();
         } else if (!dragResizeActuator.isDragging() && fixedChat.consumeRelayoutNeeded()) {
             mainModals.relayout(); // Re-fit the open modal to the changed band in the same tick
         }
@@ -252,6 +261,16 @@ public class ChatResizeModule {
     // Apply resizes for the current layout
     private Dimension apply(boolean force) {
         return client.isResized() ? resizable.apply(force) : fixedChat.apply(force);
+    }
+
+    private void syncOpacityAfterSizeChange(Dimension size) {
+        if (size == null) {
+            return;
+        }
+        if (!size.equals(lastOpacityTrackedSize)) {
+            lastOpacityTrackedSize = size;
+            chatboxOpacityModule.reapplyAfterChatMutation();
+        }
     }
 
     // Hide or unhide chat on keybind
@@ -375,15 +394,19 @@ public class ChatResizeModule {
             if (dragging) {
                 if (!wasDragging) fixedChat.setCollapsed(false); // Drag writes config height, which collapse would override
                 Dimension size = apply(false), last = dragResizeActuator.getLastDragSize();
+                syncOpacityAfterSizeChange(size);
                 if (client.isResized() && config.liveRewrap() && size != null && !size.equals(last))
                     client.runScript(RawScripts.RESIZES_CHAT); // Re-wrap text and move PM split
                 dragResizeActuator.setLastDragSize(size);
             } else {
                 adoptConfigEdits(); // Ahead of this frame's apply, or chat adopts the edit a frame before interfaces re-fit to it
-                apply(false); // Drift-correct: re-stretch the tab bar/border after a rebuild (e.g. world hop) reverts it
+                Dimension settledSize = apply(false); // Drift-correct: re-stretch the tab bar/border after a rebuild (e.g. world hop) reverts it
+                syncOpacityAfterSizeChange(settledSize);
                 if (wasDragging && client.isResized()) {
                     ChatRebuild.now(client, RawScripts.RESIZES_CHAT); // Single expensive re-wrap on drag-resize release
+                    chatboxOpacityModule.reapplyAfterChatMutation();
                     mainModals.relayout(); // Re-fit bank/overlays to the new chat size on release
+                    resizable.consumeRelayoutNeeded(); // release handled the pending live HUD-band change
                     scrollKeep.noteRewrap(); // Re-anchor scroll if that re-wrap was the drag's deferred width change
                 }
                 dragResizeActuator.setLastDragSize(null);
@@ -399,8 +422,9 @@ public class ChatResizeModule {
             // Fixed layout: re-anchor lines to the bottom after a height change; never mid-drag (see the drag branch)
             if (!client.isResized() && !dragging && fixedChat.consumeRebuildNeeded()) client.refreshChat();
             // Resizable layout: chat was collapsed or uncollapsed, re-fit the band and re-wrap at the new height
-            if (client.isResized() && resizable.consumeRelayoutNeeded()) {
+            if (client.isResized() && !dragging && resizable.consumeRelayoutNeeded()) {
                 ChatRebuild.now(client, RawScripts.RESIZES_CHAT);
+                chatboxOpacityModule.reapplyAfterChatMutation();
                 mainModals.relayout();
             }
 
@@ -413,6 +437,7 @@ public class ChatResizeModule {
             dragResizeActuator.update(bounds, !client.isResized(), client.getCanvasWidth(), client.getCanvasHeight());
 
             hudAnchors.presentAnchorHeight();
+
         }
 
         @Subscribe
