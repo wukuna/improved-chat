@@ -15,7 +15,7 @@ public class ChatUiConfigTest {
     public void consolidatedChatboxFeaturesAreOptIn() {
         assertFalse(config.enableCollapsibleChat());
         assertFalse(config.enableResizableChat());
-        assertFalse(config.modernizeChat());
+        assertFalse(config.enableChatboxOpacity());
     }
 
     @Test
@@ -46,6 +46,13 @@ public class ChatUiConfigTest {
         assertEquals(Keybind.NOT_SET, config.toggleShowChat());
         assertEquals(Keybind.NOT_SET, config.dragModifier());
         assertEquals(Keybind.NOT_SET, config.secondaryKeybind());
+    }
+
+    @Test
+    public void opacityDefaultsAreSafe() {
+        assertEquals(150, config.chatboxOpacity());
+        assertEquals(-1, config.buttonOpacity());
+        assertTrue(config.opacityDialogueMenus());
     }
 
     @Test
