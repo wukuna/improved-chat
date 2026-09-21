@@ -1,6 +1,4 @@
-/* Integrated and adapted from Collapse Chat by stutify under BSD 2-Clause.
- * See THIRD_PARTY_NOTICES.md. This module is hosted by ImprovedChatPlugin.
- */
+/* Improved Chat native chat collapse module. See THIRD_PARTY_NOTICES.md for required attribution. */
 package com.improvedchat.chatbox.collapse;
 
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +19,7 @@ import net.runelite.client.events.ConfigChanged;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import com.improvedchat.ImprovedChatConfig;
+import com.improvedchat.chatbox.opacity.ChatboxOpacityModule;
 import net.runelite.api.events.GameTick;
 import net.runelite.client.eventbus.EventBus;
 
@@ -41,6 +40,8 @@ public class ChatCollapseModule {
     private ImprovedChatConfig config;
     @Inject
     private EventBus eventBus;
+    @Inject
+    private ChatboxOpacityModule chatboxOpacityModule;
 
     private boolean started;
 
@@ -64,6 +65,7 @@ public class ChatCollapseModule {
         clientThread.invokeLater(() -> {
             refreshChatWidgets();
             client.runScript(113);
+            chatboxOpacityModule.reapplyAfterChatMutation();
         });
     }
 
@@ -75,12 +77,7 @@ public class ChatCollapseModule {
 
     private void refreshChatWidgets() {
         widgetManager.updateChatWidgets(state);
-    }
-
-    public void refreshAfterExternalStyleChange() {
-        if (started) {
-            clientThread.invokeLater(this::refreshChatWidgets);
-        }
+        chatboxOpacityModule.reapplyAfterChatMutation();
     }
 
     @Subscribe
