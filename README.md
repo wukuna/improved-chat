@@ -16,13 +16,13 @@ The project is derived in part from the BSD-2-Clause **Chat Widgets** plugin, bu
 - Configure attention behavior for message text, border, and background flashes.
 - Integrate with RuneLite's built-in Chat Color, Chat Filter, and Emojis functionality.
 - Collapse duplicate messages, preserve contextual colors, show channel names, and optionally hide RuneLite's default split private-chat widget.
-- Optionally collapse RuneLite's native chat to a single customizable button, including hover text, transparency, and per-channel unread highlighting.
-- Resize native chat in resizable and fixed layouts, including private-chat rewrapping, tab resizing, interface growth, dialog/interface reversion, drag-resizing, and a keybound secondary size.
-- Enable **Modernize Chat** for a flat modern native-chat presentation with configurable background, tab, selected-tab, unread, and text colors.
+- Collapse native chat to a single customizable button with unread highlighting.
+- Resize native chat in fixed and resizable layouts, including drag resizing, interface reclaim, and secondary sizes.
+- Adjust transparent chatbox/button opacity while optionally preserving dialogue and menu opacity.
 
 ## How it differs from Chat Widgets
 
-Improved Chat is not only a widget-layout variant. In addition to configurable chat overlays, it adds chatbox message recoloring rules, overlay-only rainbow rules, attention/flash rules, border and background attention effects, richer text styling, native chat collapse/resize controls, and an optional modernized native-chat presentation. The plugin keeps its existing hard conflicts with Chat Widgets and Force Recolor. The optional Collapse, Resize, and Modernize features are off by default; users should disable the corresponding standalone chatbox plugin before enabling an overlapping Improved Chat feature.
+Improved Chat is not only a widget-layout variant. In addition to configurable chat overlays, it adds chatbox message recoloring rules, overlay-only rainbow rules, attention/flash rules, border and background attention effects, richer text styling, and expanded placement controls. The plugin declares a conflict with Chat Widgets so both overlapping chat-overlay implementations are not active at the same time.
 
 ## Rule syntax
 
