@@ -119,8 +119,8 @@ public class FixedModeChat {
             universe.getWidth() == STOCK_W && universe.getHeight() == targetH &&
             (main == null || main.getHeight() == mainH)
         ) {
-            bgGraphic.syncBackground(STOCK_W, backgroundH);
-            bgGraphic.syncBorder(chatArea, false); // Recreate if dropped, else re-sync visibility
+            bgGraphic.syncBackground(STOCK_W, backgroundH, dialogOpen);
+            bgGraphic.syncBorder(chatArea, false, dialogOpen); // Recreate if dropped, else re-sync visibility
             extendViewportBorders(viewportBottom); // Re-assert side borders (engine resets them on rebuilds)
             pmSplit.setPmBoxHeight(pmH); // Re-assert split-PM position (engine resets it on rebuilds)
             if (dialogOpen) dialogBoxes.centerDialogs();
@@ -130,8 +130,8 @@ public class FixedModeChat {
         sizeChat(slot, universe, targetY, targetH);
         sizeViewport(main, mainH);
         extendViewportBorders(viewportBottom);
-        bgGraphic.syncBorder(chatArea, true);
-        bgGraphic.syncBackground(STOCK_W, backgroundH);
+        bgGraphic.syncBorder(chatArea, true, dialogOpen);
+        bgGraphic.syncBackground(STOCK_W, backgroundH, dialogOpen);
         pmSplit.setPmBoxHeight(pmH);
         if (dialogOpen) dialogBoxes.centerDialogs(); // Mounted dialog groups need placing by hand, as in resizable
         return new Dimension(STOCK_W, targetH);
