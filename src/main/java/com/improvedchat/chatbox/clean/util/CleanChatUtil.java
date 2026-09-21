@@ -4,11 +4,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.client.util.Text;
 
-@Slf4j
 public class CleanChatUtil
 {
 	public static final String CLAN_INSTRUCTION_MESSAGE = "To talk in your clan's channel, start each line of chat with // or /c.";
@@ -44,13 +42,7 @@ public class CleanChatUtil
 		return cleanString(text, client)
 			.chars()
 			.mapToObj(ch -> (char) ch)
-			.map(key -> {
-				if (!CHAR_SIZE_MAP.containsKey(key))
-				{
-					log.debug("Couldn't get length of {}", key);
-				}
-				return CHAR_SIZE_MAP.getOrDefault(key, 5) + 2;
-			})
+			.map(key -> CHAR_SIZE_MAP.getOrDefault(key, 5) + 2)
 			.reduce(0, Integer::sum) + getChatIconsWidth(text);
 	}
 
