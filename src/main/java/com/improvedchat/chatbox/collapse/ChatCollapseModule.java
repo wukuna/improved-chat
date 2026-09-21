@@ -1,6 +1,4 @@
-/* Integrated and adapted from Collapse Chat by stutify under BSD 2-Clause.
- * See THIRD_PARTY_NOTICES.md. This module is hosted by ImprovedChatPlugin.
- */
+/* Improved Chat native chat collapse module. See THIRD_PARTY_NOTICES.md for required attribution. */
 package com.improvedchat.chatbox.collapse;
 
 import lombok.extern.slf4j.Slf4j;
@@ -75,12 +73,6 @@ public class ChatCollapseModule {
 
     private void refreshChatWidgets() {
         widgetManager.updateChatWidgets(state);
-    }
-
-    public void refreshAfterExternalStyleChange() {
-        if (started) {
-            clientThread.invokeLater(this::refreshChatWidgets);
-        }
     }
 
     @Subscribe
