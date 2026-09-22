@@ -1,5 +1,8 @@
 package com.improvedchat;
 
+import com.improvedchat.chatbox.collapse.ChatCollapseModule;
+import com.improvedchat.chatbox.opacity.ChatboxOpacityModule;
+import com.improvedchat.dialogue.DialogueFontsModule;
 import com.improvedchat.model.MessageCategory;
 import com.improvedchat.model.MessageMergeRule;
 import com.improvedchat.model.OverlayMessage;
@@ -171,6 +174,14 @@ public class ImprovedChatPlugin extends Plugin {
     @Inject
     private PluginManager pluginManager;
 
+    @Inject
+    private ChatCollapseModule chatCollapseModule;
+
+    @Inject
+    private ChatboxOpacityModule chatboxOpacityModule;
+
+    @Inject
+    private DialogueFontsModule dialogueFontsModule;
 
     // Shared message pool
     private final CopyOnWriteArrayList<OverlayMessage> messages = new CopyOnWriteArrayList<>();
@@ -242,6 +253,10 @@ public class ImprovedChatPlugin extends Plugin {
 
         updatePmWidgetVisibility();
 
+        chatCollapseModule.startUp();
+        chatboxOpacityModule.startUp();
+        dialogueFontsModule.startUp();
+
         panel = new ImprovedChatPanel(this);
         BufferedImage icon;
         try {
@@ -262,6 +277,10 @@ public class ImprovedChatPlugin extends Plugin {
 
     @Override
     protected void shutDown() {
+        dialogueFontsModule.shutDown();
+        chatboxOpacityModule.shutDown();
+        chatCollapseModule.shutDown();
+
         for (DynamicChatOverlay overlay : overlays) {
             overlayManager.remove(overlay);
         }
@@ -728,6 +747,27 @@ public class ImprovedChatPlugin extends Plugin {
         }
         if ("hidePrivateChat".equals(event.getKey())) {
             updatePmWidgetVisibility();
+        }
+        if ("enableCollapsibleChat".equals(event.getKey())) {
+            if (config.enableCollapsibleChat()) {
+                chatCollapseModule.startUp();
+            } else {
+                chatCollapseModule.shutDown();
+            }
+        }
+        if ("enableChatboxOpacity".equals(event.getKey())) {
+            if (config.enableChatboxOpacity()) {
+                chatboxOpacityModule.startUp();
+            } else {
+                chatboxOpacityModule.shutDown();
+            }
+        }
+        if ("enableDialogueFonts".equals(event.getKey())) {
+            if (config.enableDialogueFonts()) {
+                dialogueFontsModule.startUp();
+            } else {
+                dialogueFontsModule.shutDown();
+            }
         }
     }
 
