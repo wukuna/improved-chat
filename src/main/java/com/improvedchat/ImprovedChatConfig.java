@@ -1,13 +1,18 @@
 package com.improvedchat;
 
+import com.improvedchat.dialogue.FontChoice;
 import java.awt.Color;
+import net.runelite.client.config.Alpha;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.ConfigSection;
+import net.runelite.client.config.Range;
+import net.runelite.client.config.Units;
 
 @ConfigGroup("improvedchat")
 public interface ImprovedChatConfig extends Config {
+    String GROUP = "improvedchat";
     @ConfigSection(
         name = "General",
         description = "Global Improved Chat settings",
@@ -151,4 +156,132 @@ public interface ImprovedChatConfig extends Config {
 
     @ConfigItem(keyName = "rainbowStyle", name = "Rainbow Style", description = "Color by word or visible character", section = overlayRulesSection, position = 2)
     default RainbowStyle rainbowStyle() { return RainbowStyle.PER_WORD; }
+    @ConfigSection(
+        name = "Collapsible Chat",
+        description = "Collapse RuneLite chat to a single customizable button",
+        position = 10,
+        closedByDefault = true
+    )
+    String collapseChatSection = "collapseChat";
+
+    @ConfigSection(
+        name = "Chatbox Opacity",
+        description = "Fine tune native transparent chatbox and button opacity",
+        position = 11,
+        closedByDefault = true
+    )
+    String chatboxOpacitySection = "chatboxOpacity";
+
+    @ConfigSection(
+        name = "Dialogue Text Styling",
+        description = "Customize supported dialogue text appearance and readability",
+        position = 12,
+        closedByDefault = true
+    )
+    String dialogueFontsSection = "dialogueFonts";
+
+    enum CollapsedButtonContent {
+        STATIC_TEXT("Static text"),
+        REPORT_BUTTON_TEXT("Report button text");
+
+        private final String label;
+
+        CollapsedButtonContent(String label) {
+            this.label = label;
+        }
+
+        @Override
+        public String toString() {
+            return label;
+        }
+    }
+
+    @ConfigItem(keyName = "enableCollapsibleChat", name = "Enable Collapsible Chat", description = "Collapse native chat tabs to one button when chat is hidden", section = collapseChatSection, position = 0)
+    default boolean enableCollapsibleChat() { return false; }
+
+    @ConfigItem(keyName = "collapsedButtonContent", name = "Button Content", description = "Content shown on the single collapsed chat button", section = collapseChatSection, position = 1)
+    default CollapsedButtonContent collapsedButtonContent() { return CollapsedButtonContent.STATIC_TEXT; }
+
+    @ConfigItem(keyName = "collapsedButtonTransparent", name = "Transparent Button", description = "Make the collapsed button transparent", section = collapseChatSection, position = 2)
+    default boolean collapsedButtonTransparent() { return false; }
+
+    @ConfigItem(keyName = "collapsedButtonText", name = "Button Text", description = "Text shown while chat is collapsed", section = collapseChatSection, position = 3)
+    default String collapsedButtonContentCustomText() { return "-"; }
+
+    @ConfigItem(keyName = "collapsedButtonHoverText", name = "Hover Text", description = "Text shown while hovering the collapsed button", section = collapseChatSection, position = 4)
+    default String collapsedButtonContentCustomTextHovered() { return "+"; }
+
+    @ConfigItem(keyName = "collapseUnreadPublic", name = "Unread Public", description = "Highlight the collapsed button for unread public messages", section = collapseChatSection, position = 10)
+    default boolean highlightOnUnreadPublicMessages() { return false; }
+
+    @ConfigItem(keyName = "collapseUnreadPrivate", name = "Unread Private", description = "Highlight the collapsed button for unread private messages", section = collapseChatSection, position = 11)
+    default boolean highlightOnUnreadPrivateMessages() { return false; }
+
+    @ConfigItem(keyName = "collapseUnreadFriends", name = "Unread Friends Chat", description = "Highlight the collapsed button for unread friends chat messages", section = collapseChatSection, position = 12)
+    default boolean highlightOnUnreadFriendsChatMessages() { return false; }
+
+    @ConfigItem(keyName = "collapseUnreadClan", name = "Unread Clan", description = "Highlight the collapsed button for unread clan messages", section = collapseChatSection, position = 13)
+    default boolean highlightOnUnreadClanChatMessages() { return false; }
+
+    @ConfigItem(keyName = "collapseUnreadTrade", name = "Unread Trade", description = "Highlight the collapsed button for unread trade messages", section = collapseChatSection, position = 14)
+    default boolean highlightOnUnreadTradeMessages() { return false; }
+
+    @ConfigItem(keyName = "enableChatboxOpacity", name = "Enable Chatbox Opacity", description = "Enable transparent-chat background and button opacity controls", section = chatboxOpacitySection, position = 0)
+    default boolean enableChatboxOpacity() { return false; }
+
+    @Range(min = -1, max = 255)
+    @ConfigItem(keyName = "chatboxOpacity", name = "Chatbox Opacity", description = "-1 keeps RuneLite default; 0 is opaque and 255 is fully transparent", section = chatboxOpacitySection, position = 1)
+    default int chatboxOpacity() { return 150; }
+
+    @Range(min = -1, max = 255)
+    @ConfigItem(keyName = "buttonOpacity", name = "Button Opacity", description = "-1 keeps RuneLite default; 0 is opaque and 255 is fully transparent", section = chatboxOpacitySection, position = 2)
+    default int buttonOpacity() { return -1; }
+
+    @ConfigItem(keyName = "opacityDialogueMenus", name = "Dialogue & Menus", description = "Apply chatbox opacity to dialogue boxes and option menus shown in the chat area", section = chatboxOpacitySection, position = 3)
+    default boolean opacityDialogueMenus() { return true; }
+
+    @ConfigItem(keyName = "enableDialogueFonts", name = "Enable Dialogue Text Styling", description = "Customize supported dialogue text with configurable fonts and readability controls", section = dialogueFontsSection, position = 0)
+    default boolean enableDialogueFonts() { return false; }
+
+    @ConfigItem(keyName = "fontFamily", name = "Font", description = "Font used for dialogue text", section = dialogueFontsSection, position = 1)
+    default FontChoice fontFamily() { return FontChoice.SANS_SERIF; }
+
+    @Range(min = 10, max = 24)
+    @ConfigItem(keyName = "fontSize", name = "Font Size", description = "Dialogue text size in pixels", section = dialogueFontsSection, position = 2)
+    default int fontSize() { return 14; }
+
+    @ConfigItem(keyName = "boldText", name = "Bold", description = "Use bold dialogue text", section = dialogueFontsSection, position = 3)
+    default boolean boldText() { return false; }
+
+    @ConfigItem(keyName = "antiAlias", name = "Anti-aliasing", description = "Smooth dialogue font edges", section = dialogueFontsSection, position = 4)
+    default boolean antiAlias() { return true; }
+
+    @Range(min = 10, max = 24)
+    @ConfigItem(keyName = "dialogueOptionFontSize", name = "Option Font Size", description = "Separate font size for dialogue option rows", section = dialogueFontsSection, position = 5)
+    default int dialogueOptionFontSize() { return 13; }
+
+    @Range(min = -2, max = 8)
+    @Units(Units.PIXELS)
+    @ConfigItem(keyName = "dialogueLineSpacing", name = "Line Spacing", description = "Extra spacing between wrapped dialogue lines", section = dialogueFontsSection, position = 6)
+    default int dialogueLineSpacing() { return 0; }
+
+    @ConfigItem(keyName = "dialogueTextShadow", name = "Text Shadow", description = "Draw a subtle shadow behind replacement dialogue text", section = dialogueFontsSection, position = 7)
+    default boolean dialogueTextShadow() { return false; }
+
+    @Alpha
+    @ConfigItem(keyName = "dialogueShadowColor", name = "Shadow Color", description = "Color and opacity of the optional dialogue text shadow", section = dialogueFontsSection, position = 8)
+    default Color dialogueShadowColor() { return new Color(0, 0, 0, 150); }
+
+    @ConfigItem(keyName = "replaceNpc", name = "NPC Dialogue", description = "Replace NPC dialogue text", section = dialogueFontsSection, position = 10)
+    default boolean replaceNpc() { return true; }
+
+    @ConfigItem(keyName = "replacePlayer", name = "Player Dialogue", description = "Replace player dialogue text", section = dialogueFontsSection, position = 11)
+    default boolean replacePlayer() { return true; }
+
+    @ConfigItem(keyName = "replaceOptions", name = "Option Menus", description = "Replace dialogue option-menu text while preserving 1–5 keyboard selection", section = dialogueFontsSection, position = 12)
+    default boolean replaceOptions() { return true; }
+
+    @ConfigItem(keyName = "replaceSprite", name = "Item/Action Dialogue", description = "Replace item and action dialogue text", section = dialogueFontsSection, position = 13)
+    default boolean replaceSprite() { return true; }
+
 }
