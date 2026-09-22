@@ -5,6 +5,10 @@ Improved Chat is a separate RuneLite Plugin Hub plugin for building configurable
 The project is derived in part from the BSD-2-Clause **Chat Widgets** plugin, but it has its own package, configuration namespace, repository, feature set, and Plugin Hub identity. It does not read or write Chat Widgets' saved configuration.
 
 ## Features
+- Collapse the native chatbox to a single configurable button.
+- Control transparent chatbox/button opacity, with an option to preserve dialogue and option-menu opacity.
+- Customize supported NPC, player, option-menu, and item/action dialogue text.
+
 
 - Create multiple independent chat overlays and choose the message categories shown by each one.
 - Use RuneLite's normal movable/resizable overlay placement, or attach an overlay above/below the local player.
