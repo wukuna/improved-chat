@@ -5,6 +5,7 @@ import com.improvedchat.ImprovedChatConfig;
 
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
+import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.gameval.SpriteID;
 import net.runelite.api.widgets.JavaScriptCallback;
 import net.runelite.api.widgets.Widget;
@@ -23,11 +24,29 @@ public class ChatWidgetManager {
     private ImprovedChatConfig config;
 
     private static final String ORIGINAL_ALL_BUTTON_TEXT = "All";
+    private Widget collapsedBackground;
+    private boolean backgroundWasHidden;
 
     public void updateChatWidgets(ChatState state) {
+        updateControlsBackground(state.isCollapsed());
         toggleChatButtonVisibility(state);
         updateAllButtonGraphic(state);
         updateButtonContent(state);
+    }
+
+    private void updateControlsBackground(boolean collapsed) {
+        Widget background = client.getWidget(InterfaceID.Chatbox.CONTROLS_BACKGROUND_GRAPHIC);
+        if (collapsedBackground != null && (!collapsed || collapsedBackground != background)) {
+            collapsedBackground.setHidden(backgroundWasHidden);
+            collapsedBackground = null;
+        }
+        if (!collapsed || background == null) return;
+        if (collapsedBackground == null) {
+            collapsedBackground = background;
+            backgroundWasHidden = background.isSelfHidden();
+        }
+        // Hide only the bar artwork; the All button and its click target remain live.
+        background.setHidden(true);
     }
 
     private void toggleChatButtonVisibility(ChatState state) {

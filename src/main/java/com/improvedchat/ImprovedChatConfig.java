@@ -327,7 +327,7 @@ public interface ImprovedChatConfig extends Config {
     @ConfigItem(keyName = REVERT_FOR_MODALS, name = "Revert For Interfaces", description = "Temporarily return adjusted dimensions toward stock while top-level interfaces are open", section = resizeChatSection, position = 21)
     default Revert revertForModals() { return Revert.UNGROW; }
 
-    @ConfigItem(keyName = TOGGLE_SHOW_CHAT, name = "Show/Hide Chat Keybind", description = "Hide or unhide the native chatbox", section = resizeChatSection, position = 6)
+    @ConfigItem(keyName = TOGGLE_SHOW_CHAT, name = "Collapse Chat Keybind", description = "Open or close native chat with a keybind (for example, backtick). Works with Collapsible Chat or Resizable Chat enabled; fixed layout also requires Hideable Fixed Chat.", section = collapseChatSection, position = 15)
     default Keybind toggleShowChat() { return Keybind.NOT_SET; }
 
     @ConfigItem(keyName = NO_BORDERS, name = "Don't Draw Resize Borders", description = "Hide Improved Chat's resize frame; native dialogue and option-menu borders remain untouched", section = resizeChatSection, position = 30)

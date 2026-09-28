@@ -274,18 +274,24 @@ public class ChatResizeModule {
     }
 
     // Hide or unhide chat on keybind
-    private final HotkeyListener hideChatHotkey = new HotkeyListener(() -> config.toggleShowChat()) {
+    private final HotkeyListener hideChatHotkey = new HotkeyListener(
+        () -> config.enableCollapsibleChat() ? Keybind.NOT_SET : config.toggleShowChat()) {
         @Override public void hotkeyPressed() {
             clientThread.invoke(() -> {
-                if (events == null || client.getGameState() != GameState.LOGGED_IN) return;
-                if (client.isResized()) {
-                    resizable.toggleHidden();
-                } else if (config.fixedTabCollapse()) {
-                    fixedChat.setCollapsed(!fixedChat.isCollapsed());
-                }
+                // Collapsible Chat owns the shared binding while it is enabled.
+                if (!config.enableCollapsibleChat()) toggleChat();
             });
         }
     };
+
+    public void toggleChat() {
+        if (events == null || client.getGameState() != GameState.LOGGED_IN) return;
+        if (client.isResized()) {
+            resizable.toggleHidden();
+        } else if (config.fixedTabCollapse()) {
+            fixedChat.setCollapsed(!fixedChat.isCollapsed());
+        }
+    }
 
     // Swap to the secondary size while its keybind is held, or toggled with it, per the configured mode
     private final HotkeyListener swapSizeHotkey = new HotkeyListener(() -> config.secondaryKeybind()) {

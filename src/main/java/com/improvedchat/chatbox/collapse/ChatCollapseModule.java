@@ -4,8 +4,10 @@ package com.improvedchat.chatbox.collapse;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
+import net.runelite.api.GameState;
 import net.runelite.api.ScriptID;
 import net.runelite.api.events.ChatMessage;
+import net.runelite.api.events.BeforeRender;
 import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.events.ScriptPostFired;
 import net.runelite.api.events.VarClientIntChanged;
@@ -22,6 +24,10 @@ import com.improvedchat.ImprovedChatConfig;
 import com.improvedchat.chatbox.opacity.ChatboxOpacityModule;
 import net.runelite.api.events.GameTick;
 import net.runelite.client.eventbus.EventBus;
+import net.runelite.client.input.KeyManager;
+import net.runelite.client.util.HotkeyListener;
+import com.improvedchat.chatbox.resize.ChatResizeModule;
+import com.improvedchat.chatbox.resize.internal.RawScripts;
 
 
 @Slf4j
@@ -42,14 +48,39 @@ public class ChatCollapseModule {
     private EventBus eventBus;
     @Inject
     private ChatboxOpacityModule chatboxOpacityModule;
+    @Inject
+    private KeyManager keyManager;
+    @Inject
+    private ChatResizeModule chatResizeModule;
 
     private boolean started;
+    private int lastOpenTab;
+
+    private final HotkeyListener collapseHotkey = new HotkeyListener(() -> config.toggleShowChat()) {
+        @Override public void hotkeyPressed() {
+            clientThread.invoke(ChatCollapseModule.this::toggleChat);
+        }
+    };
+
+    void toggleChat() {
+        if (!started || client.getGameState() != GameState.LOGGED_IN) return;
+        if (config.enableResizableChat()) {
+            chatResizeModule.toggleChat();
+        } else if (client.isResized()) {
+            int tab = client.getVarcIntValue(VarClientID.CHAT_VIEW);
+            if (tab >= 0 && tab <= 6) lastOpenTab = tab;
+            client.runScript(RawScripts.CHAT_TAB_CLICKED, 1,
+                tab == RawScripts.COLLAPSED_TAB ? lastOpenTab : tab);
+        }
+    }
 
     public synchronized void startUp() {
         if (started || !config.enableCollapsibleChat()) {
             return;
         }
         started = true;
+        lastOpenTab = 0;
+        keyManager.registerKeyListener(collapseHotkey);
         state.reset();
         eventBus.register(this);
         clientThread.invokeLater(this::refreshAll);
@@ -60,6 +91,7 @@ public class ChatCollapseModule {
             return;
         }
         started = false;
+        keyManager.unregisterKeyListener(collapseHotkey);
         eventBus.unregister(this);
         state.reset();
         clientThread.invokeLater(() -> {
@@ -78,6 +110,14 @@ public class ChatCollapseModule {
     private void refreshChatWidgets() {
         widgetManager.updateChatWidgets(state);
         chatboxOpacityModule.reapplyAfterChatMutation();
+    }
+
+    @Subscribe(priority = -1)
+    public void onBeforeRender(BeforeRender event) {
+        // Native rebuilds and the resize module may rewrite the controls earlier in this frame.
+        if (!started) return;
+        updateChatState();
+        widgetManager.updateChatWidgets(state);
     }
 
     @Subscribe
@@ -158,6 +198,8 @@ public class ChatCollapseModule {
     }
 
     private void updateChatState() {
+        int tab = client.getVarcIntValue(VarClientID.CHAT_VIEW);
+        if (tab >= 0 && tab <= 6) lastOpenTab = tab;
         state.selectedChatButton = widgetManager.getSelectedChatButton();
         if (state.selectedChatButton == null) {
             state.collapseState = ChatCollapseState.COLLAPSED;
