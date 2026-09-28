@@ -23,6 +23,16 @@ Improved Chat's single-button native chat collapse behavior is derived from the 
 - Copyright: Copyright (c) 2025, stutify
 - License: BSD 2-Clause
 
+## Chat Resizer
+
+Improved Chat's advanced native chat resizing module is derived from the BSD-2-Clause **Chat Resizer / Better Resizable Chat** plugin:
+
+- Repository: `https://github.com/shanktank/better-resizable-chat`
+- Copyright: Copyright (c) 2026, shanktank
+- License: BSD 2-Clause
+
+The integrated module retains resizable/fixed layout sizing, private-chat rewrapping, tab resizing, interface growth, dialog/interface reversion, drag resizing, secondary sizes, and compatibility controls.
+
 ## Chatbox Opacity
 
 Improved Chat's optional native transparent-chat opacity controls are derived from **Chatbox Opacity**:

@@ -7,6 +7,7 @@ import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.ConfigSection;
+import net.runelite.client.config.Keybind;
 import net.runelite.client.config.Range;
 import net.runelite.client.config.Units;
 
@@ -165,9 +166,33 @@ public interface ImprovedChatConfig extends Config {
     String collapseChatSection = "collapseChat";
 
     @ConfigSection(
+        name = "Resizable Chat",
+        description = "Resize RuneLite chat in resizable and fixed layouts",
+        position = 11,
+        closedByDefault = true
+    )
+    String resizeChatSection = "resizeChat";
+
+    @ConfigSection(
+        name = "Drag Resizing",
+        description = "Resize chat by dragging its border",
+        position = 12,
+        closedByDefault = true
+    )
+    String dragResizeSection = "dragResize";
+
+    @ConfigSection(
+        name = "Secondary Chat Size",
+        description = "Swap to a second chat size with a keybind",
+        position = 13,
+        closedByDefault = true
+    )
+    String secondarySizeSection = "secondarySize";
+
+    @ConfigSection(
         name = "Chatbox Opacity",
         description = "Fine tune native transparent chatbox and button opacity",
-        position = 11,
+        position = 14,
         closedByDefault = true
     )
     String chatboxOpacitySection = "chatboxOpacity";
@@ -175,7 +200,7 @@ public interface ImprovedChatConfig extends Config {
     @ConfigSection(
         name = "Dialogue Text Styling",
         description = "Customize supported dialogue text appearance and readability",
-        position = 12,
+        position = 15,
         closedByDefault = true
     )
     String dialogueFontsSection = "dialogueFonts";
@@ -195,6 +220,43 @@ public interface ImprovedChatConfig extends Config {
             return label;
         }
     }
+
+    enum Revert {
+        UNGROW, UNSHRINK, BOTH, NEITHER;
+
+        public boolean ungrows() {
+            return this == UNGROW || this == BOTH;
+        }
+
+        public boolean unshrinks() {
+            return this == UNSHRINK || this == BOTH;
+        }
+    }
+
+    enum Mode {
+        HOLD, TOGGLE
+    }
+
+    String HEIGHT_CHANGE = "heightChange";
+    String WIDTH_CHANGE = "widthChange";
+    String REWRAP_PRIVATE_CHAT = "rewrapPrivateChat";
+    String RESIZE_TAB_BUTTONS = "resizeTabButtons";
+    String GROW_INTERFACES = "growInterfaces";
+    String FIXED_HEIGHT_CHANGE = "fixedHeightChange";
+    String FIXED_TAB_COLLAPSE = "fixedTabCollapse";
+    String FIXED_ADJUST_VIEWPORT = "fixedAdjustViewport";
+    String REVERT_FOR_DIALOGS = "revertForDialogs";
+    String REVERT_FOR_MODALS = "revertForModals";
+    String TOGGLE_SHOW_CHAT = "toggleShowChat";
+    String INDICATOR_COLOR = "indicatorColor";
+    String DRAG_MODIFIER = "dragModifier";
+    String LIVE_REWRAP = "liveRewrap";
+    String SWAP_HEIGHT_CHANGE = "swapHeightChange";
+    String SWAP_WIDTH_CHANGE = "swapWidthChange";
+    String SWAP_SIZE_KEYBIND = "swapSizeKeybind";
+    String SWAP_SIZE_MODE = "swapSizeMode";
+    String NO_BORDERS = "noBorders";
+    String NO_BACKGROUND_ZOOM = "noBackgroundZoom";
 
     @ConfigItem(keyName = "enableCollapsibleChat", name = "Enable Collapsible Chat", description = "Collapse native chat tabs to one button when chat is hidden", section = collapseChatSection, position = 0)
     default boolean enableCollapsibleChat() { return false; }
@@ -225,6 +287,80 @@ public interface ImprovedChatConfig extends Config {
 
     @ConfigItem(keyName = "collapseUnreadTrade", name = "Unread Trade", description = "Highlight the collapsed button for unread trade messages", section = collapseChatSection, position = 14)
     default boolean highlightOnUnreadTradeMessages() { return false; }
+
+    @ConfigItem(keyName = "enableResizableChat", name = "Enable Resizable Chat", description = "Enable advanced native chat resizing", section = resizeChatSection, position = 0)
+    default boolean enableResizableChat() { return false; }
+
+    @Range(min = -165, max = 10000)
+    @Units(Units.PIXELS)
+    @ConfigItem(keyName = HEIGHT_CHANGE, name = "Resizable Height Change", description = "Add or subtract native chat height in resizable layout", section = resizeChatSection, position = 1)
+    default int heightChange() { return 28; }
+
+    @Range(min = -519, max = 10000)
+    @Units(Units.PIXELS)
+    @ConfigItem(keyName = WIDTH_CHANGE, name = "Resizable Width Change", description = "Add or subtract native chat width in resizable layout", section = resizeChatSection, position = 2)
+    default int widthChange() { return 80; }
+
+    @ConfigItem(keyName = REWRAP_PRIVATE_CHAT, name = "Adjust Private Split Width", description = "Match split-private-message width to resized chat", section = resizeChatSection, position = 3)
+    default boolean rewrapPrivateChat() { return true; }
+
+    @ConfigItem(keyName = RESIZE_TAB_BUTTONS, name = "Resize Chat Tab Buttons", description = "Stretch chat tabs to match adjusted width", section = resizeChatSection, position = 4)
+    default boolean resizeTabButtons() { return false; }
+
+    @ConfigItem(keyName = GROW_INTERFACES, name = "Grow Interface Height", description = "Let interfaces reclaim space freed by a smaller chatbox", section = resizeChatSection, position = 5)
+    default boolean growInterfaces() { return true; }
+
+    @Range(min = -165, max = 10000)
+    @Units(Units.PIXELS)
+    @ConfigItem(keyName = FIXED_HEIGHT_CHANGE, name = "Fixed Height Change", description = "Add or subtract native chat height in fixed layout", section = resizeChatSection, position = 10)
+    default int fixedHeightChange() { return 0; }
+
+    @ConfigItem(keyName = FIXED_TAB_COLLAPSE, name = "Hideable Fixed Chat", description = "Allow fixed-layout chat to be hidden like resizable chat", section = resizeChatSection, position = 11)
+    default boolean fixedTabCollapse() { return true; }
+
+    @ConfigItem(keyName = FIXED_ADJUST_VIEWPORT, name = "Adjust Camera On Grow", description = "Keep the player centered when fixed chat grows", section = resizeChatSection, position = 12)
+    default boolean fixedAdjustViewport() { return false; }
+
+    @ConfigItem(keyName = REVERT_FOR_DIALOGS, name = "Revert For Dialogs", description = "Temporarily return adjusted dimensions toward stock while chat dialogs are open", section = resizeChatSection, position = 20)
+    default Revert revertForDialogs() { return Revert.BOTH; }
+
+    @ConfigItem(keyName = REVERT_FOR_MODALS, name = "Revert For Interfaces", description = "Temporarily return adjusted dimensions toward stock while top-level interfaces are open", section = resizeChatSection, position = 21)
+    default Revert revertForModals() { return Revert.UNGROW; }
+
+    @ConfigItem(keyName = TOGGLE_SHOW_CHAT, name = "Show/Hide Chat Keybind", description = "Hide or unhide the native chatbox", section = resizeChatSection, position = 6)
+    default Keybind toggleShowChat() { return Keybind.NOT_SET; }
+
+    @ConfigItem(keyName = NO_BORDERS, name = "Don't Draw Resize Borders", description = "Hide Improved Chat's resize frame; native dialogue and option-menu borders remain untouched", section = resizeChatSection, position = 30)
+    default boolean noBorders() { return false; }
+
+    @ConfigItem(keyName = NO_BACKGROUND_ZOOM, name = "Don't Zoom Background", description = "Keep the normal opaque chat background at its native artwork scale", section = resizeChatSection, position = 31)
+    default boolean noBackgroundZoom() { return false; }
+
+    @ConfigItem(keyName = DRAG_MODIFIER, name = "Drag-Resize Modifier", description = "Hold this key while dragging a chat border to resize; unset disables drag resizing", section = dragResizeSection, position = 0)
+    default Keybind dragModifier() { return Keybind.NOT_SET; }
+
+    @ConfigItem(keyName = LIVE_REWRAP, name = "Live Re-wrap", description = "Re-wrap chat continuously while drag-resizing", section = dragResizeSection, position = 1)
+    default boolean liveRewrap() { return true; }
+
+    @Alpha
+    @ConfigItem(keyName = INDICATOR_COLOR, name = "Drag Indicator Color", description = "Color of the active drag-resize border", section = dragResizeSection, position = 2)
+    default Color indicatorColor() { return Color.GREEN; }
+
+    @Range(min = -165, max = 10000)
+    @Units(Units.PIXELS)
+    @ConfigItem(keyName = SWAP_HEIGHT_CHANGE, name = "Secondary Height Change", description = "Height change while the secondary size is active", section = secondarySizeSection, position = 0)
+    default int secondaryHeightChange() { return 0; }
+
+    @Range(min = -519, max = 10000)
+    @Units(Units.PIXELS)
+    @ConfigItem(keyName = SWAP_WIDTH_CHANGE, name = "Secondary Width Change", description = "Width change while the secondary size is active", section = secondarySizeSection, position = 1)
+    default int secondaryWidthChange() { return 0; }
+
+    @ConfigItem(keyName = SWAP_SIZE_MODE, name = "Secondary Size Mode", description = "Hold or toggle the secondary chat size", section = secondarySizeSection, position = 2)
+    default Mode secondaryMode() { return Mode.HOLD; }
+
+    @ConfigItem(keyName = SWAP_SIZE_KEYBIND, name = "Secondary Size Keybind", description = "Switch to the secondary chat size", section = secondarySizeSection, position = 3)
+    default Keybind secondaryKeybind() { return Keybind.NOT_SET; }
 
     @ConfigItem(keyName = "enableChatboxOpacity", name = "Enable Chatbox Opacity", description = "Enable transparent-chat background and button opacity controls", section = chatboxOpacitySection, position = 0)
     default boolean enableChatboxOpacity() { return false; }

@@ -2,6 +2,7 @@ package com.improvedchat;
 
 import com.improvedchat.chatbox.collapse.ChatCollapseModule;
 import com.improvedchat.chatbox.opacity.ChatboxOpacityModule;
+import com.improvedchat.chatbox.resize.ChatResizeModule;
 import com.improvedchat.dialogue.DialogueFontsModule;
 import com.improvedchat.model.MessageCategory;
 import com.improvedchat.model.MessageMergeRule;
@@ -175,6 +176,9 @@ public class ImprovedChatPlugin extends Plugin {
     private PluginManager pluginManager;
 
     @Inject
+    private ChatResizeModule chatResizeModule;
+
+    @Inject
     private ChatCollapseModule chatCollapseModule;
 
     @Inject
@@ -253,6 +257,7 @@ public class ImprovedChatPlugin extends Plugin {
 
         updatePmWidgetVisibility();
 
+        chatResizeModule.startUp();
         chatCollapseModule.startUp();
         chatboxOpacityModule.startUp();
         dialogueFontsModule.startUp();
@@ -280,6 +285,7 @@ public class ImprovedChatPlugin extends Plugin {
         dialogueFontsModule.shutDown();
         chatboxOpacityModule.shutDown();
         chatCollapseModule.shutDown();
+        chatResizeModule.shutDown();
 
         for (DynamicChatOverlay overlay : overlays) {
             overlayManager.remove(overlay);
@@ -747,6 +753,13 @@ public class ImprovedChatPlugin extends Plugin {
         }
         if ("hidePrivateChat".equals(event.getKey())) {
             updatePmWidgetVisibility();
+        }
+        if ("enableResizableChat".equals(event.getKey())) {
+            if (config.enableResizableChat()) {
+                chatResizeModule.startUp();
+            } else {
+                chatResizeModule.shutDown();
+            }
         }
         if ("enableCollapsibleChat".equals(event.getKey())) {
             if (config.enableCollapsibleChat()) {

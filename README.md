@@ -8,6 +8,7 @@ The project is derived in part from the BSD-2-Clause **Chat Widgets** plugin, bu
 - Collapse the native chatbox to a single configurable button.
 - Control transparent chatbox/button opacity, with an option to preserve dialogue and option-menu opacity.
 - Customize supported NPC, player, option-menu, and item/action dialogue text.
+- Resize native chat in resizable and fixed layouts, including private-chat rewrapping, tab resizing, interface growth, dialog/interface reversion, drag resizing, and a keybound secondary size.
 
 
 - Create multiple independent chat overlays and choose the message categories shown by each one.
@@ -24,6 +25,10 @@ The project is derived in part from the BSD-2-Clause **Chat Widgets** plugin, bu
 ## How it differs from Chat Widgets
 
 Improved Chat is not only a widget-layout variant. In addition to configurable chat overlays, it adds chatbox message recoloring rules, overlay-only rainbow rules, attention/flash rules, border and background attention effects, richer text styling, and expanded placement controls. The plugin declares a conflict with Chat Widgets so both overlapping chat-overlay implementations are not active at the same time.
+
+## Resource Packs compatibility
+
+Resizable Chat includes **Don't Draw Resize Borders** and **Don't Zoom Background** controls for custom chatbox artwork that should not be stretched or framed by Improved Chat.
 
 ## Rule syntax
 
