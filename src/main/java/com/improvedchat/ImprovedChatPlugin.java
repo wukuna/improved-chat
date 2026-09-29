@@ -4,6 +4,7 @@ import com.improvedchat.chatbox.collapse.ChatCollapseModule;
 import com.improvedchat.chatbox.opacity.ChatboxOpacityModule;
 import com.improvedchat.chatbox.resize.ChatResizeModule;
 import com.improvedchat.dialogue.DialogueFontsModule;
+import com.improvedchat.release.ReleaseNoticeModule;
 import com.improvedchat.model.MessageCategory;
 import com.improvedchat.model.MessageMergeRule;
 import com.improvedchat.model.OverlayMessage;
@@ -187,6 +188,9 @@ public class ImprovedChatPlugin extends Plugin {
     @Inject
     private DialogueFontsModule dialogueFontsModule;
 
+    @Inject
+    private ReleaseNoticeModule releaseNoticeModule;
+
     // Shared message pool
     private final CopyOnWriteArrayList<OverlayMessage> messages = new CopyOnWriteArrayList<>();
 
@@ -261,6 +265,7 @@ public class ImprovedChatPlugin extends Plugin {
         chatCollapseModule.startUp();
         chatboxOpacityModule.startUp();
         dialogueFontsModule.startUp();
+        releaseNoticeModule.startUp();
 
         panel = new ImprovedChatPanel(this);
         BufferedImage icon;
@@ -282,6 +287,7 @@ public class ImprovedChatPlugin extends Plugin {
 
     @Override
     protected void shutDown() {
+        releaseNoticeModule.shutDown();
         dialogueFontsModule.shutDown();
         chatboxOpacityModule.shutDown();
         chatCollapseModule.shutDown();
