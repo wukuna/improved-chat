@@ -62,8 +62,10 @@ public final class CleanChatModule {
         overlayManager.add(colorBarOverlay);
 
         clientThread.invoke(() -> {
-            handleScrollbarVisibility(config.hideScrollbar());
-            if (client.getGameState() == GameState.LOGGED_IN) {
+            if (config.hideScrollbar()) {
+                handleScrollbarVisibility(true);
+            }
+            if (client.getGameState() == GameState.LOGGED_IN && hasActiveCleanupSettings(config)) {
                 client.refreshChat();
             }
         });
@@ -86,8 +88,10 @@ public final class CleanChatModule {
         channelNameManager.shutdown();
 
         clientThread.invoke(() -> {
-            handleScrollbarVisibility(false);
-            if (client.getGameState() == GameState.LOGGED_IN) {
+            if (config.hideScrollbar()) {
+                handleScrollbarVisibility(false);
+            }
+            if (client.getGameState() == GameState.LOGGED_IN && hasActiveCleanupSettings(config)) {
                 client.refreshChat();
             }
         });
@@ -181,6 +185,32 @@ public final class CleanChatModule {
             default:
                 return false;
         }
+    }
+
+    static boolean hasActiveCleanupSettings(ImprovedChatConfig config) {
+        return config.removeWelcome()
+            || config.indentationMode() != com.improvedchat.chatbox.clean.data.IndentMode.MESSAGE
+            || config.hideScrollbar()
+            || config.hideSpecs()
+            || config.isFixedWidthTimestampEnabled()
+            || config.isColorBarEnabled()
+            || config.removeClanInstruction()
+            || config.removeClanName()
+            || config.removeClanRank()
+            || config.removeGuestClanInstruction()
+            || config.removeGuestClanReconnecting()
+            || config.removeGuestClanName()
+            || config.removeGroupIronInstruction()
+            || config.removeGroupIronName()
+            || config.removeGroupIronFromClan()
+            || config.removeFriendsChatStartup()
+            || config.removeFriendsChatName()
+            || config.removeFriendsAttempting()
+            || config.removeFriendsNowTalking()
+            || !ImprovedChatConfig.DEFAULT_CUSTOM_CHANNEL_NAME.equals(config.getShortClanName())
+            || !ImprovedChatConfig.DEFAULT_CUSTOM_CHANNEL_NAME.equals(config.getShortGuestClanName())
+            || !ImprovedChatConfig.DEFAULT_CUSTOM_CHANNEL_NAME.equals(config.getShortGroupIronName())
+            || !ImprovedChatConfig.DEFAULT_CUSTOM_CHANNEL_NAME.equals(config.getShortFriendsName());
     }
 
     private boolean findTimestampPluginEnabled() {
