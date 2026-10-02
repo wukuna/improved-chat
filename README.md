@@ -8,6 +8,9 @@ The project is derived in part from the BSD-2-Clause **Chat Widgets** plugin, bu
 - Collapse the native chatbox to a single configurable button.
 - Control transparent chatbox/button opacity, with an option to preserve dialogue and option-menu opacity.
 - Customize supported NPC, player, option-menu, and item/action dialogue text.
+- Clean up native chat labels, startup text, wrapping, scrollbars, timestamps, and optional channel color bars.
+- Simplify chat-message context menus and optionally mark offline clan members.
+- Yield conflicting native-chat controls automatically while the standalone Modern Chat redesign owns them.
 - Resize native chat in resizable and fixed layouts, including private-chat rewrapping, tab resizing, interface growth, dialog/interface reversion, drag resizing, and a keybound secondary size.
 
 
