@@ -21,6 +21,11 @@ public final class OverlayConfig {
     private String id = UUID.randomUUID().toString();
     private String name = "Custom Overlay";
     private Set<ChatMessageType> messageTypes = EnumSet.noneOf(ChatMessageType.class);
+    private boolean useGlobalChatFilter;
+    private OverlayFilterMode filterMode = OverlayFilterMode.OFF;
+    private String filteredWords = "";
+    private String filteredRegex = "";
+    private String filteredNames = "";
     private int maxMessages = 10;
     private int fadeOutDuration;
     private int widgetWidth = 512;
@@ -120,6 +125,25 @@ public final class OverlayConfig {
                 ? EnumSet.noneOf(ChatMessageType.class)
                 : EnumSet.copyOf(value);
     }
+
+    public boolean isUseGlobalChatFilter() { return useGlobalChatFilter; }
+    public void setUseGlobalChatFilter(boolean value) { useGlobalChatFilter = value; }
+
+    public OverlayFilterMode getFilterMode() {
+        return filterMode == null ? OverlayFilterMode.OFF : filterMode;
+    }
+    public void setFilterMode(OverlayFilterMode value) {
+        filterMode = value == null ? OverlayFilterMode.OFF : value;
+    }
+
+    public String getFilteredWords() { return filteredWords == null ? "" : filteredWords; }
+    public void setFilteredWords(String value) { filteredWords = value == null ? "" : value; }
+
+    public String getFilteredRegex() { return filteredRegex == null ? "" : filteredRegex; }
+    public void setFilteredRegex(String value) { filteredRegex = value == null ? "" : value; }
+
+    public String getFilteredNames() { return filteredNames == null ? "" : filteredNames; }
+    public void setFilteredNames(String value) { filteredNames = value == null ? "" : value; }
 
     public int getMaxMessages() { return maxMessages; }
     public void setMaxMessages(int value) { maxMessages = clamp(value, 1, 20); }
