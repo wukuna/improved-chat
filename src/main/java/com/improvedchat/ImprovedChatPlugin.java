@@ -1,8 +1,13 @@
 package com.improvedchat;
 
+import com.improvedchat.chatbox.clean.CleanChatModule;
 import com.improvedchat.chatbox.collapse.ChatCollapseModule;
+import com.improvedchat.chatbox.menu.RemoveChatOptionsModule;
+import com.improvedchat.chatbox.offline.OfflineChatStatusModule;
 import com.improvedchat.chatbox.opacity.ChatboxOpacityModule;
 import com.improvedchat.chatbox.resize.ChatResizeModule;
+import com.improvedchat.compat.ModernChatCompatibility;
+import com.improvedchat.compat.ModernChatOwnership;
 import com.improvedchat.dialogue.DialogueFontsModule;
 import com.improvedchat.release.ReleaseNoticeModule;
 import com.improvedchat.model.MessageCategory;
@@ -31,10 +36,12 @@ import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.gameval.VarClientID;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.Widget;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.config.ChatColorConfig;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.events.OverlayMenuClicked;
+import net.runelite.client.events.PluginChanged;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
@@ -177,6 +184,15 @@ public class ImprovedChatPlugin extends Plugin {
     private PluginManager pluginManager;
 
     @Inject
+    private ClientThread clientThread;
+
+    @Inject
+    private ModernChatCompatibility modernChatCompatibility;
+
+    @Inject
+    private CleanChatModule cleanChatModule;
+
+    @Inject
     private ChatResizeModule chatResizeModule;
 
     @Inject
@@ -184,6 +200,12 @@ public class ImprovedChatPlugin extends Plugin {
 
     @Inject
     private ChatboxOpacityModule chatboxOpacityModule;
+
+    @Inject
+    private RemoveChatOptionsModule removeChatOptionsModule;
+
+    @Inject
+    private OfflineChatStatusModule offlineChatStatusModule;
 
     @Inject
     private DialogueFontsModule dialogueFontsModule;
@@ -261,11 +283,11 @@ public class ImprovedChatPlugin extends Plugin {
 
         updatePmWidgetVisibility();
 
-        chatResizeModule.startUp();
-        chatCollapseModule.startUp();
-        chatboxOpacityModule.startUp();
+        reconcileNativeChatOwnership(modernChatCompatibility.startupSnapshot());
+        removeChatOptionsModule.startUp();
         dialogueFontsModule.startUp();
         releaseNoticeModule.startUp();
+        scheduleNativeChatOwnershipReconcile();
 
         panel = new ImprovedChatPanel(this);
         BufferedImage icon;
@@ -289,6 +311,9 @@ public class ImprovedChatPlugin extends Plugin {
     protected void shutDown() {
         releaseNoticeModule.shutDown();
         dialogueFontsModule.shutDown();
+        offlineChatStatusModule.shutDown();
+        removeChatOptionsModule.shutDown();
+        cleanChatModule.shutDown();
         chatboxOpacityModule.shutDown();
         chatCollapseModule.shutDown();
         chatResizeModule.shutDown();
@@ -740,6 +765,115 @@ public class ImprovedChatPlugin extends Plugin {
         }
     }
 
+    private void reconcileNativeChatOwnership() {
+        reconcileNativeChatOwnership(modernChatCompatibility.snapshot());
+    }
+
+    private void reconcileNativeChatOwnership(ModernChatOwnership ownership) {
+        if (config.enableResizableChat() && !ownership.blocksGeometry()) {
+            chatResizeModule.startUp();
+        } else {
+            chatResizeModule.shutDown();
+        }
+
+        if (config.enableCollapsibleChat() && !ownership.blocksVisibility()) {
+            chatCollapseModule.startUp();
+        } else {
+            chatCollapseModule.shutDown();
+        }
+
+        if (config.enableChatboxOpacity() && !ownership.blocksNativePresentation()) {
+            chatboxOpacityModule.startUp();
+        } else {
+            chatboxOpacityModule.shutDown();
+        }
+
+        if (!ownership.blocksNativePresentation()) {
+            cleanChatModule.startUp();
+        } else {
+            cleanChatModule.shutDown();
+        }
+
+        if (config.enableOfflineChatStatus() && !ownership.blocksNativePresentation()) {
+            offlineChatStatusModule.startUp();
+        } else {
+            offlineChatStatusModule.shutDown();
+        }
+    }
+
+    private void suspendForModernChatOwnership(ModernChatOwnership ownership) {
+        if (ownership.blocksNativePresentation()) {
+            offlineChatStatusModule.shutDown();
+            cleanChatModule.shutDown();
+            chatboxOpacityModule.shutDown();
+        }
+        if (ownership.blocksVisibility()) {
+            chatCollapseModule.shutDown();
+        }
+        if (ownership.blocksGeometry()) {
+            chatResizeModule.shutDown();
+        }
+    }
+
+    private void suspendForModernChatConfigTransition(String key) {
+        if (modernChatCompatibility.isRedesignKey(key)) {
+            offlineChatStatusModule.shutDown();
+            cleanChatModule.shutDown();
+            chatboxOpacityModule.shutDown();
+            chatCollapseModule.shutDown();
+            chatResizeModule.shutDown();
+        } else if (modernChatCompatibility.isToggleKey(key)) {
+            chatCollapseModule.shutDown();
+        }
+    }
+
+    private void scheduleNativeChatOwnershipReconcile() {
+        clientThread.invokeAtTickEnd(this::reconcileNativeChatOwnership);
+    }
+
+    @Subscribe(priority = 100f)
+    public void onModernChatPluginEnableChanging(ConfigChanged event) {
+        if (!modernChatCompatibility.isModernChatEnableConfig(event.getGroup(), event.getKey())
+                || !"true".equalsIgnoreCase(event.getNewValue())) {
+            return;
+        }
+
+        suspendForModernChatOwnership(modernChatCompatibility.startupSnapshot());
+    }
+
+    @Subscribe(priority = 100f)
+    public void onModernChatOwnershipConfigChanging(ConfigChanged event) {
+        if (!modernChatCompatibility.isOwnershipConfig(event.getGroup(), event.getKey())
+                || !modernChatCompatibility.isModernChatActive()) {
+            return;
+        }
+
+        suspendForModernChatConfigTransition(event.getKey());
+    }
+
+    @Subscribe(priority = -100f)
+    public void onModernChatOwnershipConfigChanged(ConfigChanged event) {
+        if (!modernChatCompatibility.isOwnershipConfig(event.getGroup(), event.getKey())
+                || !modernChatCompatibility.isModernChatActive()) {
+            return;
+        }
+
+        scheduleNativeChatOwnershipReconcile();
+    }
+
+    @Subscribe
+    public void onPluginChanged(PluginChanged event) {
+        if (!modernChatCompatibility.isModernChatPlugin(event.getPlugin())) {
+            return;
+        }
+
+        if (event.isLoaded()) {
+            suspendForModernChatOwnership(modernChatCompatibility.snapshot());
+        }
+
+        scheduleNativeChatOwnershipReconcile();
+    }
+
     @Subscribe
     public void onConfigChanged(ConfigChanged event) {
         // Keep our copy of the Chat Filter lists in sync as the user edits them.
@@ -760,26 +894,20 @@ public class ImprovedChatPlugin extends Plugin {
         if ("hidePrivateChat".equals(event.getKey())) {
             updatePmWidgetVisibility();
         }
-        if ("enableResizableChat".equals(event.getKey())) {
-            if (config.enableResizableChat()) {
-                chatResizeModule.startUp();
+        if ("enableResizableChat".equals(event.getKey())
+                || "enableCollapsibleChat".equals(event.getKey())
+                || "enableChatboxOpacity".equals(event.getKey())) {
+            reconcileNativeChatOwnership();
+        }
+        if ("enableRemoveChatOptions".equals(event.getKey())) {
+            if (config.enableRemoveChatOptions()) {
+                removeChatOptionsModule.startUp();
             } else {
-                chatResizeModule.shutDown();
+                removeChatOptionsModule.shutDown();
             }
         }
-        if ("enableCollapsibleChat".equals(event.getKey())) {
-            if (config.enableCollapsibleChat()) {
-                chatCollapseModule.startUp();
-            } else {
-                chatCollapseModule.shutDown();
-            }
-        }
-        if ("enableChatboxOpacity".equals(event.getKey())) {
-            if (config.enableChatboxOpacity()) {
-                chatboxOpacityModule.startUp();
-            } else {
-                chatboxOpacityModule.shutDown();
-            }
+        if ("enableOfflineChatStatus".equals(event.getKey())) {
+            reconcileNativeChatOwnership();
         }
         if ("enableDialogueFonts".equals(event.getKey())) {
             if (config.enableDialogueFonts()) {
