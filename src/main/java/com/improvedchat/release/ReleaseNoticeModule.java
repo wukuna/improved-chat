@@ -24,15 +24,14 @@ import net.runelite.client.eventbus.Subscribe;
 @Singleton
 public final class ReleaseNoticeModule
 {
-    static final String CURRENT_NOTICE_ID = "part2-native-chat-controls-v1";
+    static final String CURRENT_NOTICE_ID = "part3-chat-cleanup-v1";
     static final int MAX_REMINDERS = 2;
 
     private static final String NOTICE_ID_KEY = "releaseNoticeId";
     private static final String NOTICE_COUNT_KEY = "releaseNoticeCount";
     private static final String NOTICE_TEXT =
-        "Improved Chat has been updated: Resizable Chat and Collapsible Chat now include drag resizing, "
-            + "secondary chat sizes, improved fixed-layout support, a compact single-button collapsed state, "
-            + "and a Collapse Chat keybind.";
+        "Improved Chat has been updated: new chat cleanup controls, chat-menu cleanup, offline clan status, "
+            + "and safer coexistence with the standalone Modern Chat plugin.";
 
     /**
      * External plugins can be toggled without restarting RuneLite. Keep this static so toggling
