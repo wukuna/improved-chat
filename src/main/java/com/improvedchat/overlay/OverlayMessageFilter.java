@@ -20,6 +20,11 @@ public final class OverlayMessageFilter
     private List<Pattern> messagePatterns = new ArrayList<>();
     private List<Pattern> namePatterns = new ArrayList<>();
 
+    public static boolean usesGlobalChatFilter(boolean globalOverride, OverlayConfig config)
+    {
+        return globalOverride || config.isUseGlobalChatFilter();
+    }
+
     public boolean shouldExclude(OverlayConfig config, OverlayMessage message)
     {
         OverlayFilterMode mode = config.getFilterMode();
