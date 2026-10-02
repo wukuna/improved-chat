@@ -48,3 +48,24 @@ Improved Chat's optional dialogue-font replacement is derived from **Dialogue Fo
 - Repository: `https://github.com/theOranguzang/osrs-dialogue-fonts-plugin`
 - Copyright: Copyright (c) 2026, theOranguzang
 - License: BSD 2-Clause
+
+
+## Chat cleanup features
+
+Improved Chat's native chat cleanup behavior includes BSD-2-Clause code derived from **Chat Cleanup**:
+
+- Repository: `https://github.com/ldavid432/chat-cleanup`
+- Copyright: Copyright (c) 2025, ldavid432
+- License: BSD 2-Clause
+
+Chat-menu cleanup includes BSD-2-Clause code derived from **Remove Chat Options**:
+
+- Repository: `https://github.com/96jonesa/remove-chat-options`
+- Copyright: Copyright (c) 2025, Andrew Jones
+- License: BSD 2-Clause
+
+Offline clan-status behavior includes BSD-2-Clause code derived from **RuneLite Offline Chat Icon**:
+
+- Repository: `https://github.com/fatfingers23/RuneliteOfflineChatIcon`
+- Copyright: Copyright (c) 2022, Bailey Townsend
+- License: BSD 2-Clause
