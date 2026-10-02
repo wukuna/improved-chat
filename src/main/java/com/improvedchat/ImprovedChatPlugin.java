@@ -964,7 +964,8 @@ public class ImprovedChatPlugin extends Plugin {
         long fadeOutThreshold = fadeOutDuration > 0 ? (fadeOutDuration * 2000L) + 2000 : 0;
         boolean gameFilterEnabled = isGameFilterEnabled();
         boolean bossKcFilterEnabled = isBossKcFilterEnabled();
-        boolean useGlobalChatFilter = config.useChatFilter() || overlayConfig.isUseGlobalChatFilter();
+        boolean useGlobalChatFilter = OverlayMessageFilter.usesGlobalChatFilter(
+                config.useChatFilter(), overlayConfig);
         boolean globalChatFilterActive = useGlobalChatFilter && isChatFilterEnabled();
         OverlayMessageFilter overlayFilter = useGlobalChatFilter
                 ? null
