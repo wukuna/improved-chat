@@ -828,37 +828,9 @@ public class ImprovedChatPlugin extends Plugin {
     }
 
     private void scheduleNativeChatOwnershipReconcile() {
-        clientThread.invokeAtTickEnd(this::reconcileNativeChatOwnership);
-    }
-
-    @Subscribe(priority = 100f)
-    public void onModernChatPluginEnableChanging(ConfigChanged event) {
-        if (!modernChatCompatibility.isModernChatEnableConfig(event.getGroup(), event.getKey())
-                || !"true".equalsIgnoreCase(event.getNewValue())) {
-            return;
-        }
-
-        suspendForModernChatOwnership(modernChatCompatibility.startupSnapshot());
-    }
-
-    @Subscribe(priority = 100f)
-    public void onModernChatOwnershipConfigChanging(ConfigChanged event) {
-        if (!modernChatCompatibility.isOwnershipConfig(event.getGroup(), event.getKey())
-                || !modernChatCompatibility.isModernChatActive()) {
-            return;
-        }
-
-        suspendForModernChatConfigTransition(event.getKey());
-    }
-
-    @Subscribe(priority = -100f)
-    public void onModernChatOwnershipConfigChanged(ConfigChanged event) {
-        if (!modernChatCompatibility.isOwnershipConfig(event.getGroup(), event.getKey())
-                || !modernChatCompatibility.isModernChatActive()) {
-            return;
-        }
-
-        scheduleNativeChatOwnershipReconcile();
+        // Defer once past the current event dispatch, then queue at tick end. This lets Modern Chat
+        // enqueue its own start/stop restoration first, including its tick-end legacy-chat restore.
+        clientThread.invokeLater(() -> clientThread.invokeAtTickEnd(this::reconcileNativeChatOwnership));
     }
 
     @Subscribe
@@ -874,8 +846,24 @@ public class ImprovedChatPlugin extends Plugin {
         scheduleNativeChatOwnershipReconcile();
     }
 
-    @Subscribe
+    @Subscribe(priority = 100f)
     public void onConfigChanged(ConfigChanged event) {
+        if (modernChatCompatibility.isOwnershipConfig(event.getGroup(), event.getKey())) {
+            if (modernChatCompatibility.isModernChatActive()) {
+                suspendForModernChatConfigTransition(event.getKey());
+                scheduleNativeChatOwnershipReconcile();
+            }
+            return;
+        }
+
+        if (modernChatCompatibility.isModernChatEnableConfig(event.getGroup(), event.getKey())) {
+            if ("true".equalsIgnoreCase(event.getNewValue())) {
+                suspendForModernChatOwnership(modernChatCompatibility.startupSnapshot());
+            }
+            scheduleNativeChatOwnershipReconcile();
+            return;
+        }
+
         // Keep our copy of the Chat Filter lists in sync as the user edits them.
         if ("chatfilter".equals(event.getGroup())) {
             rebuildChatFilter();
