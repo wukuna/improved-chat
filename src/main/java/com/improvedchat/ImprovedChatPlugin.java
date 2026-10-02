@@ -16,6 +16,7 @@ import com.improvedchat.model.OverlayMessage;
 import com.improvedchat.overlay.AttentionEngine;
 import com.improvedchat.overlay.DynamicChatOverlay;
 import com.improvedchat.overlay.OverlayConfig;
+import com.improvedchat.overlay.OverlayMessageFilter;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.google.inject.Provides;
@@ -62,7 +63,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -224,6 +227,7 @@ public class ImprovedChatPlugin extends Plugin {
     // Dynamic overlays
     private final List<OverlayConfig> overlayConfigs = new ArrayList<>();
     private final List<DynamicChatOverlay> overlays = new ArrayList<>();
+    private final Map<String, OverlayMessageFilter> overlayMessageFilters = new ConcurrentHashMap<>();
 
     private NavigationButton navButton;
     private ImprovedChatPanel panel;
@@ -322,6 +326,7 @@ public class ImprovedChatPlugin extends Plugin {
             overlayManager.remove(overlay);
         }
         overlays.clear();
+        overlayMessageFilters.clear();
         pendingUpdates.clear();
         MessageColorRuleEngine.configure(null);
         OverlayColorRuleEngine.configure(null);
@@ -354,6 +359,7 @@ public class ImprovedChatPlugin extends Plugin {
 
     public void removeOverlay(OverlayConfig oc) {
         overlayConfigs.remove(oc);
+        overlayMessageFilters.remove(oc.getId());
         DynamicChatOverlay toRemove = null;
         for (DynamicChatOverlay overlay : overlays) {
             if (overlay.getOverlayConfig() == oc) {
@@ -382,6 +388,7 @@ public class ImprovedChatPlugin extends Plugin {
         }
         overlays.clear();
         overlayConfigs.clear();
+        overlayMessageFilters.clear();
 
         overlayConfigs.add(OverlayConfig.defaultPrivateOverlay());
         overlayConfigs.add(OverlayConfig.defaultAllOverlay());
@@ -624,11 +631,8 @@ public class ImprovedChatPlugin extends Plugin {
             }
         }
 
-        // Drop messages matching the Chat Filter plugin's lists — only while that plugin is enabled.
-        if (config.useChatFilter() && isChatFilterEnabled() && chatMessageFilter.matches(message)) {
-            return;
-        }
-
+        // Keep the shared pool unfiltered. Global/per-overlay filtering is applied when each
+        // overlay selects messages so one overlay can hide a message while another still shows it.
         String sender = cleanSender(event.getName());
         String channelName = cleanSender(event.getSender());
         boolean isOutgoing = type == ChatMessageType.PRIVATECHATOUT;
@@ -960,6 +964,12 @@ public class ImprovedChatPlugin extends Plugin {
         long fadeOutThreshold = fadeOutDuration > 0 ? (fadeOutDuration * 2000L) + 2000 : 0;
         boolean gameFilterEnabled = isGameFilterEnabled();
         boolean bossKcFilterEnabled = isBossKcFilterEnabled();
+        boolean useGlobalChatFilter = config.useChatFilter() || overlayConfig.isUseGlobalChatFilter();
+        boolean globalChatFilterActive = useGlobalChatFilter && isChatFilterEnabled();
+        OverlayMessageFilter overlayFilter = useGlobalChatFilter
+                ? null
+                : overlayMessageFilters.computeIfAbsent(
+                        overlayConfig.getId(), key -> new OverlayMessageFilter());
 
         int maxMessages = overlayConfig.getMaxMessages();
         List<OverlayMessage> filtered = new ArrayList<>(maxMessages);
@@ -985,6 +995,14 @@ public class ImprovedChatPlugin extends Plugin {
             }
 
             if (bossKcFilterEnabled && msg.isBossKc()) {
+                continue;
+            }
+
+            if (globalChatFilterActive && chatMessageFilter.matches(msg.getMessage())) {
+                continue;
+            }
+
+            if (overlayFilter != null && overlayFilter.shouldExclude(overlayConfig, msg)) {
                 continue;
             }
 
