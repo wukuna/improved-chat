@@ -15,6 +15,7 @@ The project is derived in part from the BSD-2-Clause **Chat Widgets** plugin, bu
 
 
 - Create multiple independent chat overlays and choose the message categories shown by each one.
+- Give each overlay its own Hide Matches / Show Only Matches word, regex, and sender filters, or opt individual overlays into RuneLite's global Chat Filter; a master global override remains available.
 - Use RuneLite's normal movable/resizable overlay placement, or attach an overlay above/below the local player.
 - Configure width, padding, player-relative offsets, message count, fade time, dynamic height, timestamps, and input preview per overlay.
 - Customize fonts, bold text, left/center/right text alignment, background colors, borders, and per-overlay text color overrides.
