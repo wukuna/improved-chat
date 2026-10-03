@@ -22,6 +22,8 @@ import net.runelite.client.ui.FontManager;
 @Singleton
 public class ChatTimestampOverlay extends BaseCleanChatOverlay
 {
+	private static final int NUMERIC_CELL_WIDTH = 8;
+	private static final int TEXT_CELL_WIDTH = 9;
 
 	@Inject
 	private ConfigManager configManager;
@@ -55,7 +57,7 @@ public class ChatTimestampOverlay extends BaseCleanChatOverlay
 
 		graphics.setFont(FontManager.getRunescapeFont());
 
-		AtomicInteger timestampX = new AtomicInteger(x);
+		AtomicInteger timestampX = new AtomicInteger(group.getTimestampX());
 
 		boolean isChatboxTransparent = client.isResized() && client.getVarbitValue(VarbitID.CHATBOX_TRANSPARENCY) == 1;
 
@@ -76,9 +78,7 @@ public class ChatTimestampOverlay extends BaseCleanChatOverlay
 						graphics.setColor(timestampColor);
 					}
 					graphics.drawString(str, timestampX.get(), timestampY);
-					// Largest numbers are 6 pixels + 2 character spacing
-					//  Currently does not account for letter size (Monday, January etc.)
-					timestampX.addAndGet(6 + 2);
+					timestampX.addAndGet(cellWidth(segment));
 
 				}
 			}
@@ -127,7 +127,9 @@ public class ChatTimestampOverlay extends BaseCleanChatOverlay
 				@Override
 				public void consumeSegment(FormatterExtractor.FormatSegment segment)
 				{
-					plugin.setTimestampTemplateWidth(plugin.getTimestampTemplateWidth() + ((6 + 2) * segment.tokenCount));
+					int reservedChars = segment.endIndex - segment.startIndex;
+					plugin.setTimestampTemplateWidth(plugin.getTimestampTemplateWidth()
+						+ (cellWidth(segment) * reservedChars));
 				}
 
 				@Override
@@ -141,6 +143,21 @@ public class ChatTimestampOverlay extends BaseCleanChatOverlay
 		client.refreshChat();
 	}
 
+
+	private static int cellWidth(FormatterExtractor.FormatSegment segment)
+	{
+		switch (segment.tokenChar)
+		{
+			case 'M':
+				return segment.tokenCount >= 3 ? TEXT_CELL_WIDTH : NUMERIC_CELL_WIDTH;
+			case 'E':
+			case 'a':
+			case 'z':
+				return TEXT_CELL_WIDTH;
+			default:
+				return NUMERIC_CELL_WIDTH;
+		}
+	}
 
 	private TimestampConfig timestampConfig()
 	{
