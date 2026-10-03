@@ -1,6 +1,7 @@
 package com.improvedchat.overlay;
 
 import com.improvedchat.ImprovedChatConfig;
+import com.improvedchat.chatbox.offline.ClanChatPresentationService;
 import com.improvedchat.ImprovedChatPlugin;
 import com.improvedchat.model.FontSize;
 import com.improvedchat.model.MessageCategory;
@@ -49,16 +50,19 @@ public class DynamicChatOverlay extends Overlay {
     private final ImprovedChatConfig globalConfig;
     private final Client client;
     private final ChatColorConfig chatColorConfig;
+    private final ClanChatPresentationService clanPresentationService;
     private OverlayConfig overlayConfig;
     private PlacementMode appliedPlacementMode;
 
     public DynamicChatOverlay(ImprovedChatPlugin plugin, ImprovedChatConfig globalConfig, Client client,
-            ChatColorConfig chatColorConfig, OverlayConfig overlayConfig) {
+            ChatColorConfig chatColorConfig, ClanChatPresentationService clanPresentationService,
+            OverlayConfig overlayConfig) {
         super(plugin);
         this.plugin = plugin;
         this.globalConfig = globalConfig;
         this.client = client;
         this.chatColorConfig = chatColorConfig;
+        this.clanPresentationService = clanPresentationService;
         this.overlayConfig = overlayConfig;
 
         setPosition(client.isResized() ? OverlayPosition.ABOVE_CHATBOX_RIGHT : OverlayPosition.BOTTOM_LEFT);
@@ -159,6 +163,30 @@ public class DynamicChatOverlay extends Overlay {
                     || currentTime - msg.getTimestamp() < msgFadeThreshold) {
                 Color inherited = getCategoryColour(msg.getType());
                 Color msgColor = OverlayStyleEngine.resolveTextColor(overlayConfig, inherited);
+                List<TextSegment> senderDecorations = new ArrayList<>();
+                Color senderColorOverride = null;
+                ClanChatPresentationService.Presentation clanPresentation =
+                        clanPresentationService.resolve(msg.getSender(), msg.getType());
+
+                if (clanPresentation.isClanMessage()) {
+                    if (overlayConfig.isShowClanRankIcons() && clanPresentation.getRankIconId() >= 0) {
+                        int iconId = clanPresentation.getRankIconId();
+                        senderDecorations.add(new TextSegment("", iconId,
+                                ChatRenderUtils.calculateIconWidth(modIcons, iconId, fontSize), Color.WHITE));
+                    }
+
+                    if (overlayConfig.isShowOfflineStatus() && clanPresentation.isOffline()) {
+                        if (overlayConfig.isShowOfflineIcon() && clanPresentation.getOfflineIconId() >= 0) {
+                            int iconId = clanPresentation.getOfflineIconId();
+                            senderDecorations.add(new TextSegment("", iconId,
+                                    ChatRenderUtils.calculateIconWidth(modIcons, iconId, fontSize), Color.WHITE));
+                        }
+                        if (overlayConfig.isColorOfflineNames()) {
+                            senderColorOverride = overlayConfig.getOfflineColor();
+                        }
+                    }
+                }
+
                 List<RenderLine> msgLines = ChatRenderUtils.buildMessageLines(
                         msg,
                         metrics,
@@ -174,7 +202,9 @@ public class DynamicChatOverlay extends Overlay {
                         overlayConfig.isShowTimestamp(),
                         globalConfig.timestampFormat(),
                         globalConfig.showChannelName(),
-                        chatColorConfig);
+                        chatColorConfig,
+                        senderDecorations,
+                        senderColorOverride);
 
                 for (RenderLine line : msgLines) {
                     if (line.alpha > 0) {
