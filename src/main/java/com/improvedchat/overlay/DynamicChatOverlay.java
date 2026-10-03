@@ -169,7 +169,9 @@ public class DynamicChatOverlay extends Overlay {
                         clanPresentationService.resolve(msg.getSender(), msg.getType());
 
                 if (clanPresentation.isClanMessage()) {
-                    if (overlayConfig.isShowClanRankIcons() && clanPresentation.getRankIconId() >= 0) {
+                    if (overlayConfig.isShowClanRankIcons()
+                            && clanPresentation.getRankIconId() >= 0
+                            && (msg.getSender() == null || !msg.getSender().contains("<img="))) {
                         int iconId = clanPresentation.getRankIconId();
                         senderDecorations.add(new TextSegment("", iconId,
                                 ChatRenderUtils.calculateIconWidth(modIcons, iconId, fontSize), Color.WHITE));
