@@ -38,7 +38,6 @@ public class ChatWidgetGroup
 	private ChatChannel channelType = null;
 
 	private int messageIndentSpaces = 0;
-	private int channelIndentSpaces = 0;
 	private int timestampX = -1;
 
 	@Getter
@@ -228,22 +227,13 @@ public class ChatWidgetGroup
 
 	public void applyIndent()
 	{
-		if (channel.isHidden() && channelIndentSpaces > 0)
-		{
-			messageIndentSpaces += channelIndentSpaces;
-		}
-
 		if (messageIndentSpaces > 0)
 		{
-			// Using spaces to keep the first line at the initial position (+/-2 pixels)
+			// Indentation mode still uses native text spacing for wrapped-message indentation.
+			// Fixed-width timestamps no longer participate in this approximation; they own a real
+			// pixel slot in extractTimestamp/applyFixedTimestampSlot.
 			message.setText(" ".repeat(messageIndentSpaces) + message.getText());
 			message.revalidate();
-		}
-
-		if (channelIndentSpaces > 0 && !channel.isHidden())
-		{
-			channel.setText(" ".repeat(channelIndentSpaces) + channel.getText());
-			channel.revalidate();
 		}
 	}
 
