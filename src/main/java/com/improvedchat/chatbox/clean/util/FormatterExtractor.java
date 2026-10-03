@@ -139,15 +139,15 @@ public class FormatterExtractor {
 			String remainingText = originalEndPos < text.length() ?
 				text.substring(originalEndPos) : "";
 
-			// Populate segment values from the actual output
+			// Populate segment values from the regex capture groups instead of slicing by the
+			// template's maximum-width positions. Variable-width tokens such as H, M, d, or E can
+			// produce fewer characters than their reserved template width; slicing by template
+			// offsets causes separators/neighboring tokens to leak into the value.
 			List<FormatSegment> populatedSegments = new ArrayList<>();
-			for (FormatSegment seg : template.segments)
+			for (int i = 0; i < template.segments.size(); i++)
 			{
-				// Ensure segment indices are within bounds
-				int startIdx = Math.min(seg.startIndex, formattedOutput.length());
-				int endIdx = Math.min(seg.endIndex, formattedOutput.length());
-
-				String value = formattedOutput.substring(startIdx, endIdx);
+				FormatSegment seg = template.segments.get(i);
+				String value = matcher.group(i + 1);
 				populatedSegments.add(new FormatSegment(seg.token, seg.tokenChar, seg.tokenCount,
 					seg.startIndex, seg.endIndex, value));
 			}

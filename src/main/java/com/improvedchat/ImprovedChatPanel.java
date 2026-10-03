@@ -9,6 +9,7 @@ import com.improvedchat.model.MessageCategory;
 import com.improvedchat.model.PlacementMode;
 import com.improvedchat.model.TextAlignment;
 import com.improvedchat.overlay.OverlayConfig;
+import com.improvedchat.overlay.OverlayFilterMode;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -38,6 +39,7 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.Scrollable;
 import javax.swing.SpinnerNumberModel;
@@ -224,6 +226,68 @@ public class ImprovedChatPanel extends PluginPanel {
         ));
         body.add(Box.createVerticalStrut(6));
 
+        JPanel filtering = panel(CARD);
+        filtering.setLayout(new BoxLayout(filtering, BoxLayout.Y_AXIS));
+        filtering.add(checkRow("Use Global Chat Filter", oc.isUseGlobalChatFilter(), v -> {
+            oc.setUseGlobalChatFilter(v);
+            saveOverlay();
+            rebuild();
+        }));
+        if (!oc.isUseGlobalChatFilter()) {
+            filtering.add(comboRow("Filter Mode", OverlayFilterMode.values(), oc.getFilterMode(), v -> {
+                oc.setFilterMode(v);
+                saveOverlay();
+                rebuild();
+            }));
+            if (oc.getFilterMode() != OverlayFilterMode.OFF) {
+                filtering.add(textFieldRow("Filtered Words", oc.getFilteredWords(), v -> {
+                    oc.setFilteredWords(v);
+                    saveOverlay();
+                }));
+                filtering.add(textAreaRow("Filtered Regex", oc.getFilteredRegex(), v -> {
+                    oc.setFilteredRegex(v);
+                    saveOverlay();
+                }));
+                filtering.add(textAreaRow("Filtered Names", oc.getFilteredNames(), v -> {
+                    oc.setFilteredNames(v);
+                    saveOverlay();
+                }));
+            }
+        }
+        body.add(accordionPanel(oc, "filtering", "MESSAGE FILTERING", false, filtering));
+        body.add(Box.createVerticalStrut(6));
+
+        JPanel clanDisplay = panel(CARD);
+        clanDisplay.setLayout(new BoxLayout(clanDisplay, BoxLayout.Y_AXIS));
+        clanDisplay.add(checkRow("Show Clan Rank Icons", oc.isShowClanRankIcons(), v -> {
+            oc.setShowClanRankIcons(v);
+            saveOverlay();
+        }));
+        clanDisplay.add(checkRow("Show Offline Status", oc.isShowOfflineStatus(), v -> {
+            oc.setShowOfflineStatus(v);
+            saveOverlay();
+            rebuild();
+        }));
+        if (oc.isShowOfflineStatus()) {
+            clanDisplay.add(checkRow("Show Offline Icon", oc.isShowOfflineIcon(), v -> {
+                oc.setShowOfflineIcon(v);
+                saveOverlay();
+            }));
+            clanDisplay.add(checkRow("Color Offline Names", oc.isColorOfflineNames(), v -> {
+                oc.setColorOfflineNames(v);
+                saveOverlay();
+                rebuild();
+            }));
+            if (oc.isColorOfflineNames()) {
+                clanDisplay.add(colorRow("Offline Color", oc.getOfflineColor(), v -> {
+                    oc.setOfflineColor(v);
+                    saveOverlay();
+                }));
+            }
+        }
+        body.add(accordionPanel(oc, "clanDisplay", "CLAN DISPLAY", false, clanDisplay));
+        body.add(Box.createVerticalStrut(6));
+
         JPanel overlayColors = panel(CARD);
         overlayColors.setLayout(new BoxLayout(overlayColors, BoxLayout.Y_AXIS));
         overlayColors.add(checkRow("Text Override", oc.isOverlayColorOverrideEnabled(), v -> {
@@ -329,6 +393,34 @@ public class ImprovedChatPanel extends PluginPanel {
             @Override public void focusLost(FocusEvent e) { setter.accept(field.getText()); }
         });
         return controlRow(name, field);
+    }
+
+    private Component textAreaRow(String name, String value, java.util.function.Consumer<String> setter) {
+        JTextArea area = new JTextArea(value == null ? "" : value, 3, 12);
+        area.setLineWrap(false);
+        area.setBackground(CONTROL);
+        area.setForeground(TEXT);
+        area.setCaretColor(TEXT);
+        area.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 10));
+        area.setBorder(BorderFactory.createEmptyBorder(3, 4, 3, 4));
+        area.addFocusListener(new FocusAdapter() {
+            @Override public void focusLost(FocusEvent e) { setter.accept(area.getText()); }
+        });
+
+        JScrollPane scroller = new JScrollPane(area);
+        scroller.setPreferredSize(new Dimension(128, 58));
+        scroller.setMaximumSize(new Dimension(128, 58));
+        scroller.setBorder(BorderFactory.createLineBorder(BORDER));
+        scroller.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+
+        JPanel row = panel(CARD);
+        row.setLayout(new BorderLayout(6, 0));
+        row.setBorder(BorderFactory.createEmptyBorder(3, 0, 3, 0));
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 64));
+        row.setAlignmentX(Component.LEFT_ALIGNMENT);
+        row.add(label(name, TEXT, 10, Font.PLAIN), BorderLayout.CENTER);
+        row.add(scroller, BorderLayout.EAST);
+        return row;
     }
 
     private Component checkRow(String name, boolean selected, java.util.function.Consumer<Boolean> setter) {

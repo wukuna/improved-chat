@@ -24,14 +24,14 @@ import net.runelite.client.eventbus.Subscribe;
 @Singleton
 public final class ReleaseNoticeModule
 {
-    static final String CURRENT_NOTICE_ID = "part3-chat-cleanup-v1";
+    static final String CURRENT_NOTICE_ID = "part4-overlay-filters-clan-v1";
     static final int MAX_REMINDERS = 2;
 
     private static final String NOTICE_ID_KEY = "releaseNoticeId";
     private static final String NOTICE_COUNT_KEY = "releaseNoticeCount";
     private static final String NOTICE_TEXT =
-        "Improved Chat has been updated: new chat cleanup controls, chat-menu cleanup, offline clan status, "
-            + "and safer coexistence with the standalone Modern Chat plugin.";
+        "Improved Chat has been updated: overlays now support independent chat filters and clan rank/offline "
+            + "display, with corrected fixed-width timestamps and offline clan icons.";
 
     /**
      * External plugins can be toggled without restarting RuneLite. Keep this static so toggling
