@@ -3,6 +3,7 @@ package com.improvedchat;
 import com.improvedchat.chatbox.clean.CleanChatModule;
 import com.improvedchat.chatbox.collapse.ChatCollapseModule;
 import com.improvedchat.chatbox.menu.RemoveChatOptionsModule;
+import com.improvedchat.chatbox.offline.ClanChatPresentationService;
 import com.improvedchat.chatbox.offline.OfflineChatStatusModule;
 import com.improvedchat.chatbox.opacity.ChatboxOpacityModule;
 import com.improvedchat.chatbox.resize.ChatResizeModule;
@@ -211,6 +212,9 @@ public class ImprovedChatPlugin extends Plugin {
     private OfflineChatStatusModule offlineChatStatusModule;
 
     @Inject
+    private ClanChatPresentationService clanChatPresentationService;
+
+    @Inject
     private DialogueFontsModule dialogueFontsModule;
 
     @Inject
@@ -280,6 +284,7 @@ public class ImprovedChatPlugin extends Plugin {
         MessageColorRuleEngine.configure(config);
         OverlayColorRuleEngine.configure(config);
         rebuildChatFilter();
+        clanChatPresentationService.startUp();
 
         for (OverlayConfig oc : overlayConfigs) {
             addOverlay(oc);
@@ -328,6 +333,7 @@ public class ImprovedChatPlugin extends Plugin {
         overlays.clear();
         overlayMessageFilters.clear();
         pendingUpdates.clear();
+        clanChatPresentationService.shutDown();
         MessageColorRuleEngine.configure(null);
         OverlayColorRuleEngine.configure(null);
         AttentionEngine.setClientFocused(true);
@@ -439,7 +445,7 @@ public class ImprovedChatPlugin extends Plugin {
 
     private void addOverlay(OverlayConfig oc) {
         DynamicChatOverlay overlay = new DynamicChatOverlay(this, config, client,
-                chatColorConfig, oc);
+                chatColorConfig, clanChatPresentationService, oc);
         overlays.add(overlay);
         overlayManager.add(overlay);
         refreshOverlayPriorities();
