@@ -257,6 +257,37 @@ public class ImprovedChatPanel extends PluginPanel {
         body.add(accordionPanel(oc, "filtering", "MESSAGE FILTERING", false, filtering));
         body.add(Box.createVerticalStrut(6));
 
+        JPanel clanDisplay = panel(CARD);
+        clanDisplay.setLayout(new BoxLayout(clanDisplay, BoxLayout.Y_AXIS));
+        clanDisplay.add(checkRow("Show Clan Rank Icons", oc.isShowClanRankIcons(), v -> {
+            oc.setShowClanRankIcons(v);
+            saveOverlay();
+        }));
+        clanDisplay.add(checkRow("Show Offline Status", oc.isShowOfflineStatus(), v -> {
+            oc.setShowOfflineStatus(v);
+            saveOverlay();
+            rebuild();
+        }));
+        if (oc.isShowOfflineStatus()) {
+            clanDisplay.add(checkRow("Show Offline Icon", oc.isShowOfflineIcon(), v -> {
+                oc.setShowOfflineIcon(v);
+                saveOverlay();
+            }));
+            clanDisplay.add(checkRow("Color Offline Names", oc.isColorOfflineNames(), v -> {
+                oc.setColorOfflineNames(v);
+                saveOverlay();
+                rebuild();
+            }));
+            if (oc.isColorOfflineNames()) {
+                clanDisplay.add(colorRow("Offline Color", oc.getOfflineColor(), v -> {
+                    oc.setOfflineColor(v);
+                    saveOverlay();
+                }));
+            }
+        }
+        body.add(accordionPanel(oc, "clanDisplay", "CLAN DISPLAY", false, clanDisplay));
+        body.add(Box.createVerticalStrut(6));
+
         JPanel overlayColors = panel(CARD);
         overlayColors.setLayout(new BoxLayout(overlayColors, BoxLayout.Y_AXIS));
         overlayColors.add(checkRow("Text Override", oc.isOverlayColorOverrideEnabled(), v -> {
