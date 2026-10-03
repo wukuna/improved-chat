@@ -6,6 +6,7 @@ Improved Chat combines customizable chat overlays with native RuneLite chat cont
 
 - **Custom chat overlays** — Create multiple independent overlays, choose what message types each one shows, place them freely or above/below your character, and customize their size, font, alignment, background, borders, timestamps, fade behavior, and more.
 - **Per-overlay filtering** — Give each overlay its own Hide Matches / Show Only Matches word, regex, and sender filters, or opt selected overlays into RuneLite's global Chat Filter.
+- **Per-overlay clan display** — Show clan rank icons and independently enable offline icons/name colors on each overlay.
 - **Native chat controls** — Resize RuneLite chat in fixed or resizable mode, drag-resize it, switch to a secondary chat size with a keybind, collapse the chatbox to a compact button, and control chatbox/button opacity.
 - **Message highlighting** — Recolor important messages with simple text or regex rules, trigger attention flashes, and apply overlay-only rainbow effects.
 - **Chat cleanup** — Remove unwanted native chat labels/messages, simplify chat context menus, improve timestamp/channel presentation, and optionally show offline clan-member status.
@@ -36,6 +37,19 @@ This lets different overlays show different subsets of the same shared chat hist
 <!-- IMAGE PLACEHOLDER: Show two overlays using different filter settings on the same incoming messages. -->
 
 <!-- VIDEO PLACEHOLDER: Demonstrate one overlay using RuneLite's global filter while another uses a custom Show Only Matches rule. -->
+
+
+## Overlay clan display
+
+Each overlay has its own **Clan Display** controls:
+
+- **Show Clan Rank Icons** displays RuneLite's clan rank icon beside clan, guest-clan, and Group Ironman senders.
+- **Show Offline Status** enables offline presentation for that overlay only.
+- Offline icons and offline-name coloring can then be enabled independently, including a custom offline color.
+
+These settings do not depend on the native-chat **Offline Clan Status** option.
+
+<!-- IMAGE PLACEHOLDER: Show the same clan message in two overlays, one with rank/offline indicators enabled and one without. -->
 
 ## Resizing and collapsing chat
 
@@ -87,7 +101,7 @@ The cleanup sections can simplify RuneLite's native chat without replacing it. A
 - startup and channel-label cleanup;
 - wrapped-message indentation;
 - scrollbar and special-attack text cleanup;
-- fixed-width timestamps;
+- fixed-width timestamps with a reserved pixel column that stays clear of clan/rank icons;
 - optional channel color bars;
 - clan, guest clan, Group Ironman, and friends-chat cleanup;
 - simplified chat-message context menus;
