@@ -66,9 +66,11 @@ public class ChatTimestampOverlay extends BaseCleanChatOverlay
 			@Override
 			public void consumeSegment(FormatterExtractor.FormatSegment segment)
 			{
-				for (int i = 0; i < segment.value.length(); i++)
+				String value = segment.value == null ? "" : segment.value;
+				int cellWidth = cellWidth(segment);
+				for (int i = 0; i < value.length(); i++)
 				{
-					String str = String.valueOf(segment.value.charAt(i));
+					String str = String.valueOf(value.charAt(i));
 
 					if (isChatboxTransparent)
 					{
@@ -78,9 +80,15 @@ public class ChatTimestampOverlay extends BaseCleanChatOverlay
 						graphics.setColor(timestampColor);
 					}
 					graphics.drawString(str, timestampX.get(), timestampY);
-					timestampX.addAndGet(cellWidth(segment));
-
+					timestampX.addAndGet(cellWidth);
 				}
+
+				// Keep every token at its maximum reserved width. A one-digit H/M/d token
+				// therefore occupies the same slot as its two-digit form, so separators and all
+				// following chat widgets stay at one deterministic X position.
+				int reservedChars = segment.endIndex - segment.startIndex;
+				int remainingCells = Math.max(0, reservedChars - value.length());
+				timestampX.addAndGet(remainingCells * cellWidth);
 			}
 
 			@Override
