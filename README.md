@@ -41,9 +41,12 @@ Each overlay can independently control:
 
 RuneLite's normal overlay movement system is used for free-position overlays.
 
-> **[Example coming soon — Screenshot]** Overlay list and overlay editor.
+>  Overlay list and overlay editor.
+<img width="276" height="1305" alt="Screenshot 2026-10-03 185108" src="https://github.com/user-attachments/assets/39583041-3ec1-4c62-849f-cceadeef0761" />
 
-> **[Example coming soon — Video]** Creating an overlay, selecting message types, moving it, and changing its appearance.
+>  Creating an overlay, selecting message types, moving it, and changing its appearance.
+
+https://github.com/user-attachments/assets/95c6ba06-64a6-435d-8fb8-ad3857b9e662
 
 ## Overlay filtering
 
@@ -66,10 +69,6 @@ Invalid custom regex lines are ignored safely.
 
 Different overlays can therefore show different subsets of the same shared chat history without removing messages from the shared message pool.
 
-> **[Example coming soon — Screenshot]** Two overlays using different filters on the same incoming chat.
-
-> **[Example coming soon — Video]** Configuring Hide Matches, Show Only Matches, regex, and sender filters.
-
 ## Clan display and offline status
 
 Clan presentation can be configured separately for every overlay.
@@ -87,8 +86,6 @@ Clan, guest-clan, and Group Ironman chat are supported.
 Overlay offline presentation is independent of the native-chat **Offline Clan Status** setting, so one can be enabled without the other.
 
 The native-chat offline status feature can also add an offline icon and/or recolor offline clan-member names.
-
-> **[Example coming soon — Screenshot]** The same clan messages with rank/offline indicators enabled in one overlay and disabled in another.
 
 ## Message colors, rules, and alerts
 
@@ -135,10 +132,6 @@ Each overlay can independently configure:
 - border flashing;
 - background flashing.
 
-> **[Example coming soon — Screenshot]** Message Color Rules, rule palette, and an in-game highlighted result.
-
-> **[Example coming soon — Video]** Creating a color rule, regex rule, flash rule, and rainbow rule.
-
 ## Native chat resizing
 
 Improved Chat can resize RuneLite's native chatbox in both **resizable** and **fixed** layouts.
@@ -170,10 +163,6 @@ Configure a second chat size and switch to it with a keybind.
 
 The secondary size supports its own height/width changes and hold/toggle behavior.
 
-> **[Example coming soon — Screenshot]** Normal, enlarged, reduced, and fixed-layout chat sizes.
-
-> **[Example coming soon — Video]** Drag resizing, private-chat rewrap, and switching to the secondary chat size.
-
 ## Collapsible chat
 
 The native chatbox can collapse to a single compact button.
@@ -185,10 +174,6 @@ Controls include:
 - transparent button mode;
 - configurable button and hover text;
 - unread colors for public, private, friends chat, clan, and trade activity.
-
-> **[Example coming soon — Screenshot]** Normal native chat and the single-button collapsed state.
-
-> **[Example coming soon — Video]** Collapsing/restoring chat with the button and keybind.
 
 ## Native chat cleanup and presentation
 
@@ -250,10 +235,6 @@ Controls include:
 
 An optional **Remove Lookup** setting can remove the player Lookup entry as well. Holding Control provides temporary access to the normal options.
 
-> **[Example coming soon — Screenshot]** Before/after native chat with cleanup, fixed-width timestamps, channel color bars, and simplified channel labels.
-
-> **[Example coming soon — Video]** Toggling cleanup options and showing the chat-menu Control bypass.
-
 ## Chatbox opacity
 
 Native-chat opacity controls include:
@@ -261,8 +242,6 @@ Native-chat opacity controls include:
 - chatbox opacity;
 - chat-button opacity;
 - optional opacity for dialogue and menus shown in the chat area.
-
-> **[Example coming soon — Screenshot]** Native chat at several opacity levels.
 
 ## Dialogue text styling
 
@@ -282,8 +261,6 @@ Styling can be enabled independently for:
 - player dialogue;
 - option menus;
 - item/action dialogue.
-
-> **[Example coming soon — Screenshot]** Default dialogue compared with customized dialogue text.
 
 ## Compatibility
 
