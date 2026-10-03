@@ -20,6 +20,7 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -214,6 +215,18 @@ public final class ChatRenderUtils {
             boolean retainContextualColours, boolean hideDuplicateCount,
             FontSize fontSize, IndexedSprite[] modIcons, boolean showTimestamp, String timestampFormat,
             boolean showChannelName, ChatColorConfig chatColorConfig) {
+        return buildMessageLines(msg, metrics, widgetWidth, currentTime, fadeOutMs, wrapText,
+                textColor, retainContextualColours, hideDuplicateCount, fontSize, modIcons,
+                showTimestamp, timestampFormat, showChannelName, chatColorConfig,
+                Collections.emptyList(), null);
+    }
+
+    public static List<RenderLine> buildMessageLines(OverlayMessage msg, FontMetrics metrics,
+            int widgetWidth, long currentTime, long fadeOutMs, boolean wrapText, Color textColor,
+            boolean retainContextualColours, boolean hideDuplicateCount,
+            FontSize fontSize, IndexedSprite[] modIcons, boolean showTimestamp, String timestampFormat,
+            boolean showChannelName, ChatColorConfig chatColorConfig,
+            List<TextSegment> senderDecorations, Color senderColorOverride) {
 
         List<RenderLine> lines = new ArrayList<>();
         int alpha = AttentionEngine.adjustAlpha(msg, currentTime, calculateAlpha(msg, currentTime, fadeOutMs));
@@ -246,7 +259,9 @@ public final class ChatRenderUtils {
         }
 
         if (hasSenderPrefix && !isLoginNotification && msg.getSender() != null) {
-            Color nameColor = retainContextualColours ? Color.WHITE : textColor;
+            Color nameColor = senderColorOverride != null
+                    ? senderColorOverride
+                    : (retainContextualColours ? Color.WHITE : textColor);
             if (isPm) {
                 String prefix = msg.isOutgoing() ? "To " : "From ";
                 headerSegments.add(new TextSegment(prefix, -1, metrics.stringWidth(prefix), bodyBaseColor));
@@ -268,6 +283,13 @@ public final class ChatRenderUtils {
                 String close = "] ";
                 headerSegments.add(new TextSegment(close, -1, metrics.stringWidth(close), bracketColor));
                 headerWidth += metrics.stringWidth(close);
+            }
+
+            if (senderDecorations != null) {
+                for (TextSegment decoration : senderDecorations) {
+                    headerSegments.add(decoration);
+                    headerWidth += decoration.width;
+                }
             }
 
             List<TextSegment> senderSegments = parseTextWithIcons(msg.getSender(), metrics, modIcons,

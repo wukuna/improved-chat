@@ -38,7 +38,7 @@ public class ChatWidgetGroup
 	private ChatChannel channelType = null;
 
 	private int messageIndentSpaces = 0;
-	private int channelIndentSpaces = 0;
+	private int timestampX = -1;
 
 	@Getter
 	@Nullable
@@ -75,6 +75,11 @@ public class ChatWidgetGroup
 	public Color getColor(ImprovedChatConfig config)
 	{
 		return channelType != null ? channelType.getColor(config) : config.noChannelColor();
+	}
+
+	public int getTimestampX()
+	{
+		return timestampX >= 0 ? timestampX : getX();
 	}
 
 	public void place(final int y)
@@ -131,8 +136,10 @@ public class ChatWidgetGroup
 					// extractTimestamp handles indents for start already
 					if (isFixedWidthTimestampEnabled)
 					{
-						String prefix = widgetChannelText.substring(0, startOfChannel);
-						prefixWidth = getTextLength(prefix, client);
+						// Fixed-width timestamps reserve an exact pixel slot. Wrapped-line
+						// indentation must use that slot width rather than the variable width of
+						// the timestamp text that happened to be rendered on this message.
+						prefixWidth = timestampWidth;
 						indentWidth += prefixWidth;
 
 						if (channelType.isChannelNameRemovalEnabled(config))
@@ -220,22 +227,13 @@ public class ChatWidgetGroup
 
 	public void applyIndent()
 	{
-		if (channel.isHidden() && channelIndentSpaces > 0)
-		{
-			messageIndentSpaces += channelIndentSpaces;
-		}
-
 		if (messageIndentSpaces > 0)
 		{
-			// Using spaces to keep the first line at the initial position (+/-2 pixels)
+			// Indentation mode still uses native text spacing for wrapped-message indentation.
+			// Fixed-width timestamps no longer participate in this approximation; they own a real
+			// pixel slot in extractTimestamp/applyFixedTimestampSlot.
 			message.setText(" ".repeat(messageIndentSpaces) + message.getText());
 			message.revalidate();
-		}
-
-		if (channelIndentSpaces > 0 && !channel.isHidden())
-		{
-			channel.setText(" ".repeat(channelIndentSpaces) + channel.getText());
-			channel.revalidate();
 		}
 	}
 
@@ -320,11 +318,12 @@ public class ChatWidgetGroup
 		widget.revalidate();
 	}
 
-	public void extractTimestamp(FormatterExtractor.ExtractionResult template, int timestampWidth)
+	public void extractTimestamp(FormatterExtractor.ExtractionResult template, int timestampWidth, Client client)
 	{
 		if (template == null)
 		{
 			timestamp = null;
+			timestampX = -1;
 			return;
 		}
 
@@ -350,18 +349,68 @@ public class ChatWidgetGroup
 
 			if (timestamp == null)
 			{
+				timestampX = -1;
 				log.debug("Timestamp could not be extracted from template: `{}`, widget:`{}`, or opposite widget:`{}`", template, widget.getText(), oppositeWidget.getText());
 				return;
 			}
-			else
-			{
-				widget = oppositeWidget;
-			}
+			widget = oppositeWidget;
 		}
 
+		timestampX = widget.getCanvasLocation().getX();
+		int actualTimestampWidth = getTextLength(timestamp.getFormattedOutput(), client);
 		widget.setText(timestamp.getRemainingText());
 
-		channelIndentSpaces += max(0, timestampWidth / 3);
+		applyFixedTimestampSlot(widget, actualTimestampWidth, timestampWidth);
+	}
+
+	private void applyFixedTimestampSlot(Widget timestampWidget, int actualTimestampWidth, int targetTimestampWidth)
+	{
+		int targetWidth = max(0, targetTimestampWidth);
+		int actualWidth = max(0, actualTimestampWidth);
+		int delta = targetWidth - actualWidth;
+
+		if (timestampWidget == channel)
+		{
+			// The channel widget originally contains the timestamp text. Move its remaining text
+			// behind the fixed slot, then shift every downstream prefix/message widget by exactly
+			// the difference between the native timestamp width and the fixed slot width.
+			channel.setOriginalX(channel.getOriginalX() + targetWidth);
+			channel.setOriginalWidth(max(0, channel.getOriginalWidth() - actualWidth));
+			channel.revalidate();
+
+			shiftX(rank, delta);
+			shiftX(name, delta);
+			shiftXPreserveRight(message, delta);
+		}
+		else
+		{
+			// Game/system lines carry the timestamp in the message widget itself. Reserve the slot
+			// directly in the widget geometry instead of approximating it with leading spaces.
+			message.setOriginalX(message.getOriginalX() + targetWidth);
+			message.setOriginalWidth(max(0, message.getOriginalWidth() - targetWidth));
+			message.revalidate();
+		}
+	}
+
+	private void shiftX(Widget widget, int amount)
+	{
+		if (amount == 0)
+		{
+			return;
+		}
+		widget.setOriginalX(widget.getOriginalX() + amount);
+		widget.revalidate();
+	}
+
+	private void shiftXPreserveRight(Widget widget, int amount)
+	{
+		if (amount == 0)
+		{
+			return;
+		}
+		widget.setOriginalX(widget.getOriginalX() + amount);
+		widget.setOriginalWidth(max(0, widget.getOriginalWidth() - amount));
+		widget.revalidate();
 	}
 
 	@Override

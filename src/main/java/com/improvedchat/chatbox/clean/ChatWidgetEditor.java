@@ -314,7 +314,7 @@ public class ChatWidgetEditor
 
 					if (plugin.isFixedWidthTimestampEnabled())
 					{
-						group.extractTimestamp(plugin.getTimestampTemplate(), plugin.getTimestampTemplateWidth());
+						group.extractTimestamp(plugin.getTimestampTemplate(), plugin.getTimestampTemplateWidth(), client);
 					}
 
 					group.applyIndent();
