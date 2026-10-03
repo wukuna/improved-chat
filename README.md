@@ -1,44 +1,59 @@
 # Improved Chat
 
-Improved Chat is a separate RuneLite Plugin Hub plugin for building configurable chat overlays and styling important messages without replacing RuneLite's chat system.
+Improved Chat combines customizable chat overlays with native RuneLite chat controls, cleanup tools, and message styling in one plugin.
 
-The project is derived in part from the BSD-2-Clause **Chat Widgets** plugin, but it has its own package, configuration namespace, repository, feature set, and Plugin Hub identity. It does not read or write Chat Widgets' saved configuration.
+## What it does
 
-## Features
-- Collapse the native chatbox to a single configurable button.
-- Control transparent chatbox/button opacity, with an option to preserve dialogue and option-menu opacity.
-- Customize supported NPC, player, option-menu, and item/action dialogue text.
-- Clean up native chat labels, startup text, wrapping, scrollbars, timestamps, and optional channel color bars.
-- Simplify chat-message context menus and optionally mark offline clan members.
-- Yield conflicting native-chat controls automatically while the standalone Modern Chat redesign owns them.
-- Resize native chat in resizable and fixed layouts, including private-chat rewrapping, tab resizing, interface growth, dialog/interface reversion, drag resizing, and a keybound secondary size.
+- **Custom chat overlays** — Create multiple independent overlays, choose what message types each one shows, place them freely or above/below your character, and customize their size, font, alignment, background, borders, timestamps, fade behavior, and more.
+- **Per-overlay filtering** — Give each overlay its own Hide Matches / Show Only Matches word, regex, and sender filters, or opt selected overlays into RuneLite's global Chat Filter.
+- **Native chat controls** — Resize RuneLite chat in fixed or resizable mode, drag-resize it, switch to a secondary chat size with a keybind, collapse the chatbox to a compact button, and control chatbox/button opacity.
+- **Message highlighting** — Recolor important messages with simple text or regex rules, trigger attention flashes, and apply overlay-only rainbow effects.
+- **Chat cleanup** — Remove unwanted native chat labels/messages, simplify chat context menus, improve timestamp/channel presentation, and optionally show offline clan-member status.
+- **Dialogue styling** — Customize supported NPC, player, option-menu, and item/action dialogue text.
+- **Compatibility** — Works with RuneLite Chat Color, Chat Filter, and Emojis. Improved Chat also includes safeguards for Resource Packs and the standalone Modern Chat plugin.
+
+## Overlay setup
+
+Open the **Improved Chat** sidebar panel to create and edit overlays.
+
+Use **Message Types** to choose what belongs in each overlay. Overlays can be positioned through RuneLite's normal overlay system or attached above/below your character.
+
+<!-- IMAGE PLACEHOLDER: Show the Improved Chat overlay editor with Message Types and positioning controls. -->
+
+<!-- VIDEO PLACEHOLDER: Short clip showing how to create, position, resize, and configure an overlay. -->
 
 
-- Create multiple independent chat overlays and choose the message categories shown by each one.
-- Give each overlay its own Hide Matches / Show Only Matches word, regex, and sender filters, or opt individual overlays into RuneLite's global Chat Filter; a master global override remains available.
-- Use RuneLite's normal movable/resizable overlay placement, or attach an overlay above/below the local player.
-- Configure width, padding, player-relative offsets, message count, fade time, dynamic height, timestamps, and input preview per overlay.
-- Customize fonts, bold text, left/center/right text alignment, background colors, borders, and per-overlay text color overrides.
-- Use **Message Color Rules** to recolor matching messages in both the RuneLite chatbox and Improved Chat overlays.
-- Append `::flash` to a Message Color Rule to mark matching overlay messages for attention effects.
-- Use **Overlay Rainbow Rules** for overlay-only rainbow rendering by word or visible character.
-- Configure attention behavior for message text, border, and background flashes.
-- Integrate with RuneLite's built-in Chat Color, Chat Filter, and Emojis functionality.
-- Collapse duplicate messages, preserve contextual colors, show channel names, and optionally hide RuneLite's default split private-chat widget.
+## Overlay-specific filtering
 
-## How it differs from Chat Widgets
+Each overlay can either use RuneLite's global Chat Filter or its own independent rules.
 
-Improved Chat is not only a widget-layout variant. In addition to configurable chat overlays, it adds chatbox message recoloring rules, overlay-only rainbow rules, attention/flash rules, border and background attention effects, richer text styling, and expanded placement controls. The plugin declares a conflict with Chat Widgets so both overlapping chat-overlay implementations are not active at the same time.
+- **Use Chat Filter Globally** overrides every overlay and applies RuneLite's global Chat Filter everywhere.
+- **Use Global Chat Filter** applies RuneLite's global filter only to that overlay.
+- Otherwise, choose **Hide Matches** or **Show Only Matches** and configure words, regex, and sender/name rules for that overlay.
 
-## Resource Packs compatibility
+This lets different overlays show different subsets of the same shared chat history.
 
-Resizable Chat includes **Don't Draw Resize Borders** and **Don't Zoom Background** controls for custom chatbox artwork that should not be stretched or framed by Improved Chat.
+<!-- IMAGE PLACEHOLDER: Show two overlays using different filter settings on the same incoming messages. -->
 
-## Rule syntax
+<!-- VIDEO PLACEHOLDER: Demonstrate one overlay using RuneLite's global filter while another uses a custom Show Only Matches rule. -->
+
+## Resizing and collapsing chat
+
+Under **Resizable Chat**, you can change the native chatbox size in both fixed and resizable layouts.
+
+For drag resizing, set a **Drag-Resize Modifier** and hold that key while dragging a chat border. A separate **Secondary Chat Size** can be configured and activated with its own keybind.
+
+**Collapsible Chat** reduces the native chatbox to a compact button and can also be controlled with the **Collapse Chat Keybind**.
+
+<!-- IMAGE PLACEHOLDER: Show normal, resized, and collapsed native chat states. -->
+
+<!-- VIDEO PLACEHOLDER: Demonstrate drag resizing, secondary size switching, and collapse/restore. -->
+
+## Message rules
 
 ### Message Color Rules
 
-One rule per line:
+Use one rule per line:
 
 ```text
 is about to expire::1
@@ -46,13 +61,14 @@ has expired::1::flash
 regex:^Your .* count is:.*::2
 ```
 
-`::1` through `::9` select one of the nine configured rule colors. Prefix a rule with `regex:` to use a case-insensitive regular expression. Add `::flash` after the color number to trigger the overlay attention system for matching messages.
-
-Player-authored chat is excluded from Message Color Rules by default and can be enabled in the RuneLite config panel.
+- `::1` through `::9` select one of the configured rule colors.
+- Prefix a rule with `regex:` to use a case-insensitive regular expression.
+- Add `::flash` to trigger the overlay attention system when that message appears.
+- Player-authored chat is excluded by default and can be enabled separately.
 
 ### Overlay Rainbow Rules
 
-One literal or `regex:` expression per line:
+Rainbow rules affect Improved Chat overlays only:
 
 ```text
 achieved a new
@@ -60,30 +76,56 @@ has reached
 regex:^Collection log.*
 ```
 
-These rules affect Improved Chat overlays only.
+<!-- IMAGE PLACEHOLDER: Show Message Color Rules and Overlay Rainbow Rules with an in-game result. -->
 
-## Development
+<!-- VIDEO PLACEHOLDER: Demonstrate creating a color/flash rule and seeing it trigger in chat. -->
 
-The project follows the RuneLite external-plugin template and targets Java 11. RuneLite is resolved with `latest.release`.
+## Chat cleanup and presentation
 
-Run the development client with:
+The cleanup sections can simplify RuneLite's native chat without replacing it. Available controls include:
 
-```text
-./gradlew run
-```
+- startup and channel-label cleanup;
+- wrapped-message indentation;
+- scrollbar and special-attack text cleanup;
+- fixed-width timestamps;
+- optional channel color bars;
+- clan, guest clan, Group Ironman, and friends-chat cleanup;
+- simplified chat-message context menus;
+- optional offline clan-member icon/name styling.
 
-Run unit tests with:
+Most cleanup options are independent, so you can enable only the pieces you want.
 
-```text
-./gradlew test
-```
+<!-- IMAGE PLACEHOLDER: Before/after screenshot of native chat with selected cleanup options enabled. -->
 
-For Jagex-account login in the development client, follow RuneLite's **Using Jagex Accounts** development guide.
+## Resource Packs and Modern Chat
 
-## Plugin Hub
+If a Resource Pack uses custom chatbox artwork, **Don't Draw Resize Borders** and **Don't Zoom Background** can prevent Improved Chat's resize system from stretching or framing that artwork.
 
-`runelite-plugin.properties` uses `build=standard`; the plugin has no additional third-party runtime dependencies beyond RuneLite's dependency graph. The root `icon.png` is the Plugin Hub icon and `src/main/resources/panelicon.png` is used by the RuneLite sidebar button.
+Improved Chat can also run alongside the standalone **Modern Chat** plugin. When Modern Chat's redesign takes control of native chat geometry or visibility, Improved Chat automatically yields the conflicting native-chat features while leaving unrelated Improved Chat features available.
 
-Improved Chat uses the independent RuneLite configuration group `improvedchat` and the Java package `com.improvedchat`.
+<!-- IMAGE PLACEHOLDER: Example Resource Pack compatibility settings or Modern Chat coexistence. -->
 
-This repository is BSD 2-Clause licensed. See `LICENSE` and `THIRD_PARTY_NOTICES.md` for attribution.
+## Compatibility notes
+
+- **Chat Widgets:** Improved Chat declares a conflict with Chat Widgets because both plugins provide overlapping chat-overlay systems.
+- **Modern Chat:** Supported as a separate standalone plugin through runtime ownership safeguards.
+- **RuneLite Chat Filter / Chat Color / Emojis:** Improved Chat integrates with these RuneLite features rather than replacing them.
+
+## Support
+
+If something does not look or behave correctly, first check whether another enabled plugin also modifies RuneLite chat, chatbox geometry, opacity, or gameframe artwork.
+
+When reporting a problem, please include:
+
+- what feature you were using;
+- fixed or resizable RuneLite layout;
+- steps to reproduce the issue;
+- a screenshot or short video if the problem is visual;
+- any other enabled chat/gameframe plugins;
+- whether Modern Chat or a Resource Pack is enabled.
+
+Report issues here:
+
+https://github.com/wukuna/improved-chat/issues
+
+Improved Chat is BSD 2-Clause licensed. See `LICENSE` and `THIRD_PARTY_NOTICES.md` for attribution.
