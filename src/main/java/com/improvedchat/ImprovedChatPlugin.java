@@ -79,7 +79,7 @@ import java.util.regex.Pattern;
 @PluginDescriptor(
         name = "Improved Chat",
         configName = "improvedchat",
-        description = "Customizable chat overlays with message color rules, flashing alerts, and RuneLite Chat Color integration.",
+        description = "All-in-one RuneLite chat customization with overlays, per-overlay filters, resizing, collapse, cleanup, clan status, colors, alerts, opacity, and dialogue styling.",
         tags = {"chat", "message", "overlay", "color", "customize", "private", "clan"},
         conflicts = {"Chat Widgets", "Force Recolor"})
 public class ImprovedChatPlugin extends Plugin {
