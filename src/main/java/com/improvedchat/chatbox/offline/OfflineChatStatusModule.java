@@ -2,8 +2,10 @@ package com.improvedchat.chatbox.offline;
 
 import com.improvedchat.ImprovedChatConfig;
 import java.awt.Color;
+import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.Set;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import net.runelite.api.ChatMessageType;
@@ -32,7 +34,7 @@ public final class OfflineChatStatusModule
     @Inject private EventBus eventBus;
     @Inject private ClanChatPresentationService clanPresentation;
 
-    private final Map<MessageNode, String> originalNames = new IdentityHashMap<>();
+    private final Map<MessageNode, ClanNameState> nameStates = new IdentityHashMap<>();
     private boolean started;
 
     public synchronized void startUp()
@@ -113,10 +115,16 @@ public final class OfflineChatStatusModule
         }
 
         boolean changed = false;
+        Set<MessageNode> liveNodes = Collections.newSetFromMap(new IdentityHashMap<>());
         for (MessageNode message : messages)
         {
+            liveNodes.add(message);
             changed |= format(message);
         }
+
+        // Do not retain strong references to chat nodes that have left RuneLite's active message
+        // table. This also prevents stale decoration state from surviving longer than the message.
+        nameStates.keySet().removeIf(node -> !liveNodes.contains(node));
 
         if (changed)
         {
@@ -135,12 +143,17 @@ public final class OfflineChatStatusModule
         }
 
         String currentName = message.getName();
-        originalNames.putIfAbsent(message, currentName);
-        String base = originalNames.get(message);
-        if (base == null)
+        ClanNameState state = nameStates.get(message);
+        if (state == null || !state.matches(message))
         {
-            base = "";
+            // RuneLite recycles MessageNode objects as the chat buffer advances. A recycled node
+            // must start with the new message's own sender name, never the cached name from the
+            // older message which previously occupied this object.
+            state = ClanNameState.capture(message);
+            nameStates.put(message, state);
         }
+
+        String base = state.baseName(currentName);
 
         ClanChatPresentationService.Presentation presentation =
             clanPresentation.resolve(base, type);
@@ -161,24 +174,30 @@ public final class OfflineChatStatusModule
             }
         }
 
-        if (!result.equals(currentName))
+        boolean changed = !result.equals(currentName);
+        if (changed)
         {
             message.setName(result);
-            return true;
         }
-        return false;
+        state.recordApplied(result);
+        return changed;
     }
 
     private void restoreAll()
     {
         boolean changed = false;
-        for (Map.Entry<MessageNode, String> entry : originalNames.entrySet())
+        for (Map.Entry<MessageNode, ClanNameState> entry : nameStates.entrySet())
         {
             try
             {
-                if (!entry.getValue().equals(entry.getKey().getName()))
+                MessageNode node = entry.getKey();
+                ClanNameState state = entry.getValue();
+
+                // Never restore onto a recycled node, and never overwrite a name another plugin
+                // changed after our last decoration pass.
+                if (state.shouldRestore(node))
                 {
-                    entry.getKey().setName(entry.getValue());
+                    node.setName(state.getOriginalName());
                     changed = true;
                 }
             }
@@ -188,7 +207,7 @@ public final class OfflineChatStatusModule
             }
         }
 
-        originalNames.clear();
+        nameStates.clear();
         if (changed)
         {
             client.refreshChat();
