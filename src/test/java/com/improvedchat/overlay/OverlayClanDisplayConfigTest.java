@@ -28,6 +28,27 @@ public class OverlayClanDisplayConfigTest
     }
 
     @Test
+    public void iconTagDetectionMatchesOnlyTheRequestedIcon()
+    {
+        String sender = "<img=17><img=42>Alice";
+
+        assertTrue(DynamicChatOverlay.containsIconTag(sender, 17));
+        assertTrue(DynamicChatOverlay.containsIconTag(sender, 42));
+        assertFalse(DynamicChatOverlay.containsIconTag(sender, 9));
+        assertFalse(DynamicChatOverlay.containsIconTag(null, 17));
+        assertFalse(DynamicChatOverlay.containsIconTag(sender, -1));
+    }
+
+    @Test
+    public void offlineIconDoesNotSuppressDifferentClanRankIcon()
+    {
+        String senderAlreadyContainingOfflineMarker = "<img=42>Alice";
+
+        assertTrue(DynamicChatOverlay.containsIconTag(senderAlreadyContainingOfflineMarker, 42));
+        assertFalse(DynamicChatOverlay.containsIconTag(senderAlreadyContainingOfflineMarker, 17));
+    }
+
+    @Test
     public void overlayOfflineSettingsAreIndependent()
     {
         OverlayConfig first = new OverlayConfig();
