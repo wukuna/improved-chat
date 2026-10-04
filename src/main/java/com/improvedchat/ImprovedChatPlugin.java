@@ -13,6 +13,7 @@ import com.improvedchat.dialogue.DialogueFontsModule;
 import com.improvedchat.release.ReleaseNoticeModule;
 import com.improvedchat.model.MessageCategory;
 import com.improvedchat.model.MessageMergeRule;
+import com.improvedchat.model.MessageNodeIdentity;
 import com.improvedchat.model.OverlayMessage;
 import com.improvedchat.overlay.AttentionEngine;
 import com.improvedchat.overlay.DynamicChatOverlay;
@@ -261,9 +262,10 @@ public class ImprovedChatPlugin extends Plugin {
      * once {@code valueAccessor} reports a value different from {@code originalText}, the pooled
      * message is rebuilt with it; the entry is dropped when it updates or after its tick budget.
      */
-    private static class PendingMessageUpdate {
+    static class PendingMessageUpdate {
         final OverlayMessage widgetMessage;
         final MessageNode messageNode;
+        final MessageNodeIdentity messageIdentity;
         final Function<MessageNode, String> valueAccessor;
         final String originalText;
         int ticksRemaining;
@@ -272,9 +274,14 @@ public class ImprovedChatPlugin extends Plugin {
                 Function<MessageNode, String> valueAccessor, String originalText, int ticksRemaining) {
             this.widgetMessage = widgetMessage;
             this.messageNode = messageNode;
+            this.messageIdentity = MessageNodeIdentity.capture(messageNode);
             this.valueAccessor = valueAccessor;
             this.originalText = originalText;
             this.ticksRemaining = ticksRemaining;
+        }
+
+        boolean stillRepresentsOriginalMessage() {
+            return messageIdentity != null && messageIdentity.matches(messageNode);
         }
     }
 
@@ -730,6 +737,14 @@ public class ImprovedChatPlugin extends Plugin {
         for (int i = pendingUpdates.size() - 1; i >= 0; i--) {
             PendingMessageUpdate pending = pendingUpdates.get(i);
             pending.ticksRemaining--;
+
+            // MessageNode instances are recycled by RuneLite. If this object now represents a
+            // different chat message, drop the pending rewrite instead of transplanting the new
+            // message body into the older pooled overlay entry.
+            if (!pending.stillRepresentsOriginalMessage()) {
+                pendingUpdates.remove(i);
+                continue;
+            }
 
             String currentValue = pending.valueAccessor.apply(pending.messageNode);
             if (currentValue != null && !currentValue.equals(pending.originalText)) {
