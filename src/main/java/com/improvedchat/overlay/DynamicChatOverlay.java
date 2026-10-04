@@ -171,14 +171,16 @@ public class DynamicChatOverlay extends Overlay {
                 if (clanPresentation.isClanMessage()) {
                     if (overlayConfig.isShowClanRankIcons()
                             && clanPresentation.getRankIconId() >= 0
-                            && (msg.getSender() == null || !msg.getSender().contains("<img="))) {
+                            && !containsIconTag(msg.getSender(), clanPresentation.getRankIconId())) {
                         int iconId = clanPresentation.getRankIconId();
                         senderDecorations.add(new TextSegment("", iconId,
                                 ChatRenderUtils.calculateIconWidth(modIcons, iconId, fontSize), Color.WHITE));
                     }
 
                     if (overlayConfig.isShowOfflineStatus() && clanPresentation.isOffline()) {
-                        if (overlayConfig.isShowOfflineIcon() && clanPresentation.getOfflineIconId() >= 0) {
+                        if (overlayConfig.isShowOfflineIcon()
+                                && clanPresentation.getOfflineIconId() >= 0
+                                && !containsIconTag(msg.getSender(), clanPresentation.getOfflineIconId())) {
                             int iconId = clanPresentation.getOfflineIconId();
                             senderDecorations.add(new TextSegment("", iconId,
                                     ChatRenderUtils.calculateIconWidth(modIcons, iconId, fontSize), Color.WHITE));
@@ -343,6 +345,10 @@ public class DynamicChatOverlay extends Overlay {
             default:
                 return globalConfig.gameColour();
         }
+    }
+
+    static boolean containsIconTag(String text, int iconId) {
+        return text != null && iconId >= 0 && text.contains("<img=" + iconId + ">");
     }
 
     private int calculateLineWidth(List<TextSegment> segments, FontMetrics metrics) {
