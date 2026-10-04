@@ -146,6 +146,13 @@ public class ChatTimestampOverlay extends BaseCleanChatOverlay
 					plugin.setTimestampTemplateWidth(plugin.getTimestampTemplateWidth() + getTextLength(text, client));
 				}
 			});
+
+			// Native chat spacing is three pixels wide. Align the reserved timestamp slot to
+			// that grid so the hidden timestamp replacement and every downstream layout
+			// calculation use the exact same pixel width.
+			int spaceWidth = Math.max(1, getTextLength(" ", client));
+			int rawWidth = plugin.getTimestampTemplateWidth();
+			plugin.setTimestampTemplateWidth(((rawWidth + spaceWidth - 1) / spaceWidth) * spaceWidth);
 		}
 
 		client.refreshChat();
