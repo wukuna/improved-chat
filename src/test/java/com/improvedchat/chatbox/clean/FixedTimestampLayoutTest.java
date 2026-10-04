@@ -35,19 +35,49 @@ public class FixedTimestampLayoutTest
             FormatterExtractor.createFromFormatString("[HH:mm]");
 
         int actualWidth = CleanChatUtil.getTextLength("[19:36]", client);
-        int targetWidth = actualWidth + 17;
+        int targetWidth = actualWidth + 18;
         int oldMessageRight = messageState.x + messageState.width;
+        int expectedDelta = targetWidth - actualWidth;
+        int expectedSpaces = targetWidth / CleanChatUtil.getTextLength(" ", client);
 
         group.extractTimestamp(template, targetWidth, client);
 
         assertEquals(0, group.getTimestampX());
-        assertEquals(targetWidth, channelState.x);
-        assertEquals(100 - actualWidth, channelState.width);
-        assertEquals(66 + 17, rankState.x);
-        assertEquals(79 + 17, nameState.x);
-        assertEquals(125 + 17, messageState.x);
+        assertEquals("timestamp-bearing channel widget must stay at the native X", 0, channelState.x);
+        assertEquals(100 + expectedDelta, channelState.width);
+        assertEquals(66 + expectedDelta, rankState.x);
+        assertEquals(79 + expectedDelta, nameState.x);
+        assertEquals(125 + expectedDelta, messageState.x);
         assertEquals(oldMessageRight, messageState.x + messageState.width);
-        assertEquals(" [Clan]", channelState.text);
+        assertEquals(" ".repeat(expectedSpaces) + " [Clan]", channelState.text);
+    }
+
+    @Test
+    public void gameMessageKeepsNativeOriginAndReservesFixedSlotWithSpaces()
+    {
+        WidgetState channelState = new WidgetState("", 0, 0, 0);
+        WidgetState rankState = new WidgetState("", 0, 0, 0);
+        WidgetState nameState = new WidgetState("", 0, 0, 0);
+        WidgetState messageState = new WidgetState("[19:36] Game message", 8, 300, 0);
+        WidgetState clickState = new WidgetState("", 0, 300, 0);
+
+        Client client = clientProxy();
+        ChatWidgetGroup group = new ChatWidgetGroup(
+            channelState.proxy(), rankState.proxy(), nameState.proxy(), messageState.proxy(), clickState.proxy());
+
+        FormatterExtractor.ExtractionResult template =
+            FormatterExtractor.createFromFormatString("[HH:mm]");
+
+        int targetWidth = 45;
+        int expectedSpaces = targetWidth / CleanChatUtil.getTextLength(" ", client);
+        int originalRight = messageState.x + messageState.width;
+
+        group.extractTimestamp(template, targetWidth, client);
+
+        assertEquals(8, group.getTimestampX());
+        assertEquals("message widget origin must not move", 8, messageState.x);
+        assertEquals(originalRight, messageState.x + messageState.width);
+        assertEquals(" ".repeat(expectedSpaces) + " Game message", messageState.text);
     }
 
     private static Client clientProxy()

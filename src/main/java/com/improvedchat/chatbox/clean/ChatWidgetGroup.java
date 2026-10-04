@@ -358,38 +358,41 @@ public class ChatWidgetGroup
 
 		timestampX = widget.getCanvasLocation().getX();
 		int actualTimestampWidth = getTextLength(timestamp.getFormattedOutput(), client);
-		widget.setText(timestamp.getRemainingText());
-
-		applyFixedTimestampSlot(widget, actualTimestampWidth, timestampWidth);
+		applyFixedTimestampSlot(widget, timestamp.getRemainingText(), actualTimestampWidth, timestampWidth, client);
 	}
 
-	private void applyFixedTimestampSlot(Widget timestampWidget, int actualTimestampWidth, int targetTimestampWidth)
+	private void applyFixedTimestampSlot(Widget timestampWidget, String remainingText,
+		int actualTimestampWidth, int targetTimestampWidth, Client client)
 	{
+		int spaceWidth = max(1, getTextLength(" ", client));
 		int targetWidth = max(0, targetTimestampWidth);
 		int actualWidth = max(0, actualTimestampWidth);
-		int delta = targetWidth - actualWidth;
 
+		// The fixed timestamp renderer draws over an exact-width run of native chat spaces.
+		// Keeping the timestamp-bearing widget at its RuneLite-provided X coordinate is critical:
+		// moving that widget moves the timestamp itself and any overlays anchored to the chat line.
+		int paddingSpaces = (targetWidth + spaceWidth - 1) / spaceWidth;
+		targetWidth = paddingSpaces * spaceWidth;
+		timestampWidget.setText(" ".repeat(paddingSpaces) + remainingText);
+		timestampWidget.revalidate();
+
+		int delta = targetWidth - actualWidth;
 		if (timestampWidget == channel)
 		{
-			// The channel widget originally contains the timestamp text. Move its remaining text
-			// behind the fixed slot, then shift every downstream prefix/message widget by exactly
-			// the difference between the native timestamp width and the fixed slot width.
-			channel.setOriginalX(channel.getOriginalX() + targetWidth);
-			channel.setOriginalWidth(max(0, channel.getOriginalWidth() - actualWidth));
+			// Normal player/channel lines keep the timestamp and any remaining channel text in the
+			// channel widget. Grow/shrink that widget by only the width difference, then move the
+			// separate rank, sender, and message widgets by the same delta. The timestamp origin
+			// itself never moves.
+			channel.setOriginalWidth(max(0, channel.getOriginalWidth() + delta));
 			channel.revalidate();
 
 			shiftX(rank, delta);
 			shiftX(name, delta);
 			shiftXPreserveRight(message, delta);
 		}
-		else
-		{
-			// Game/system lines carry the timestamp in the message widget itself. Reserve the slot
-			// directly in the widget geometry instead of approximating it with leading spaces.
-			message.setOriginalX(message.getOriginalX() + targetWidth);
-			message.setOriginalWidth(max(0, message.getOriginalWidth() - targetWidth));
-			message.revalidate();
-		}
+		// Game/system lines keep timestamp and body in one message widget. The exact-width space
+		// prefix reserves the slot without changing widget geometry, so the body naturally begins
+		// after the timestamp while the right edge and wrapping area remain RuneLite-native.
 	}
 
 	private void shiftX(Widget widget, int amount)
