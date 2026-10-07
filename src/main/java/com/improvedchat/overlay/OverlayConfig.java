@@ -88,13 +88,7 @@ public final class OverlayConfig {
     }
 
     public static OverlayConfig defaultAllOverlay() {
-        EnumSet<ChatMessageType> types = EnumSet.noneOf(ChatMessageType.class);
-        for (MessageCategory category : MessageCategory.values()) {
-            if (category != MessageCategory.PRIVATE) {
-                types.addAll(category.getTypes());
-            }
-        }
-        OverlayConfig config = createDefault("Game Alerts", types, false);
+        OverlayConfig config = preset("Game Alerts", "game");
         config.showInputPreview = true;
         config.dynamicHeight = true;
         return config;
@@ -106,6 +100,40 @@ public final class OverlayConfig {
         OverlayConfig config = createDefault("Private Chat", types, true);
         config.contextualColours = true;
         return config;
+    }
+
+    public static OverlayConfig preset(String name, String template) {
+        EnumSet<ChatMessageType> types = EnumSet.noneOf(ChatMessageType.class);
+        if ("game".equals(template)) {
+            types.addAll(MessageCategory.GAME.getTypes());
+            types.addAll(MessageCategory.GAME_CLAN.getTypes());
+        } else if ("private".equals(template)) {
+            types.addAll(MessageCategory.PRIVATE.getTypes());
+        } else if ("clan".equals(template)) {
+            types.addAll(MessageCategory.CLAN_CHAT.getTypes());
+            types.addAll(MessageCategory.GUEST_CLAN_CHAT.getTypes());
+            types.addAll(MessageCategory.GIM_CLAN_CHAT.getTypes());
+        } else if ("all".equals(template)) {
+            for (MessageCategory category : MessageCategory.values()) types.addAll(category.getTypes());
+        }
+        OverlayConfig config = createDefault(name, types, "private".equals(template));
+        config.setDynamicHeight("game".equals(template));
+        return config;
+    }
+
+    public void renewId() { id = UUID.randomUUID().toString(); }
+
+    /** Gson writes fields directly, so validate persisted values before creating controls. */
+    public void normalize() {
+        setName(name);
+        setMaxMessages(maxMessages);
+        setFadeOutDuration(fadeOutDuration);
+        setWidgetWidth(widgetWidth);
+        setPaddingHorizontal(paddingHorizontal);
+        setPaddingVertical(paddingVertical);
+        setOffsetX(offsetX);
+        setOffsetY(offsetY);
+        getMessageTypes().remove(null);
     }
 
     public String getId() {

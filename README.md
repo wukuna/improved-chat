@@ -22,6 +22,14 @@ Most features are independent, so you can use only the parts you want.
 
 Create and manage multiple overlays from the **Improved Chat** side panel.
 
+Start with a preset, then choose **Show overlay** and **Message Types** in General. New custom overlays have no message types selected until you choose them. An overlay appears only when it has messages or an input preview; choosing “With chatbox open or hidden” does not draw an empty frame.
+
+Use **Preview (10 seconds)** while logged in to check appearance without waiting for chat. Preview bypasses content filters and normal visibility conditions; its sample messages never enter chat history. Use **Open Plugin Settings** for native chat features and global defaults.
+
+The overlay list has a direct Enabled switch. The editor supports duplicating an overlay, confirms deletion, preserves your scroll position when dependent controls change, and provides a background opacity percentage. Deleting every overlay stays empty after restart. Creating Game Alerts uses the same game-message selection as the first-run preset; existing saved selections are preserved.
+
+**Clear [overlay] history** clears only that overlay's view. Native chat-tab history clearing still applies to all overlays showing those message types. **Collapse Duplicates** groups consecutive matching messages within each overlay's filtered view and keeps channels, senders, and incoming/outgoing messages separate. Captured history remains intact so clearing or filtering one overlay cannot remove another overlay's messages. History is held for the current plugin session.
+
 Each overlay can independently control:
 
 - enabled state, name, maximum messages, and fade duration;
@@ -66,6 +74,10 @@ Filtering can be global or completely independent per overlay.
   - sender regex rules using a `regex:` prefix.
 
 Invalid custom regex lines are ignored safely.
+
+The editor reports invalid rule line numbers after you leave a field and warns when Show Only Matches has no usable rules. Use the sample player-name and message fields to test custom content rules. Literal names match part of a name; use `regex:^Alice$` for an exact name. The tester does not test channel selection or visibility.
+
+When the global override is active, custom controls are disabled but their saved values are retained. The editor also reports when RuneLite's Chat Filter plugin is disabled, in which case selecting the global filter does not apply content filtering.
 
 Different overlays can therefore show different subsets of the same shared chat history without removing messages from the shared message pool.
 
