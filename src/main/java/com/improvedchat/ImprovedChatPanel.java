@@ -91,9 +91,6 @@ public class ImprovedChatPanel extends PluginPanel {
         }
         boolean samePage = java.util.Objects.equals(renderedOverlayId, editingOverlayId);
         int scrollPosition = samePage && pageScroll != null ? pageScroll.getVerticalScrollBar().getValue() : 0;
-        Component focused = java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
-        String focusName = samePage && focused != null && SwingUtilities.isDescendingFrom(focused, this)
-                ? focused.getName() : null;
         int version = ++rebuildVersion;
         removeAll();
         add(buildHeader(), BorderLayout.NORTH);
@@ -103,16 +100,8 @@ public class ImprovedChatPanel extends PluginPanel {
         repaint();
         SwingUtilities.invokeLater(() -> {
             if (version != rebuildVersion) return;
-            if (focusName != null) restoreFocus(this, focusName);
             if (pageScroll != null) pageScroll.getVerticalScrollBar().setValue(scrollPosition);
         });
-    }
-
-    private void restoreFocus(java.awt.Container parent, String name) {
-        for (Component child : parent.getComponents()) {
-            if (name.equals(child.getName())) { child.requestFocusInWindow(); return; }
-            if (child instanceof java.awt.Container) restoreFocus((java.awt.Container) child, name);
-        }
     }
 
     private Component buildHeader() {
