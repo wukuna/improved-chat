@@ -38,6 +38,45 @@ public final class OverlayMessageFilter
         return mode == OverlayFilterMode.HIDE_MATCHES ? matched : !matched;
     }
 
+    /** Editor feedback only; rendering still tolerates invalid saved expressions. */
+    public List<String> validationMessages(OverlayConfig config)
+    {
+        List<String> errors = new ArrayList<>();
+        validateLines(config.getFilteredRegex(), false, errors);
+        validateLines(config.getFilteredNames(), true, errors);
+        refreshIfNeeded(config);
+        if (config.getFilterMode() == OverlayFilterMode.SHOW_ONLY_MATCHES
+                && messagePatterns.isEmpty() && namePatterns.isEmpty())
+        {
+            errors.add("No usable rules: Show Only Matches will hide every message.");
+        }
+        return errors;
+    }
+
+    private static void validateLines(String text, boolean names, List<String> errors)
+    {
+        String[] lines = text.split("\\R", -1);
+        for (int i = 0; i < lines.length; i++)
+        {
+            String expression = lines[i].trim();
+            if (expression.isEmpty()) continue;
+            if (names)
+            {
+                if (!expression.regionMatches(true, 0, "regex:", 0, 6)) continue;
+                expression = expression.substring(6).trim();
+            }
+            try
+            {
+                if (expression.isEmpty()) throw new PatternSyntaxException("Empty expression", expression, 0);
+                Pattern.compile(expression, Pattern.CASE_INSENSITIVE);
+            }
+            catch (PatternSyntaxException ex)
+            {
+                errors.add((names ? "Names" : "Regex") + " line " + (i + 1) + ": " + ex.getDescription());
+            }
+        }
+    }
+
     private void refreshIfNeeded(OverlayConfig config)
     {
         String words = safe(config.getFilteredWords());

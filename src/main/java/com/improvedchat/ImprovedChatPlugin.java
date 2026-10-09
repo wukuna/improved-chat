@@ -20,7 +20,9 @@ import com.improvedchat.overlay.DynamicChatOverlay;
 import com.improvedchat.overlay.OverlayConfig;
 import com.improvedchat.overlay.OverlayMessageFilter;
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
+import com.improvedchat.overlay.OverlayHistory;
+import com.improvedchat.overlay.OverlayConfigStore;
+import javax.swing.SwingUtilities;
 import com.google.inject.Provides;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
@@ -60,7 +62,6 @@ import net.runelite.client.util.ImageUtil;
 
 import javax.inject.Inject;
 import java.awt.image.BufferedImage;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -230,8 +231,13 @@ public class ImprovedChatPlugin extends Plugin {
     private Plugin emojiPlugin;
 
     // Dynamic overlays
-    private final List<OverlayConfig> overlayConfigs = new ArrayList<>();
-    private final List<DynamicChatOverlay> overlays = new ArrayList<>();
+    private final List<OverlayConfig> overlayConfigs = new CopyOnWriteArrayList<>();
+    private final Map<String, Long> clearedThrough = new ConcurrentHashMap<>();
+    private String configRecoveryMessage;
+
+    @Inject
+    private net.runelite.client.eventbus.EventBus eventBus;
+    private final List<DynamicChatOverlay> overlays = new CopyOnWriteArrayList<>();
     private final Map<String, OverlayMessageFilter> overlayMessageFilters = new ConcurrentHashMap<>();
 
     private NavigationButton navButton;
@@ -339,7 +345,9 @@ public class ImprovedChatPlugin extends Plugin {
         }
         overlays.clear();
         overlayMessageFilters.clear();
+        clearedThrough.clear();
         pendingUpdates.clear();
+        messages.clear();
         clanChatPresentationService.shutDown();
         MessageColorRuleEngine.configure(null);
         OverlayColorRuleEngine.configure(null);
@@ -361,7 +369,10 @@ public class ImprovedChatPlugin extends Plugin {
     }
 
     public void addNewOverlay() {
-        OverlayConfig oc = new OverlayConfig();
+        addConfiguredOverlay(new OverlayConfig());
+    }
+
+    public void addConfiguredOverlay(OverlayConfig oc) {
         overlayConfigs.add(oc);
         addOverlay(oc);
         saveOverlayConfigs();
@@ -373,6 +384,7 @@ public class ImprovedChatPlugin extends Plugin {
     public void removeOverlay(OverlayConfig oc) {
         overlayConfigs.remove(oc);
         overlayMessageFilters.remove(oc.getId());
+        clearedThrough.remove(oc.getId());
         DynamicChatOverlay toRemove = null;
         for (DynamicChatOverlay overlay : overlays) {
             if (overlay.getOverlayConfig() == oc) {
@@ -402,6 +414,7 @@ public class ImprovedChatPlugin extends Plugin {
         overlays.clear();
         overlayConfigs.clear();
         overlayMessageFilters.clear();
+        clearedThrough.clear();
 
         overlayConfigs.add(OverlayConfig.defaultPrivateOverlay());
         overlayConfigs.add(OverlayConfig.defaultAllOverlay());
@@ -462,29 +475,74 @@ public class ImprovedChatPlugin extends Plugin {
 
     private void loadOverlayConfigs() {
         overlayConfigs.clear();
+        configRecoveryMessage = null;
         String json = configManager.getConfiguration(CONFIG_GROUP, OVERLAY_CONFIGS_KEY);
-        if (json != null && !json.isEmpty()) {
-            try {
-                Type listType = new TypeToken<List<OverlayConfig>>() {}.getType();
-                List<OverlayConfig> loaded = gson.fromJson(json, listType);
-                if (loaded != null && !loaded.isEmpty()) {
-                    for (OverlayConfig overlayConfig : loaded) {
-                        if (overlayConfig != null) {
-                            overlayConfigs.add(overlayConfig);
-                        }
-                    }
-                    if (!overlayConfigs.isEmpty()) {
-                        return;
-                    }
-                }
-            } catch (Exception e) {
-                // Fall through to defaults
+        try {
+            overlayConfigs.addAll(OverlayConfigStore.read(gson, json));
+        } catch (RuntimeException ex) {
+            // Preserve the original before later edits can replace an unreadable configuration.
+            configManager.setConfiguration(CONFIG_GROUP, OVERLAY_CONFIGS_KEY + "Backup", json);
+            overlayConfigs.addAll(OverlayConfigStore.defaults());
+            configRecoveryMessage = "Saved overlays could not be read. Defaults are shown; the original configuration was kept in an overlayConfigsBackup setting for recovery.";
+        }
+        if (json == null || json.trim().isEmpty()) saveOverlayConfigs();
+    }
+
+    public OverlayConfig duplicateOverlay(OverlayConfig original) {
+        OverlayConfig copy = gson.fromJson(gson.toJson(original), OverlayConfig.class);
+        copy.renewId();
+        copy.setName(original.getName() + " (copy)");
+        copy.setWidgetWidth(getOverlayWidth(original));
+        addConfiguredOverlay(copy);
+        return copy;
+    }
+
+    public boolean isGlobalFilterOverride() { return config.useChatFilter(); }
+
+    public String getConfigRecoveryMessage() { return configRecoveryMessage; }
+
+    public void openSettings() {
+        net.runelite.client.ui.overlay.Overlay settingsTarget = new net.runelite.client.ui.overlay.Overlay(this) {
+            @Override public java.awt.Dimension render(java.awt.Graphics2D graphics) { return null; }
+        };
+        eventBus.post(new OverlayMenuClicked(
+                new net.runelite.client.ui.overlay.OverlayMenuEntry(net.runelite.api.MenuAction.RUNELITE_OVERLAY_CONFIG,
+                        OverlayManager.OPTION_CONFIGURE, "Improved Chat"), settingsTarget));
+    }
+
+    public boolean isGlobalFilterAvailable() { return isChatFilterEnabled(); }
+
+    public void refreshPanel() {
+        SwingUtilities.invokeLater(() -> { if (panel != null) panel.rebuild(); });
+    }
+
+    public int getOverlayWidth(OverlayConfig oc) {
+        for (DynamicChatOverlay overlay : overlays) {
+            if (overlay.getOverlayConfig() == oc) return overlay.getEffectiveWidth();
+        }
+        return oc.getWidgetWidth();
+    }
+
+    public void setOverlayWidth(OverlayConfig oc, int width) {
+        oc.setWidgetWidth(width);
+        for (DynamicChatOverlay overlay : overlays) {
+            if (overlay.getOverlayConfig() == oc) {
+                overlay.setWidth(width);
+                overlayManager.saveOverlay(overlay);
             }
         }
-        // First run — create defaults
-        overlayConfigs.add(OverlayConfig.defaultPrivateOverlay());
-        overlayConfigs.add(OverlayConfig.defaultAllOverlay());
-        saveOverlayConfigs();
+        onOverlayConfigChanged();
+    }
+
+    public void previewOverlay(OverlayConfig oc) {
+        for (DynamicChatOverlay overlay : overlays) {
+            if (overlay.getOverlayConfig() == oc) overlay.preview();
+        }
+    }
+
+    public String movementHint() {
+        return "Hold " + configManager.getConfig(net.runelite.client.config.RuneLiteConfig.class).dragHotkey()
+                + " and drag the overlay to move it.";
     }
 
     public void saveOverlayConfigs() {
@@ -590,7 +648,9 @@ public class ImprovedChatPlugin extends Plugin {
     public void onOverlayMenuClicked(OverlayMenuClicked event) {
         if (event.getOverlay() instanceof DynamicChatOverlay) {
             DynamicChatOverlay overlay = (DynamicChatOverlay) event.getOverlay();
-            clearMessagesForTypes(overlay.getOverlayConfig().getMessageTypes());
+            if ("Clear".equals(event.getEntry().getOption())) {
+                clearedThrough.put(overlay.getOverlayConfig().getId(), OverlayMessage.latestSequence());
+            }
         }
     }
 
@@ -663,24 +723,10 @@ public class ImprovedChatPlugin extends Plugin {
             if (!messages.isEmpty()) {
                 OverlayMessage lastMsg = messages.get(messages.size() - 1);
                 String merged = tryMergeMessages(lastMsg.getMessage(), message);
-                if (merged != null) {
-                    int existingCount = 0;
-                    if (config.collapseDuplicates()) {
-                        String mergedStripped = stripTags(merged);
-                        for (int i = messages.size() - 2; i >= 0; i--) {
-                            OverlayMessage existing = messages.get(i);
-                            if (stripTags(existing.getMessage()).equals(mergedStripped)) {
-                                existingCount = existing.getCount();
-                                messages.remove(i);
-                                break;
-                            }
-                        }
-                    }
+                if (merged != null && lastMsg.getType() == type
+                        && clearedThrough.values().stream().noneMatch(boundary -> boundary >= lastMsg.getSequence())) {
                     OverlayMessage mergedMsg = OverlayMessage.gameMessage(
                             merged, System.currentTimeMillis(), lastMsg.getType(), lastMsg.isBossKc());
-                    if (existingCount > 0) {
-                        mergedMsg.setCount(existingCount + 1);
-                    }
                     messages.set(messages.size() - 1, mergedMsg);
                     return;
                 }
@@ -698,12 +744,6 @@ public class ImprovedChatPlugin extends Plugin {
                     sender != null ? sender : "Unknown", channelName, message, System.currentTimeMillis(), type, isOutgoing);
         } else {
             newMsg = OverlayMessage.gameMessage(message, System.currentTimeMillis(), type, isBossKc);
-        }
-
-        // Collapse duplicates (except login notifications). newMsg isn't in the pool yet, so pass
-        // skipIndex -1 and base count 1 — the fold adds the matched entry's own count on top.
-        if (config.collapseDuplicates() && type != ChatMessageType.LOGINLOGOUTNOTIFICATION) {
-            newMsg.setCount(collapseDuplicate(messages, stripTags(message), newMsg.getSender(), 1, -1));
         }
 
         messages.add(newMsg);
@@ -758,36 +798,15 @@ public class ImprovedChatPlugin extends Plugin {
 
     /**
      * Replaces the pooled {@code old} message with a copy carrying {@code newBody}, preserving its
-     * kind (sender vs game), count, and metadata. Re-applies duplicate collapsing afterwards: the
-     * body only reaches its final form here (a command result, or an Emojis {@code <img=N>} tag),
-     * so a duplicate the capture-time text couldn't match may only surface post-rewrite. No-op if
-     * {@code old} has already been evicted from the pool.
+     * kind, sequence, and metadata. Duplicate counts are computed in each overlay's view, so a
+     * delayed rewrite never removes another captured message. No-op if already evicted.
      */
     private void rebuildPooledMessage(OverlayMessage old, String newBody) {
         int idx = messages.indexOf(old);
         if (idx < 0) {
             return;
         }
-        OverlayMessage updated;
-        if (old.getSender() != null) {
-            updated = OverlayMessage.senderMessage(
-                    old.getSender(), old.getChannelName(), newBody,
-                    old.getTimestamp(), old.getType(), old.isOutgoing());
-        } else {
-            updated = OverlayMessage.gameMessage(newBody, old.getTimestamp(), old.getType(), old.isBossKc());
-        }
-        if (old.getCount() > 1) {
-            updated.setCount(old.getCount());
-        }
-        messages.set(idx, updated);
-
-        // The shortcut-vs-<img> (or command-vs-result) mismatch at capture time can hide a
-        // duplicate that only matches once the body reaches its final form here. updated is already
-        // in the pool, so skip its own slot and fold on top of the count it already carries.
-        if (config.collapseDuplicates() && updated.getType() != ChatMessageType.LOGINLOGOUTNOTIFICATION) {
-            updated.setCount(collapseDuplicate(
-                    messages, stripTags(newBody), updated.getSender(), updated.getCount(), idx));
-        }
+        messages.set(idx, old.withBody(newBody));
     }
 
     private void reconcileNativeChatOwnership() {
@@ -860,6 +879,7 @@ public class ImprovedChatPlugin extends Plugin {
 
     @Subscribe
     public void onPluginChanged(PluginChanged event) {
+        if (event.getPlugin() instanceof ChatFilterPlugin) refreshPanel();
         if (!modernChatCompatibility.isModernChatPlugin(event.getPlugin())) {
             return;
         }
@@ -892,11 +912,13 @@ public class ImprovedChatPlugin extends Plugin {
         // Keep our copy of the Chat Filter lists in sync as the user edits them.
         if ("chatfilter".equals(event.getGroup())) {
             rebuildChatFilter();
+            refreshPanel();
             return;
         }
         if (!event.getGroup().equals(CONFIG_GROUP)) {
             return;
         }
+        if ("useChatFilter".equals(event.getKey())) refreshPanel();
         if ("hideSidePanel".equals(event.getKey())) {
             if (config.hideSidePanel()) {
                 clientToolbar.removeNavigation(navButton);
@@ -975,7 +997,8 @@ public class ImprovedChatPlugin extends Plugin {
 
     public List<OverlayMessage> getMessagesForOverlay(OverlayConfig overlayConfig) {
         Set<ChatMessageType> types = overlayConfig.getMessageTypes();
-        int size = messages.size();
+        List<OverlayMessage> snapshot = new ArrayList<>(messages);
+        int size = snapshot.size();
         if (size == 0 || types.isEmpty()) {
             return new ArrayList<>(0);
         }
@@ -995,10 +1018,7 @@ public class ImprovedChatPlugin extends Plugin {
 
         int maxMessages = overlayConfig.getMaxMessages();
         List<OverlayMessage> filtered = new ArrayList<>(maxMessages);
-        int msgCount = 0;
-
-        for (int i = size - 1; i >= 0; i--) {
-            OverlayMessage msg = messages.get(i);
+        for (OverlayMessage msg : snapshot) {
 
             if (!types.contains(msg.getType())) {
                 continue;
@@ -1028,19 +1048,11 @@ public class ImprovedChatPlugin extends Plugin {
                 continue;
             }
 
-            // Login notifications don't count against max
-            boolean isLoginNotification = msg.getType() == ChatMessageType.LOGINLOGOUTNOTIFICATION;
-            if (!isLoginNotification && msgCount >= maxMessages) {
-                continue;
-            }
-
-            filtered.add(0, msg);
-            if (!isLoginNotification) {
-                msgCount++;
-            }
+            filtered.add(msg);
         }
 
-        return filtered;
+        return OverlayHistory.select(filtered, clearedThrough.getOrDefault(overlayConfig.getId(), 0L),
+                maxMessages, config.collapseDuplicates());
     }
 
     public void clearMessagesForTypes(Set<ChatMessageType> types) {
@@ -1067,44 +1079,6 @@ public class ImprovedChatPlugin extends Plugin {
             }
         }
         return null;
-    }
-
-    private static String stripTags(String text) {
-        if (text == null) {
-            return "";
-        }
-        return text.replaceAll("</?col[^>]*>", "");
-    }
-
-    /**
-     * Folds a duplicate message into a target's slot: scans {@code pool} for an entry with the same
-     * colour-stripped body and sender, and on a hit removes it and returns the combined count.
-     *
-     * @param pool         the shared message pool, mutated in place (the matched entry is removed)
-     * @param strippedBody the target's body with colour tags stripped ({@link #stripTags})
-     * @param sender       the target's sender ({@code null} for game messages)
-     * @param baseCount    the count the target carries before folding — 1 for a freshly captured
-     *                     message, or its preserved count when rebuilt after a node rewrite
-     * @param skipIndex    the target's own index when it already lives in {@code pool} (so it isn't
-     *                     matched against itself), or -1 when it has not been added yet
-     * @return {@code baseCount} plus the matched entry's count, or {@code baseCount} unchanged when
-     *         no duplicate is found (pool left untouched)
-     */
-    static int collapseDuplicate(List<OverlayMessage> pool, String strippedBody, String sender,
-            int baseCount, int skipIndex) {
-        for (int i = pool.size() - 1; i >= 0; i--) {
-            if (i == skipIndex) {
-                continue;
-            }
-            OverlayMessage other = pool.get(i);
-            String otherSender = other.getSender();
-            if (stripTags(other.getMessage()).equals(strippedBody)
-                    && (otherSender == null ? sender == null : otherSender.equals(sender))) {
-                pool.remove(i);
-                return baseCount + other.getCount();
-            }
-        }
-        return baseCount;
     }
 
     /**

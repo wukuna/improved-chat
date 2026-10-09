@@ -53,6 +53,8 @@ public class DynamicChatOverlay extends Overlay {
     private final ClanChatPresentationService clanPresentationService;
     private OverlayConfig overlayConfig;
     private PlacementMode appliedPlacementMode;
+    private volatile long previewUntil;
+    private List<OverlayMessage> previewMessages = new ArrayList<>();
 
     public DynamicChatOverlay(ImprovedChatPlugin plugin, ImprovedChatConfig globalConfig, Client client,
             ChatColorConfig chatColorConfig, ClanChatPresentationService clanPresentationService,
@@ -79,6 +81,26 @@ public class DynamicChatOverlay extends Overlay {
 
     public OverlayConfig getOverlayConfig() {
         return overlayConfig;
+    }
+
+    public int getEffectiveWidth() {
+        Dimension size = getPreferredSize();
+        return size != null && size.width > 0 ? Math.max(150, size.width) : overlayConfig.getWidgetWidth();
+    }
+
+    public void setWidth(int width) {
+        overlayConfig.setWidgetWidth(width);
+        Dimension size = getPreferredSize();
+        setPreferredSize(new Dimension(overlayConfig.getWidgetWidth(), size == null ? 0 : size.height));
+    }
+
+    public void preview() {
+        long now = System.currentTimeMillis();
+        previewMessages = java.util.Arrays.asList(
+                OverlayMessage.gameMessage("[Preview] Sample game message", now, ChatMessageType.GAMEMESSAGE, false),
+                OverlayMessage.senderMessage("Example player", null, "[Preview] A longer sample chat message to check wrapping and readability.",
+                        now, ChatMessageType.PUBLICCHAT, false));
+        previewUntil = now + 10000;
     }
 
     public void setOverlayConfig(OverlayConfig overlayConfig) {
@@ -124,11 +146,7 @@ public class DynamicChatOverlay extends Overlay {
         FontMetrics metrics = FontStyler.setupGraphics(graphics, fontSize, overlayConfig);
         IndexedSprite[] modIcons = client.getModIcons();
 
-        Dimension preferredSize = getPreferredSize();
-        int widgetWidth = preferredSize != null && preferredSize.width > 0
-                ? preferredSize.width
-                : overlayConfig.getWidgetWidth();
-        widgetWidth = Math.max(150, widgetWidth);
+        int widgetWidth = getEffectiveWidth();
 
         int paddingX = overlayConfig.getPaddingHorizontal();
         int paddingY = overlayConfig.getPaddingVertical();
@@ -143,12 +161,12 @@ public class DynamicChatOverlay extends Overlay {
         boolean followPlayer = placementMode != PlacementMode.FREE;
         boolean useDynamicHeight = followPlayer || overlayConfig.isDynamicHeight();
 
-        int fadeOutDuration = overlayConfig.getFadeOutDuration();
+        int fadeOutDuration = currentTime < previewUntil ? 0 : overlayConfig.getFadeOutDuration();
         long fadeOutMs = fadeOutDuration * 1000L;
         long fadeOutThreshold = fadeOutMs + 5000L;
         int maxMessages = overlayConfig.getMaxMessages();
 
-        List<OverlayMessage> messages = plugin.getMessagesForOverlay(overlayConfig);
+        List<OverlayMessage> messages = currentTime < previewUntil ? previewMessages : plugin.getMessagesForOverlay(overlayConfig);
         int startIndex = Math.max(0, messages.size() - maxMessages);
         List<RenderLine> renderableLines = new ArrayList<>();
 
@@ -289,6 +307,7 @@ public class DynamicChatOverlay extends Overlay {
     }
 
     private boolean shouldRender() {
+        if (System.currentTimeMillis() < previewUntil) return client.getGameState() == GameState.LOGGED_IN;
         if (!overlayConfig.isShow() || client.getGameState() != GameState.LOGGED_IN) {
             return false;
         }

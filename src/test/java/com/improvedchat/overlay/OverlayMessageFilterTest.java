@@ -13,6 +13,22 @@ import static org.junit.Assert.assertTrue;
 public class OverlayMessageFilterTest
 {
     @Test
+    public void reportsInvalidRuleLinesAndEmptyShowOnlyMode()
+    {
+        OverlayConfig config = new OverlayConfig();
+        config.setFilterMode(OverlayFilterMode.SHOW_ONLY_MATCHES);
+        config.setFilteredRegex("\n[invalid");
+        config.setFilteredNames("regex:");
+        java.util.List<String> errors = new OverlayMessageFilter().validationMessages(config);
+        assertEquals(3, errors.size());
+        assertTrue(errors.get(0).startsWith("Regex line 2:"));
+        assertTrue(errors.get(1).startsWith("Names line 1:"));
+        assertTrue(errors.get(2).contains("hide every message"));
+        config.setFilteredWords("hello");
+        assertEquals(2, new OverlayMessageFilter().validationMessages(config).size());
+    }
+
+    @Test
     public void newOverlayDefaultsDoNotChangeExistingBehavior()
     {
         OverlayConfig config = new OverlayConfig();
