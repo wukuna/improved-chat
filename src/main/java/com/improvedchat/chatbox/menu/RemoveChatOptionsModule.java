@@ -81,6 +81,7 @@ public final class RemoveChatOptionsModule {
 
     private boolean isMouseOverChatMessages() {
         Point mouse = client.getMouseCanvasPosition();
+        if (mouse == null) return false;
         Widget chatLines = client.getWidget(ComponentID.CHATBOX_MESSAGE_LINES);
         if (chatLines != null && !chatLines.isHidden()
             && chatLines.getBounds().contains(mouse.getX(), mouse.getY())) {
@@ -105,7 +106,10 @@ public final class RemoveChatOptionsModule {
             int groupId = WidgetUtil.componentToInterface(componentId);
             if ((groupId != InterfaceID.CHATBOX || PRESERVED_CHAT_COMPONENTS.contains(componentId))
                 && groupId != InterfaceID.PRIVATE_CHAT
-                && !EXTERNAL_CHAT_OPTIONS.contains(entry.getOption())) {
+                && !(entry.getType() == MenuAction.RUNELITE
+                    && EXTERNAL_CHAT_OPTIONS.contains(net.runelite.client.util.Text.removeTags(entry.getOption()))
+                    && (componentId <= 0 || groupId == InterfaceID.CHATBOX || groupId == InterfaceID.PRIVATE_CHAT)
+                    && isMouseOverChatMessages())) {
                 kept.add(entry);
             }
         }

@@ -24,7 +24,6 @@ import net.runelite.client.events.ConfigChanged;
 public final class ChatboxOpacityModule {
     private static final int CHATBOX_GROUP_ID = 162;
     private static final int BUTTON_BACKGROUND_CHILD = 3;
-    private static final int ORIGINAL_BUTTON_TYPE = 5;
     private static final int FILLED_BUTTON_TYPE = 3;
 
     @Inject private Client client;
@@ -35,10 +34,9 @@ public final class ChatboxOpacityModule {
     private final Map<Widget, Integer> backgroundOpacity = new IdentityHashMap<>();
     private boolean started;
     private boolean deferredApplyQueued;
-    private int buttonSprite = -1;
-    private int buttonOpacity = -1;
-    private boolean buttonFilled;
-    private int buttonType = ORIGINAL_BUTTON_TYPE;
+    private Widget ownedButton;
+    private ButtonStyle originalButton;
+    private ButtonStyle appliedButton;
 
     public synchronized void startUp() {
         if (started || !config.enableChatboxOpacity()) return;
@@ -138,20 +136,21 @@ public final class ChatboxOpacityModule {
         }
 
         Widget button = client.getWidget(CHATBOX_GROUP_ID, BUTTON_BACKGROUND_CHILD);
-        if (button == null) return;
+        if (button == null) { restoreButton(); return; }
         if (config.buttonOpacity() == -1) {
             restoreButton();
         } else {
-            if (buttonSprite == -1) {
-                buttonSprite = button.getSpriteId();
-                buttonOpacity = button.getOpacity();
-                buttonFilled = button.isFilled();
-                buttonType = button.getType();
+            if (ownedButton != button || appliedButton == null || !appliedButton.matches(button)) {
+                // Release only values we still own before capturing a fresh widget/style.
+                restoreButton();
+                ownedButton = button;
+                originalButton = new ButtonStyle(button);
             }
             button.setSpriteId(-1);
             button.setType(FILLED_BUTTON_TYPE);
             button.setFilled(true);
             button.setOpacity(config.buttonOpacity());
+            appliedButton = new ButtonStyle(button);
         }
     }
 
@@ -182,15 +181,33 @@ public final class ChatboxOpacityModule {
     }
 
     private void restoreButton() {
-        if (buttonSprite == -1) return;
-        Widget button = client.getWidget(CHATBOX_GROUP_ID, BUTTON_BACKGROUND_CHILD);
-        if (button != null) {
-            button.setSpriteId(buttonSprite);
-            button.setOpacity(buttonOpacity);
-            button.setFilled(buttonFilled);
-            button.setType(buttonType);
+        if (ownedButton != null && originalButton != null && appliedButton != null) {
+            // A native rebuild or another plugin can change individual properties.
+            // Never write an old widget's snapshot onto its replacement.
+            if (ownedButton.getSpriteId() == appliedButton.sprite) ownedButton.setSpriteId(originalButton.sprite);
+            if (ownedButton.getOpacity() == appliedButton.opacity) ownedButton.setOpacity(originalButton.opacity);
+            if (ownedButton.isFilled() == appliedButton.filled) ownedButton.setFilled(originalButton.filled);
+            if (ownedButton.getType() == appliedButton.type) ownedButton.setType(originalButton.type);
         }
-        buttonSprite = -1;
-        buttonOpacity = -1;
+        ownedButton = null;
+        originalButton = null;
+        appliedButton = null;
+    }
+
+    private static final class ButtonStyle {
+        final int sprite, opacity, type;
+        final boolean filled;
+
+        ButtonStyle(Widget widget) {
+            sprite = widget.getSpriteId();
+            opacity = widget.getOpacity();
+            type = widget.getType();
+            filled = widget.isFilled();
+        }
+
+        boolean matches(Widget widget) {
+            return sprite == widget.getSpriteId() && opacity == widget.getOpacity()
+                    && type == widget.getType() && filled == widget.isFilled();
+        }
     }
 }
