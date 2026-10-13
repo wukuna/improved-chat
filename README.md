@@ -333,3 +333,9 @@ https://github.com/wukuna/improved-chat/issues
 ## License and attribution
 
 Improved Chat is BSD 2-Clause licensed. See [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for license and attribution details.
+
+## Per-overlay notifications
+
+Each overlay has a **Notifications** section in its editor. Notifications start disabled. Enable them for all new matching messages or only messages matching a `::flash` color rule. Hidden overlays, filtered messages, your own messages and RuneLite console notifications do not trigger alerts. Repainting, loading history and delayed message formatting do not replay notifications. Each enabled matching overlay sends its own alert.
+
+Use RuneLite defaults, or enable **Customize Notification** for independent desktop notifications, Native/Custom/Off sound, volume, focus behavior, window flashing and color, timeout, and chatbox notification. Custom sounds use a WAV filename in RuneLite's notifications folder; blank uses its default custom sound. Playback and operating-system notifications are handled by RuneLite's shared Notifier, as with Idle Notifier. These controls are independent of the existing overlay Attention flashing.

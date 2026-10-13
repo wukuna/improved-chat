@@ -13,6 +13,7 @@ import java.util.EnumSet;
 import java.util.Set;
 import java.util.UUID;
 import net.runelite.api.ChatMessageType;
+import net.runelite.client.config.Notification;
 
 /** Per-overlay settings for Improved Chat. */
 public final class OverlayConfig {
@@ -63,6 +64,9 @@ public final class OverlayConfig {
     private boolean borderEnabled;
     private Color borderColour = Color.WHITE;
     private BorderThickness borderThickness = BorderThickness.NORMAL;
+
+    private volatile Notification notification = Notification.OFF;
+    private AttentionTrigger notificationTrigger = AttentionTrigger.ALL_NEW_MESSAGES;
 
     private boolean flashEnabled;
     private AttentionTrigger attentionTrigger = AttentionTrigger.FLASH_RULES_ONLY;
@@ -125,6 +129,7 @@ public final class OverlayConfig {
 
     /** Gson writes fields directly, so validate persisted values before creating controls. */
     public void normalize() {
+        setNotification(notification);
         setName(name);
         setMaxMessages(maxMessages);
         setFadeOutDuration(fadeOutDuration);
@@ -348,6 +353,15 @@ public final class OverlayConfig {
 
     public boolean isFlashBackground() { return flashBackground; }
     public void setFlashBackground(boolean value) { flashBackground = value; }
+
+    public Notification getNotification() { return notification == null ? Notification.OFF : notification; }
+    public void setNotification(Notification value) { notification = OverlayNotifications.normalize(value); }
+    public AttentionTrigger getNotificationTrigger() {
+        return notificationTrigger == null ? AttentionTrigger.ALL_NEW_MESSAGES : notificationTrigger;
+    }
+    public void setNotificationTrigger(AttentionTrigger value) {
+        notificationTrigger = value == null ? AttentionTrigger.ALL_NEW_MESSAGES : value;
+    }
 
     private static int clamp(int value, int min, int max) {
         return Math.max(min, Math.min(max, value));

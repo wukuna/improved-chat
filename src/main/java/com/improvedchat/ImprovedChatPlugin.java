@@ -18,6 +18,10 @@ import com.improvedchat.model.OverlayMessage;
 import com.improvedchat.overlay.AttentionEngine;
 import com.improvedchat.overlay.DynamicChatOverlay;
 import com.improvedchat.overlay.OverlayConfig;
+import com.improvedchat.overlay.OverlayNotifications;
+import net.runelite.client.Notifier;
+import net.runelite.client.config.Notification;
+import net.runelite.client.config.RuneLiteConfig;
 import com.improvedchat.overlay.OverlayMessageFilter;
 import com.google.gson.Gson;
 import com.improvedchat.overlay.OverlayHistory;
@@ -167,6 +171,8 @@ public class ImprovedChatPlugin extends Plugin {
 
     @Inject
     private Client client;
+    @Inject private Notifier notifier;
+    @Inject private RuneLiteConfig runeLiteConfig;
 
     @Inject
     private ImprovedChatConfig config;
@@ -728,6 +734,7 @@ public class ImprovedChatPlugin extends Plugin {
                     OverlayMessage mergedMsg = OverlayMessage.gameMessage(
                             merged, System.currentTimeMillis(), lastMsg.getType(), lastMsg.isBossKc());
                     messages.set(messages.size() - 1, mergedMsg);
+                    notifyOverlays(mergedMsg);
                     return;
                 }
             }
@@ -747,6 +754,7 @@ public class ImprovedChatPlugin extends Plugin {
         }
 
         messages.add(newMsg);
+        notifyOverlays(newMsg);
 
         while (messages.size() > MAX_POOL_SIZE) {
             messages.remove(0);
@@ -992,6 +1000,30 @@ public class ImprovedChatPlugin extends Plugin {
         }
         return emojiPlugin != null && pluginManager.isPluginEnabled(emojiPlugin);
     }
+
+    public Notification customizeNotification(Notification original) {
+        if (original.isInitialized()) return original.withOverride(true);
+        return new Notification(original.isEnabled(), true, true,
+                runeLiteConfig.enableTrayNotifications(), java.awt.TrayIcon.MessageType.NONE,
+                runeLiteConfig.notificationRequestFocus(), runeLiteConfig.notificationSound(), null,
+                runeLiteConfig.notificationVolume(), runeLiteConfig.notificationTimeout(),
+                runeLiteConfig.enableGameMessageNotification(), runeLiteConfig.flashNotification(),
+                runeLiteConfig.notificationFlashColor(), runeLiteConfig.sendNotificationsWhenFocused());
+    }
+
+    void notifyOverlays(OverlayMessage message) {
+        if (client.getGameState() != GameState.LOGGED_IN || message.isOutgoing()) return;
+        if (message.getSender() != null && client.getLocalPlayer() != null
+                && net.runelite.client.util.Text.removeTags(message.getSender()).equalsIgnoreCase(client.getLocalPlayer().getName())) return;
+        for (OverlayConfig overlay : overlayConfigs) {
+            if (!overlay.getNotification().isEnabled() || !overlay.isShow()) continue;
+            if (OverlayNotifications.eligible(overlay, message, getMessagesForOverlay(overlay))) {
+                sendOverlayNotification(overlay.getNotification(), OverlayNotifications.message(overlay, message));
+            }
+        }
+    }
+
+    protected void sendOverlayNotification(Notification notification, String message) { notifier.notify(notification, message); }
 
     // --- Message access for overlays ---
 

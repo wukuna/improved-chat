@@ -49,6 +49,10 @@ import javax.swing.JTextField;
 import javax.swing.Scrollable;
 import javax.swing.SpinnerNumberModel;
 import net.runelite.api.ChatMessageType;
+import net.runelite.client.config.Notification;
+import net.runelite.client.config.NotificationSound;
+import net.runelite.client.config.RequestFocusType;
+import net.runelite.client.config.FlashNotification;
 import net.runelite.client.ui.PluginPanel;
 
 /** Compact side panel for Improved Chat. */
@@ -325,6 +329,9 @@ public class ImprovedChatPanel extends PluginPanel {
         body.add(accordionPanel(oc, "overlayColors", "OVERLAY COLORS", false, overlayColors));
         body.add(Box.createVerticalStrut(6));
 
+        body.add(accordionPanel(oc, "notifications", "NOTIFICATIONS", false, notificationControls(oc)));
+        body.add(Box.createVerticalStrut(6));
+
         JPanel attention = panel(CARD);
         attention.setLayout(new BoxLayout(attention, BoxLayout.Y_AXIS));
         attention.add(checkRow("Flash", oc.isFlashEnabled(), v -> { oc.setFlashEnabled(v); saveOverlay(); rebuild(); }));
@@ -372,6 +379,48 @@ public class ImprovedChatPanel extends PluginPanel {
         return body;
     }
 
+
+    private JPanel notificationControls(OverlayConfig oc) {
+        JPanel controls = panel(CARD);
+        controls.setLayout(new BoxLayout(controls, BoxLayout.Y_AXIS));
+        Notification notification = oc.getNotification();
+        controls.add(checkRow("Enable Notifications", notification.isEnabled(), value -> {
+            oc.setNotification(oc.getNotification().withEnabled(value)); saveOverlay(); rebuild();
+        }));
+        if (!notification.isEnabled()) return controls;
+        controls.add(comboRow("Notify For", AttentionTrigger.values(), oc.getNotificationTrigger(), value -> {
+            oc.setNotificationTrigger(value); saveOverlay();
+        }));
+        controls.add(checkRow("Customize Notification", notification.isOverride(), value -> {
+            oc.setNotification(value ? plugin.customizeNotification(oc.getNotification()) : oc.getNotification().withOverride(false));
+            saveOverlay(); rebuild();
+        }));
+        if (!notification.isOverride()) {
+            controls.add(help("Uses RuneLite's Notification Settings, including sound and focus preferences."));
+            return controls;
+        }
+        controls.add(checkRow("Desktop Notification", notification.isTray(), value -> updateNotification(oc, n -> n.withTray(value))));
+        controls.add(comboRow("Sound", NotificationSound.values(), notification.getSound(), value -> {
+            updateNotification(oc, n -> n.withSound(value)); rebuild();
+        }));
+        if (notification.getSound() == NotificationSound.CUSTOM) {
+            controls.add(textFieldRow("Sound Filename", notification.getSoundName() == null ? "" : notification.getSoundName(), value ->
+                    updateNotification(oc, n -> n.withSoundName(value))));
+            controls.add(help("Use a WAV filename from RuneLite's notifications folder. Blank uses RuneLite's default custom sound."));
+        }
+        controls.add(spinnerRow("Volume (%)", notification.getVolume(), 0, 100, 5, value -> updateNotification(oc, n -> n.withVolume(value))));
+        controls.add(checkRow("Notify While Focused", notification.isSendWhenFocused(), value -> updateNotification(oc, n -> n.withSendWhenFocused(value))));
+        controls.add(comboRow("Request Focus", RequestFocusType.values(), notification.getRequestFocus(), value -> updateNotification(oc, n -> n.withRequestFocus(value))));
+        controls.add(comboRow("Window Flash", FlashNotification.values(), notification.getFlash(), value -> updateNotification(oc, n -> n.withFlash(value))));
+        controls.add(colorRow("Flash Color", notification.getFlashColor(), value -> updateNotification(oc, n -> n.withFlashColor(value))));
+        controls.add(spinnerRow("Timeout (ms)", notification.getTimeout(), 0, Integer.MAX_VALUE, 1000, value -> updateNotification(oc, n -> n.withTimeout(value))));
+        controls.add(checkRow("Chatbox Notification", notification.isGameMessage(), value -> updateNotification(oc, n -> n.withGameMessage(value))));
+        return controls;
+    }
+
+    private void updateNotification(OverlayConfig oc, java.util.function.UnaryOperator<Notification> change) {
+        oc.setNotification(change.apply(oc.getNotification())); saveOverlay();
+    }
 
     private Component help(String text) {
         JTextArea area = new JTextArea(text) {

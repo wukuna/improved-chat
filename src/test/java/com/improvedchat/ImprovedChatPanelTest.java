@@ -25,6 +25,9 @@ public class ImprovedChatPanelTest {
         @Override public List<OverlayConfig> getOverlayConfigs() { return configs; }
         @Override public void onOverlayConfigChanged() { }
         @Override public int getOverlayWidth(OverlayConfig config) { return config.getWidgetWidth(); }
+        @Override public net.runelite.client.config.Notification customizeNotification(net.runelite.client.config.Notification original) {
+            return com.improvedchat.overlay.OverlayNotifications.normalize(original.withOverride(true).withInitialized(true).withVolume(50));
+        }
         @Override public boolean isGlobalFilterOverride() { return globalOverride; }
         @Override public boolean isGlobalFilterAvailable() { return false; }
         @Override public String movementHint() { return "Hold Alt and drag the overlay to move it."; }
@@ -82,6 +85,26 @@ public class ImprovedChatPanelTest {
                 panel.rebuild();
                 layout(panel);
                 capture(panel, "overlay-narrow");
+            } catch (Exception ex) { throw new AssertionError(ex); }
+        });
+    }
+
+    @Test public void notificationsEditorKeepsEachOverlayIndependent() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            try {
+                FakePlugin plugin=new FakePlugin(); OverlayConfig second=new OverlayConfig(); plugin.configs.add(second);
+                ImprovedChatPanel panel=new ImprovedChatPanel(plugin); panel.setSize(280,900);
+                button(panel,"EDIT").doClick(); button(panel,"NOTIFICATIONS").doClick();
+                button(panel,"Enable Notifications").doClick();
+                assertTrue(plugin.configs.get(0).getNotification().isEnabled()); assertFalse(second.getNotification().isEnabled());
+                button(panel,"Customize Notification").doClick();
+                assertTrue(plugin.configs.get(0).getNotification().isOverride());
+                layout(panel);
+                javax.swing.JComponent section=(javax.swing.JComponent)button(panel,"NOTIFICATIONS").getParent();
+                section.scrollRectToVisible(new java.awt.Rectangle(0,0,section.getWidth(),650));
+                capture(panel,"overlay-notifications");
+                button(panel,"Enable Notifications").doClick();
+                assertFalse(plugin.configs.get(0).getNotification().isEnabled());
             } catch (Exception ex) { throw new AssertionError(ex); }
         });
     }
