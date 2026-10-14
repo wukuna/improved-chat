@@ -20,6 +20,7 @@ public class NativeUserCombinationAuditTest {
    w=(Widget)Proxy.newProxyInstance(Widget.class.getClassLoader(),new Class[]{Widget.class},(o,m,a)->{
     if(m.getName().equals("hashCode"))return System.identityHashCode(o);if(m.getName().equals("equals"))return o==a[0];
     if(m.getName().startsWith("set")){p.put(m.getName().substring(3),a[0]);return m.getReturnType()==Widget.class?o:null;}
+    if(m.getName().equals("isSelfHidden"))return p.getOrDefault("Hidden",false);
     String k=m.getName().startsWith("is")?m.getName().substring(2):m.getName().startsWith("get")?m.getName().substring(3):m.getName();return p.getOrDefault(k,UserCombinationAuditTest.def(m.getReturnType()));});
   }
  }

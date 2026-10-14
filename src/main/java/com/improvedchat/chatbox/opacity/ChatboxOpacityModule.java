@@ -31,7 +31,7 @@ public final class ChatboxOpacityModule {
     @Inject private ImprovedChatConfig config;
     @Inject private EventBus eventBus;
 
-    private final Map<Widget, Integer> backgroundOpacity = new IdentityHashMap<>();
+    private final Map<Widget, BackgroundOpacity> backgroundOpacity = new IdentityHashMap<>();
     private boolean started;
     private boolean deferredApplyQueued;
     private Widget ownedButton;
@@ -105,34 +105,30 @@ public final class ChatboxOpacityModule {
             if (!config.opacityDialogueMenus() && isDialogueOrMenuSurface(children)) {
                 restoreBackground();
             } else {
-                boolean generationChanged = backgroundOpacity.size() != liveCount(children);
-                if (!generationChanged) {
-                    for (Widget child : children) {
-                        if (child != null && !backgroundOpacity.containsKey(child)) {
-                            generationChanged = true;
-                            break;
-                        }
-                    }
-                }
-                if (generationChanged) {
-                    backgroundOpacity.clear();
-                    for (Widget child : children) {
-                        if (child != null) {
-                            backgroundOpacity.put(child, child.getOpacity());
-                        }
-                    }
-                }
-
+                Map<Widget, Boolean> live = new IdentityHashMap<>();
+                for (Widget child : children) if (child != null) live.put(child, Boolean.TRUE);
+                backgroundOpacity.entrySet().removeIf(entry -> {
+                    if (live.containsKey(entry.getKey())) return false;
+                    restoreBackgroundChild(entry.getKey(), entry.getValue());
+                    return true;
+                });
                 if (config.chatboxOpacity() == -1) {
                     restoreBackground();
                 } else {
                     for (Widget child : children) {
-                        if (child != null) {
-                            child.setOpacity(config.chatboxOpacity());
+                        if (child == null) continue;
+                        BackgroundOpacity snapshot = backgroundOpacity.get(child);
+                        if (snapshot == null || child.getOpacity() != snapshot.applied) {
+                            snapshot = new BackgroundOpacity(child.getOpacity());
+                            backgroundOpacity.put(child, snapshot);
                         }
+                        child.setOpacity(config.chatboxOpacity());
+                        snapshot.applied = child.getOpacity();
                     }
                 }
             }
+        } else {
+            restoreBackground();
         }
 
         Widget button = client.getWidget(CHATBOX_GROUP_ID, BUTTON_BACKGROUND_CHILD);
@@ -163,19 +159,23 @@ public final class ChatboxOpacityModule {
         return false;
     }
 
-    private static int liveCount(Widget[] widgets) {
-        int count = 0;
-        for (Widget widget : widgets) if (widget != null) count++;
-        return count;
+    private static final class BackgroundOpacity {
+        final int original;
+        int applied;
+
+        BackgroundOpacity(int opacity) {
+            original = opacity;
+            applied = opacity;
+        }
+    }
+
+    private static void restoreBackgroundChild(Widget widget, BackgroundOpacity snapshot) {
+        if (widget.getOpacity() == snapshot.applied) widget.setOpacity(snapshot.original);
     }
 
     private void restoreBackground() {
-        for (Map.Entry<Widget, Integer> entry : backgroundOpacity.entrySet()) {
-            try {
-                entry.getKey().setOpacity(entry.getValue());
-            } catch (Exception ignored) {
-                // Widget generations are transient; stale instances can safely be dropped.
-            }
+        for (Map.Entry<Widget, BackgroundOpacity> entry : backgroundOpacity.entrySet()) {
+            restoreBackgroundChild(entry.getKey(), entry.getValue());
         }
         backgroundOpacity.clear();
     }

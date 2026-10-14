@@ -49,11 +49,6 @@ import java.util.regex.Pattern;
 public final class ChatRenderUtils {
 
     private static final Pattern IMG_TAG_PATTERN = Pattern.compile("<img=(\\d+)>");
-    private static final Pattern COL_TAG_PATTERN = Pattern.compile("<col=([0-9a-fA-F]{6})>");
-    private static final Pattern COL_NAMED_PATTERN = Pattern.compile("<col(NORMAL|HIGHLIGHT)>");
-    private static final Pattern COL_UNKNOWN_PATTERN = Pattern.compile("<col[^>]*>");
-    private static final Pattern COL_END_PATTERN = Pattern.compile("</col>");
-    private static final Pattern BR_TAG_PATTERN = Pattern.compile("<br>");
     private static final int MAX_MESSAGE_LENGTH = 500;
 
     private static IndexedSprite[] cachedModIconsRef;
@@ -434,105 +429,64 @@ public final class ChatRenderUtils {
             return segments;
         }
 
+        text = com.improvedchat.ChatDisplayText.expandTemplates(text);
         Color currentColor = textColor;
+        Color underline = null, strike = null, shadow = null;
         StringBuilder currentText = new StringBuilder();
-        int i = 0;
-
-        while (i < text.length()) {
-            Matcher imgMatcher = IMG_TAG_PATTERN.matcher(text.substring(i));
-            Matcher colMatcher = COL_TAG_PATTERN.matcher(text.substring(i));
-            Matcher colNamedMatcher = COL_NAMED_PATTERN.matcher(text.substring(i));
-            Matcher colEndMatcher = COL_END_PATTERN.matcher(text.substring(i));
-            Matcher brMatcher = BR_TAG_PATTERN.matcher(text.substring(i));
-
-            if (brMatcher.lookingAt()) {
-                if (currentText.length() > 0) {
-                    String str = currentText.toString();
-                    segments.add(new TextSegment(str, -1, metrics.stringWidth(str), currentColor));
-                    currentText = new StringBuilder();
-                }
-                segments.add(new TextSegment("", TextSegment.LINE_BREAK, 0, currentColor));
-                i += brMatcher.end();
-            } else if (imgMatcher.lookingAt()) {
-                if (currentText.length() > 0) {
-                    String str = currentText.toString();
-                    segments.add(new TextSegment(str, -1, metrics.stringWidth(str), currentColor));
-                    currentText = new StringBuilder();
-                }
-                try {
-                    int iconId = Integer.parseInt(imgMatcher.group(1));
-                    int iconWidth = calculateIconWidth(modIcons, iconId, fontSize);
-                    segments.add(new TextSegment("", iconId, iconWidth, currentColor));
-                } catch (NumberFormatException e) {
-                    currentText.append(imgMatcher.group(0));
-                }
-                i += imgMatcher.end();
-            } else if (colNamedMatcher.lookingAt()) {
-                if (currentText.length() > 0) {
-                    String str = currentText.toString();
-                    segments.add(new TextSegment(str, -1, metrics.stringWidth(str), currentColor));
-                    currentText = new StringBuilder();
-                }
-                String colorName = colNamedMatcher.group(1);
-                if ("NORMAL".equals(colorName) || !retainContextualColours) {
-                    currentColor = textColor;
-                } else if ("HIGHLIGHT".equals(colorName)) {
+        for (int i = 0; i < text.length();) {
+            if (text.charAt(i) != '<') { currentText.append(text.charAt(i++)); continue; }
+            int end = text.indexOf('>', i);
+            if (end < 0) { currentText.append(text.charAt(i++)); continue; }
+            String tag = text.substring(i + 1, end);
+            i = end + 1;
+            if (tag.equals("lt") || tag.equals("gt") || tag.equals("at") || tag.equals("nbh")) {
+                currentText.append(tag.equals("lt") ? '<' : tag.equals("gt") ? '>' : tag.equals("at") ? '@' : '-');
+                continue;
+            }
+            if (currentText.length() > 0) {
+                String value = currentText.toString();
+                segments.add(new TextSegment(value, -1, metrics.stringWidth(value), currentColor, underline, strike, shadow));
+                currentText.setLength(0);
+            }
+            try {
+                if (tag.equals("br") || tag.equals("n")) {
+                    segments.add(new TextSegment("", TextSegment.LINE_BREAK, 0, currentColor));
+                    currentColor = textColor; underline = null; strike = null; shadow = null;
+                } else if (tag.startsWith("img=")) {
+                    int icon = Integer.parseInt(tag.substring(4));
+                    if (icon >= 0) segments.add(new TextSegment("", icon, calculateIconWidth(modIcons, icon, fontSize), currentColor));
+                } else if (tag.equals("colNORMAL") || tag.equals("/col")) currentColor = textColor;
+                else if (tag.equals("colHIGHLIGHT") && retainContextualColours) {
                     Color highlight = getConfiguredChatColor(messageType, true, chatColorConfig, OverlayColorRuleEngine.chatColorSource());
-                    currentColor = highlight != null ? highlight : textColor;
-                }
-                i += colNamedMatcher.end();
-            } else if (colMatcher.lookingAt() && retainContextualColours) {
-                if (currentText.length() > 0) {
-                    String str = currentText.toString();
-                    segments.add(new TextSegment(str, -1, metrics.stringWidth(str), currentColor));
-                    currentText = new StringBuilder();
-                }
-                try {
-                    currentColor = Color.decode("#" + colMatcher.group(1));
-                } catch (NumberFormatException e) {
-                    currentColor = textColor;
-                }
-                i += colMatcher.end();
-            } else if (colEndMatcher.lookingAt() && retainContextualColours) {
-                if (currentText.length() > 0) {
-                    String str = currentText.toString();
-                    segments.add(new TextSegment(str, -1, metrics.stringWidth(str), currentColor));
-                    currentText = new StringBuilder();
-                }
-                currentColor = textColor;
-                i += colEndMatcher.end();
-            } else if (colMatcher.lookingAt()) {
-                i += colMatcher.end();
-            } else if (colEndMatcher.lookingAt()) {
-                i += colEndMatcher.end();
-            } else if (text.startsWith("<lt>", i)) {
-                currentText.append('<');
-                i += 4;
-            } else if (text.startsWith("<gt>", i)) {
-                currentText.append('>');
-                i += 4;
-            } else if (text.startsWith("<at>", i)) {
-                currentText.append('@');
-                i += 4;
-            } else {
-                Matcher colUnknownMatcher = COL_UNKNOWN_PATTERN.matcher(text.substring(i));
-                if (colUnknownMatcher.lookingAt()) {
-                    i += colUnknownMatcher.end();
-                } else {
-                    currentText.append(text.charAt(i));
-                    i++;
-                }
+                    currentColor = highlight == null ? textColor : highlight;
+                } else if (tag.startsWith("col=") && retainContextualColours) currentColor = tagColor(tag.substring(4));
+                else if (tag.equals("u")) underline = Color.BLACK;
+                else if (tag.startsWith("u=")) underline = tagColor(tag.substring(2));
+                else if (tag.equals("/u")) underline = null;
+                else if (tag.equals("str")) strike = new Color(0x800000);
+                else if (tag.startsWith("str=")) strike = tagColor(tag.substring(4));
+                else if (tag.equals("/str")) strike = null;
+                else if (tag.equals("shad")) shadow = Color.BLACK;
+                else if (tag.startsWith("shad=")) shadow = tagColor(tag.substring(5));
+                else if (tag.equals("/shad")) shadow = null;
+                // Native font rendering skips unknown tags; escaped angle brackets remain text.
+            } catch (NumberFormatException ignored) {
+                // Malformed native formatting tags must not break a chat overlay.
             }
         }
-
         if (currentText.length() > 0) {
-            String str = currentText.toString();
-            segments.add(new TextSegment(str, -1, metrics.stringWidth(str), currentColor));
+            String value = currentText.toString();
+            segments.add(new TextSegment(value, -1, metrics.stringWidth(value), currentColor, underline, strike, shadow));
         }
 
         return segments;
     }
 
+
+    private static Color tagColor(String hex) {
+        if (hex.isEmpty() || hex.length() > 6 || !hex.matches("[0-9a-fA-F]+")) throw new NumberFormatException();
+        return new Color(Integer.parseInt(hex, 16));
+    }
 
     private static Color getConfiguredChatColor(ChatMessageType type, boolean highlight,
             ChatColorConfig chatColorConfig, ChatColorSource source) {
@@ -657,8 +611,7 @@ public final class ChatRenderUtils {
     private static List<TextSegment> applySolidColor(List<TextSegment> input, Color color) {
         List<TextSegment> out = new ArrayList<>(input.size());
         for (TextSegment seg : input) {
-            out.add(new TextSegment(seg.text, seg.iconId, seg.width,
-                    seg.iconId == TextSegment.LINE_BREAK ? seg.color : color));
+            out.add(seg.copy(seg.text, seg.width, seg.iconId == TextSegment.LINE_BREAK ? seg.color : color));
         }
         return out;
     }
@@ -694,7 +647,7 @@ public final class ChatRenderUtils {
                     } else {
                         c = RAINBOW[colorIndex++ % RAINBOW.length];
                     }
-                    out.add(new TextSegment(ch, -1, metrics.stringWidth(ch), c));
+                    out.add(seg.copy(ch, metrics.stringWidth(ch), c));
                     offset += Character.charCount(cp);
                 }
             } else {
@@ -705,7 +658,7 @@ public final class ChatRenderUtils {
                     Color c = whitespace
                             ? RAINBOW[(Math.max(0, colorIndex - 1)) % RAINBOW.length]
                             : RAINBOW[colorIndex++ % RAINBOW.length];
-                    out.add(new TextSegment(token, -1, metrics.stringWidth(token), c));
+                    out.add(seg.copy(token, metrics.stringWidth(token), c));
                 }
             }
         }
@@ -760,7 +713,7 @@ public final class ChatRenderUtils {
                     if (word.isEmpty() && wi < words.length - 1) {
                         int spaceWidth = metrics.stringWidth(" ");
                         if (spaceWidth <= currentWidth) {
-                            currentLine.add(new TextSegment(" ", -1, spaceWidth, segment.color));
+                            currentLine.add(segment.copy(" ", spaceWidth, segment.color));
                             currentWidth -= spaceWidth;
                         }
                         continue;
@@ -773,10 +726,10 @@ public final class ChatRenderUtils {
 
                     if (neededWidth <= currentWidth) {
                         if (needsSpace) {
-                            currentLine.add(new TextSegment(" ", -1, spaceWidth, segment.color));
+                            currentLine.add(segment.copy(" ", spaceWidth, segment.color));
                             currentWidth -= spaceWidth;
                         }
-                        currentLine.add(new TextSegment(word, -1, wordWidth, segment.color));
+                        currentLine.add(segment.copy(word, wordWidth, segment.color));
                         currentWidth -= wordWidth;
                     } else {
                         if (!currentLine.isEmpty()) {
@@ -784,7 +737,7 @@ public final class ChatRenderUtils {
                             currentLine = new ArrayList<>();
                             currentWidth = subsequentLineWidth;
                         }
-                        currentLine.add(new TextSegment(word, -1, wordWidth, segment.color));
+                        currentLine.add(segment.copy(word, wordWidth, segment.color));
                         currentWidth -= wordWidth;
                     }
                 }

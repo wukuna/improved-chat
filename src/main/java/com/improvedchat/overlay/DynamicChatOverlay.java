@@ -251,16 +251,24 @@ public class DynamicChatOverlay extends Overlay {
             translateToPlayer(graphics, placementMode, widgetWidth, widgetHeight);
         }
 
+        int paintHeight = widgetHeight;
+        OverlayPosition anchor = getPreferredPosition() == null ? getPosition() : getPreferredPosition();
+        if (!followPlayer && useDynamicHeight && getPreferredLocation() == null
+                && (anchor == OverlayPosition.BOTTOM_LEFT || anchor == OverlayPosition.BOTTOM_RIGHT
+                    || anchor == OverlayPosition.ABOVE_CHATBOX_RIGHT) && getBounds().height > 0) {
+            // RuneLite places bottom-anchored overlays using the previous frame's bounds.
+            paintHeight = getBounds().height;
+        }
         Shape originalClip = graphics.getClip();
-        graphics.setClip(0, 0, widgetWidth, widgetHeight);
+        graphics.setClip(0, 0, widgetWidth, paintHeight);
 
         Color background = overlayConfig.getRenderBackgroundColour();
         if (background.getAlpha() > 0) {
             graphics.setColor(background);
-            graphics.fillRect(0, 0, widgetWidth, widgetHeight);
+            graphics.fillRect(0, 0, widgetWidth, paintHeight);
         }
 
-        int y = widgetHeight - paddingY - metrics.getDescent();
+        int y = paintHeight - paddingY - metrics.getDescent();
         if (inputSegments != null) {
             drawSegments(graphics, inputSegments, 255, y, widgetWidth,
                     paddingX, fontSize, metrics, modIcons, drawShadow);
@@ -278,7 +286,7 @@ public class DynamicChatOverlay extends Overlay {
         }
 
         graphics.setClip(originalClip);
-        AttentionEngine.drawBorder(graphics, overlayConfig, widgetWidth, widgetHeight, currentTime);
+        AttentionEngine.drawBorder(graphics, overlayConfig, widgetWidth, paintHeight, currentTime);
 
         return followPlayer ? null : new Dimension(widgetWidth, widgetHeight);
     }
@@ -406,8 +414,22 @@ public class DynamicChatOverlay extends Overlay {
                 }
             } else {
                 Color segmentColor = segment.color == null ? Color.WHITE : segment.color;
-                x += ChatRenderUtils.drawText(graphics, segment.text, segmentColor, alpha, x, y,
-                        drawShadow, metrics);
+                if (segment.shadow != null) {
+                    graphics.setColor(ChatRenderUtils.withAlpha(segment.shadow, alpha));
+                    graphics.drawString(segment.text, x + 2, y + 1);
+                }
+                int width = ChatRenderUtils.drawText(graphics, segment.text, segmentColor, alpha, x, y,
+                        segment.shadow == null && drawShadow, metrics);
+                if (segment.underline != null) {
+                    graphics.setColor(ChatRenderUtils.withAlpha(segment.underline, alpha));
+                    graphics.drawLine(x + 1, y + 1, x + width, y + 1);
+                }
+                if (segment.strikethrough != null) {
+                    graphics.setColor(ChatRenderUtils.withAlpha(segment.strikethrough, alpha));
+                    int strikeY = y - metrics.getAscent() + (int) (metrics.getAscent() * 0.7);
+                    graphics.drawLine(x + 1, strikeY, x + width, strikeY);
+                }
+                x += width;
             }
         }
     }

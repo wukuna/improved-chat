@@ -13,6 +13,8 @@ import net.runelite.api.widgets.Widget;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.function.Consumer;
+import java.util.IdentityHashMap;
+import java.util.Map;
 
 @Slf4j
 @Singleton
@@ -24,6 +26,7 @@ public class ChatWidgetManager {
     private ImprovedChatConfig config;
 
     private static final String ORIGINAL_ALL_BUTTON_TEXT = "All";
+    private final Map<Widget, Boolean> collapsedTabs = new IdentityHashMap<>();
     private Widget collapsedBackground;
     private boolean backgroundWasHidden;
 
@@ -37,7 +40,7 @@ public class ChatWidgetManager {
     private void updateControlsBackground(boolean collapsed) {
         Widget background = client.getWidget(InterfaceID.Chatbox.CONTROLS_BACKGROUND_GRAPHIC);
         if (collapsedBackground != null && (!collapsed || collapsedBackground != background)) {
-            collapsedBackground.setHidden(backgroundWasHidden);
+            if (collapsedBackground.isSelfHidden()) collapsedBackground.setHidden(backgroundWasHidden);
             collapsedBackground = null;
         }
         if (!collapsed || background == null) return;
@@ -50,8 +53,23 @@ public class ChatWidgetManager {
     }
 
     private void toggleChatButtonVisibility(ChatState state) {
-        for (int buttonID : ChatButton.CONTAINER_IDS_TO_TOGGLE) {
-            runOnWidgetIfPresent(buttonID, (Widget w) -> w.setHidden(state.isCollapsed()));
+        Map<Widget, Boolean> live = new IdentityHashMap<>();
+        if (state.isCollapsed()) {
+            for (int buttonID : ChatButton.CONTAINER_IDS_TO_TOGGLE) {
+                Widget widget = client.getWidget(buttonID);
+                if (widget != null) live.put(widget, Boolean.TRUE);
+            }
+        }
+        collapsedTabs.entrySet().removeIf(entry -> {
+            if (live.containsKey(entry.getKey())) return false;
+            if (entry.getKey().isSelfHidden()) entry.getKey().setHidden(entry.getValue());
+            return true;
+        });
+        for (Widget widget : live.keySet()) {
+            if (!collapsedTabs.containsKey(widget) || !widget.isSelfHidden()) {
+                collapsedTabs.put(widget, widget.isSelfHidden());
+            }
+            widget.setHidden(true);
         }
     }
 

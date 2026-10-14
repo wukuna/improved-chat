@@ -297,8 +297,13 @@ public class ImprovedChatPlugin extends Plugin {
         }
     }
 
+    private volatile boolean nativeChatActive;
+    private volatile long nativeChatGeneration;
+
     @Override
     protected void startUp() {
+        nativeChatGeneration++;
+        nativeChatActive = true;
         loadOverlayConfigs();
         MessageColorRuleEngine.configure(config);
         OverlayColorRuleEngine.configure(config);
@@ -337,6 +342,8 @@ public class ImprovedChatPlugin extends Plugin {
 
     @Override
     protected void shutDown() {
+        nativeChatActive = false;
+        nativeChatGeneration++;
         releaseNoticeModule.shutDown();
         dialogueFontsModule.shutDown();
         offlineChatStatusModule.shutDown();
@@ -567,6 +574,13 @@ public class ImprovedChatPlugin extends Plugin {
     // --- Event handlers ---
 
     @Subscribe
+    public void onBeforeRender(net.runelite.api.events.BeforeRender event) {
+        if (nativeChatActive && pmWidgetsHidden && client.getGameState() == GameState.LOGGED_IN) {
+            setPmWidgetsHidden(true);
+        }
+    }
+
+    @Subscribe
     public void onFocusChanged(FocusChanged event) {
         AttentionEngine.setClientFocused(event.isFocused());
     }
@@ -672,6 +686,11 @@ public class ImprovedChatPlugin extends Plugin {
             return;
         }
 
+        if (type == ChatMessageType.LOGINLOGOUTNOTIFICATION) {
+            int permanent = client.getVarbitValue(net.runelite.api.gameval.VarbitID.LOGINLOGOUT_PERMANENT);
+            int setting = permanent != 0 ? permanent : client.getVarbitValue(net.runelite.api.gameval.VarbitID.LOGINLOGOUT_SETTING);
+            if (setting == 2) return;
+        }
         String message = event.getMessage();
         if (message == null || message.trim().isEmpty()) {
             return;
@@ -709,6 +728,9 @@ public class ImprovedChatPlugin extends Plugin {
                 message = nodeValue.trim();
             }
         }
+
+        message = ChatDisplayText.normalize(type, message);
+        if (message.trim().isEmpty()) return;
 
         // Keep the shared pool unfiltered. Global/per-overlay filtering is applied when each
         // overlay selects messages so one overlay can hide a message while another still shows it.
@@ -814,14 +836,16 @@ public class ImprovedChatPlugin extends Plugin {
         if (idx < 0) {
             return;
         }
-        messages.set(idx, old.withBody(newBody));
+        messages.set(idx, old.withBody(ChatDisplayText.normalize(old.getType(), newBody)));
     }
 
     private void reconcileNativeChatOwnership() {
+        if (!nativeChatActive) return;
         reconcileNativeChatOwnership(modernChatCompatibility.snapshot());
     }
 
     private void reconcileNativeChatOwnership(ModernChatOwnership ownership) {
+        if (!nativeChatActive) return;
         if (config.enableResizableChat() && !ownership.blocksGeometry()) {
             chatResizeModule.startUp();
         } else {
@@ -882,7 +906,14 @@ public class ImprovedChatPlugin extends Plugin {
     private void scheduleNativeChatOwnershipReconcile() {
         // Defer once past the current event dispatch, then queue at tick end. This lets Modern Chat
         // enqueue its own start/stop restoration first, including its tick-end legacy-chat restore.
-        clientThread.invokeLater(() -> clientThread.invokeAtTickEnd(this::reconcileNativeChatOwnership));
+        if (!nativeChatActive) return;
+        long generation = nativeChatGeneration;
+        clientThread.invokeLater(() -> {
+            if (!nativeChatActive || generation != nativeChatGeneration) return;
+            clientThread.invokeAtTickEnd(() -> {
+                if (nativeChatActive && generation == nativeChatGeneration) reconcileNativeChatOwnership();
+            });
+        });
     }
 
     @Subscribe
@@ -1197,30 +1228,43 @@ public class ImprovedChatPlugin extends Plugin {
                 || position == OverlayPosition.CANVAS_TOP_RIGHT;
     }
 
-    private void setPmWidgetsHidden(boolean hidden) {
-        setGameframePmContainerHidden(InterfaceID.TOPLEVEL, 36, hidden);
-        setGameframePmContainerHidden(InterfaceID.TOPLEVEL_OSRS_STRETCH, 93, hidden);
-        setGameframePmContainerHidden(InterfaceID.TOPLEVEL_PRE_EOC, 90, hidden);
+    private final Map<Widget, Boolean> hiddenPmRows = new java.util.IdentityHashMap<>();
 
-        Widget pmContainer = client.getWidget(InterfaceID.PM_CHAT, 0);
-        if (pmContainer != null) {
-            pmContainer.setHidden(hidden);
-            Widget[] dynamicChildren = pmContainer.getDynamicChildren();
-            if (dynamicChildren != null) {
-                for (Widget child : dynamicChildren) {
-                    if (child != null) {
-                        child.setHidden(hidden);
+    private void setPmWidgetsHidden(boolean hidden) {
+        Map<Widget, Boolean> live = new java.util.IdentityHashMap<>();
+        Widget container = client.getWidget(InterfaceID.PM_CHAT, 0);
+        if (hidden && container != null) {
+            Widget[] children = container.getDynamicChildren();
+            if (children != null) {
+                // Native PM rows have four dynamic parts. The same parent also contains the
+                // system-update timer; hiding its parent suppresses that safety information.
+                for (int row = 0; row < children.length; row += 4) {
+                    boolean timer = false;
+                    for (int i = row; i < Math.min(row + 4, children.length); i++) {
+                        Widget child = children[i];
+                        if (child != null && child.getText() != null
+                            && net.runelite.client.util.Text.removeTags(child.getText()).startsWith("System update in:")) timer = true;
+                    }
+                    if (!timer) {
+                        for (int i = row; i < Math.min(row + 4, children.length); i++) {
+                            if (children[i] != null) live.put(children[i], Boolean.TRUE);
+                        }
+                        Widget[] clickboxes = container.getStaticChildren();
+                        int index = row / 4;
+                        if (clickboxes != null && index < clickboxes.length && clickboxes[index] != null) live.put(clickboxes[index], Boolean.TRUE);
                     }
                 }
             }
         }
-    }
-
-    private void setGameframePmContainerHidden(int group, int child, boolean hidden) {
-        Widget container = client.getWidget(group, child);
-        if (container != null) {
-            container.setHidden(hidden);
-        }
+        hiddenPmRows.entrySet().removeIf(entry -> {
+            if (live.containsKey(entry.getKey())) return false;
+            if (entry.getKey().isSelfHidden()) entry.getKey().setHidden(entry.getValue());
+            return true;
+        });
+        live.keySet().forEach(widget -> {
+            if (!hiddenPmRows.containsKey(widget) || !widget.isSelfHidden()) hiddenPmRows.put(widget, widget.isSelfHidden());
+            widget.setHidden(true);
+        });
     }
 
     @Provides

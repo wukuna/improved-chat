@@ -66,10 +66,18 @@ public final class MessageColorRuleEngine {
         if (config != c) configure(c);
 
         ChatMessageType type = event.getType();
-        Color color = colorFor(message, type);
+        Color color = colorFor(ChatDisplayText.normalize(type, message), type);
         if (color == null) return;
 
         String expanded = message;
+        MessageNode node = event.getMessageNode();
+        if (node == null) return;
+        // RuneLite can strip the GIM marker from the event while the native node retains it.
+        // Color only the display portion without discarding the native message's metadata.
+        String nativeValue = node.getValue();
+        if ((type == ChatMessageType.CLAN_GIM_MESSAGE || type == ChatMessageType.CLAN_GIM_CHAT)
+                && nativeValue != null && nativeValue.startsWith("|")) expanded = nativeValue;
+
         try {
             if (expanded.indexOf('@') >= 0) {
                 String m = client.macroExpand(expanded);
@@ -79,9 +87,7 @@ public final class MessageColorRuleEngine {
             // Keep original message if macro expansion changes unexpectedly.
         }
 
-        String recolored = forceColor(expanded, color);
-        MessageNode node = event.getMessageNode();
-        if (node == null) return;
+        String recolored = forceColor(expanded, color, type);
         try {
             node.setValue(recolored);
             node.setRuneLiteFormatMessage(recolored);
@@ -91,21 +97,29 @@ public final class MessageColorRuleEngine {
         }
     }
 
-    private static String forceColor(String message, Color color) {
+    static String forceColor(String message, Color color, ChatMessageType type) {
         String prefix = "";
+        String suffix = "";
         String body = message;
-        if (body.startsWith("CA_ID:")) {
-            int pipe = body.indexOf('|');
-            if (pipe >= 0 && pipe + 1 < body.length()) {
-                prefix = body.substring(0, pipe + 1);
-                body = body.substring(pipe + 1);
-            }
+        if ((type == ChatMessageType.CLAN_GIM_MESSAGE || type == ChatMessageType.CLAN_GIM_CHAT)
+                && body.startsWith("|")) {
+            prefix = "|";
+            body = body.substring(1);
+        }
+        int pipe = body.indexOf('|');
+        if (pipe >= 0 && (type == ChatMessageType.GAMEMESSAGE || type == ChatMessageType.CLAN_MESSAGE
+                || type == ChatMessageType.CLAN_GIM_MESSAGE)) {
+            prefix += body.substring(0, pipe + 1);
+            body = body.substring(pipe + 1);
+        } else if (pipe >= 0 && type == ChatMessageType.BROADCAST) {
+            suffix = body.substring(pipe);
+            body = body.substring(0, pipe);
         }
 
         // Force means force: remove only color-control tags so embedded colors cannot beat this layer.
         body = body.replaceAll("(?i)</?col(?:=[0-9a-f]{6}|NORMAL|HIGHLIGHT)?[^>]*>", "");
         String hex = String.format("%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
-        return prefix + "<col=" + hex + ">" + body + "</col>";
+        return prefix + "<col=" + hex + ">" + body + "</col>" + suffix;
     }
 
     public static String plainText(String text) {

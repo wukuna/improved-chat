@@ -9,11 +9,23 @@ public final class TextSegment {
     public final int iconId;
     public final int width;
     public final Color color;
+    public final Color underline, strikethrough, shadow;
 
     public TextSegment(String text, int iconId, int width, Color color) {
+        this(text, iconId, width, color, null, null, null);
+    }
+
+    public TextSegment(String text, int iconId, int width, Color color,
+            Color underline, Color strikethrough, Color shadow) {
+        this.underline = underline;
+        this.strikethrough = strikethrough;
+        this.shadow = shadow;
         this.text = text;
         this.iconId = iconId;
         this.width = width;
         this.color = color;
+    }
+    public TextSegment copy(String text, int width, Color color) {
+        return new TextSegment(text, iconId, width, color, underline, strikethrough, shadow);
     }
 }

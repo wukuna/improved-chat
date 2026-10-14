@@ -87,6 +87,7 @@ public class ChatWidgetEditor
 	}
 
 	private int lastScrollDiff = -1;
+	private int lastViewportHeight;
 	private int lastChatTab = ChatTab.CLOSED.getValue();
 	private boolean chatboxScrolled = false;
 
@@ -191,6 +192,7 @@ public class ChatWidgetEditor
 			if (chatbox != null)
 			{
 				lastScrollDiff = chatbox.getScrollHeight() - chatbox.getScrollY();
+				lastViewportHeight = Math.max(0, chatbox.getHeight());
 				client.setVarcIntValue(VarClientID.CHAT_LASTSCROLLPOS, chatbox.getScrollHeight() - lastScrollDiff);
 			}
 		}
@@ -359,6 +361,7 @@ public class ChatWidgetEditor
 
 			// Store this since rebuildchatbox changes the scroll position before we can
 			lastScrollDiff = chatbox.getScrollHeight() - chatbox.getScrollY();
+			lastViewportHeight = Math.max(0, chatbox.getHeight());
 		}
 		else
 		{
@@ -414,7 +417,9 @@ public class ChatWidgetEditor
 		if (lastChatTab != ChatTab.CLOSED.getValue() && lastScrollDiff != -1)
 		{
 			// Custom logic to restore our scroll values since rebuildchatbox will override them
-			int2 = max(scrollArea.getScrollHeight() - lastScrollDiff, 0);
+			int viewport = max(0, scrollArea.getHeight());
+			int distanceFromBottom = lastViewportHeight > 0 ? max(0, lastScrollDiff - lastViewportHeight) : 0;
+			int2 = max(scrollArea.getScrollHeight() - viewport - distanceFromBottom, 0);
 		}
 		else if (scrollArea.getHeight() < 0)
 		{
