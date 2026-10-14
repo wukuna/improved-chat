@@ -5,6 +5,7 @@ import com.improvedchat.model.AttentionSpeed;
 import com.improvedchat.model.AttentionStopMode;
 import com.improvedchat.model.AttentionTrigger;
 import com.improvedchat.model.BorderThickness;
+import com.improvedchat.model.AnimatedTextStyle;
 import com.improvedchat.model.MessageCategory;
 import com.improvedchat.model.PlacementMode;
 import com.improvedchat.model.TextAlignment;
@@ -259,8 +260,14 @@ public class ImprovedChatPanel extends PluginPanel {
         }
         appearance.add(checkRow("Border", oc.isBorderEnabled(), v -> { oc.setBorderEnabled(v); saveOverlay(); rebuild(); }));
         if (oc.isBorderEnabled()) {
+            appearance.add(checkRow("RGB Clockwise Border (Beta)", oc.isRgbBorder(), v -> { oc.setRgbBorder(v); saveOverlay(); rebuild(); }));
             appearance.add(colorRow("Border Color", oc.getBorderColour(), v -> { oc.setBorderColour(v); saveOverlay(); }));
             appearance.add(comboRow("Border Thickness", BorderThickness.values(), oc.getBorderThickness(), v -> { oc.setBorderThickness(v); saveOverlay(); }));
+        }
+        appearance.add(comboRow("Animated Text (Beta)", AnimatedTextStyle.values(), oc.getAnimatedTextStyle(), v -> { oc.setAnimatedTextStyle(v); saveOverlay(); rebuild(); }));
+        if (oc.isRgbBorder() || oc.getAnimatedTextStyle() != AnimatedTextStyle.NORMAL) {
+            appearance.add(spinnerRow("RGB cycle (seconds)", oc.getRgbCycleSeconds(), 2, 30, 1, v -> { oc.setRgbCycleSeconds(v); saveOverlay(); }));
+            appearance.add(help("Beta: colors animate only in this overlay. Text animation overrides text colors; icons and notification flashes remain unchanged. Border Color still controls border transparency. Higher seconds = slower."));
         }
         appearance.add(checkRow("Timestamps", oc.isShowTimestamp(), v -> { oc.setShowTimestamp(v); saveOverlay(); }));
         body.add(accordionPanel(oc, "appearance", "APPEARANCE", true, appearance));

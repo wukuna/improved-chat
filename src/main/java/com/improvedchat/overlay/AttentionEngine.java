@@ -8,6 +8,7 @@ import com.improvedchat.model.OverlayMessage;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.Paint;
 import java.awt.Stroke;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -78,15 +79,21 @@ public final class AttentionEngine {
 
         int px = cfg.getBorderThickness().getPixels();
         int inset = Math.max(0, px / 2);
-        Color oldColor = g.getColor();
+        Paint oldPaint = g.getPaint();
         Stroke oldStroke = g.getStroke();
         try {
             g.setColor(new Color(base.getRed(), base.getGreen(), base.getBlue(), Math.max(0, Math.min(255, alpha))));
             g.setStroke(new BasicStroke(px));
-            g.drawRect(inset, inset, Math.max(0, width - 1 - inset * 2), Math.max(0, height - 1 - inset * 2));
+            int borderWidth = Math.max(0, width - 1 - inset * 2);
+            int borderHeight = Math.max(0, height - 1 - inset * 2);
+            if (cfg.isRgbBorder() && borderWidth > 0 && borderHeight > 0) {
+                RgbAnimation.drawBorder(g, inset, borderWidth, borderHeight, alpha, now, cfg.getRgbCycleSeconds());
+            } else {
+                g.drawRect(inset, inset, borderWidth, borderHeight);
+            }
         } finally {
             g.setStroke(oldStroke);
-            g.setColor(oldColor);
+            g.setPaint(oldPaint);
         }
     }
 

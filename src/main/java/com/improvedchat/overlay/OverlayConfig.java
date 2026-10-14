@@ -1,6 +1,7 @@
 package com.improvedchat.overlay;
 
 import com.improvedchat.model.AttentionSpeed;
+import com.improvedchat.model.AnimatedTextStyle;
 import com.improvedchat.model.AttentionStopMode;
 import com.improvedchat.model.AttentionTrigger;
 import com.improvedchat.model.BorderThickness;
@@ -64,6 +65,9 @@ public final class OverlayConfig {
     private boolean borderEnabled;
     private Color borderColour = Color.WHITE;
     private BorderThickness borderThickness = BorderThickness.NORMAL;
+    private boolean rgbBorder;
+    private AnimatedTextStyle animatedTextStyle = AnimatedTextStyle.NORMAL;
+    private int rgbCycleSeconds = 8;
 
     private volatile Notification notification = Notification.OFF;
     private AttentionTrigger notificationTrigger = AttentionTrigger.ALL_NEW_MESSAGES;
@@ -306,6 +310,14 @@ public final class OverlayConfig {
     public void setBorderEnabled(boolean value) { borderEnabled = value; }
 
     public Color getBorderColour() { return borderColour == null ? Color.WHITE : borderColour; }
+    public boolean isRgbBorder() { return rgbBorder; }
+    public void setRgbBorder(boolean value) { rgbBorder = value; }
+    public AnimatedTextStyle getAnimatedTextStyle() {
+        return animatedTextStyle == null ? AnimatedTextStyle.NORMAL : animatedTextStyle;
+    }
+    public void setAnimatedTextStyle(AnimatedTextStyle value) { animatedTextStyle = value; }
+    public int getRgbCycleSeconds() { return Math.max(2, Math.min(30, rgbCycleSeconds)); }
+    public void setRgbCycleSeconds(int value) { rgbCycleSeconds = Math.max(2, Math.min(30, value)); }
     public void setBorderColour(Color value) { borderColour = value == null ? Color.WHITE : value; }
 
     public BorderThickness getBorderThickness() {

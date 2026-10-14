@@ -49,6 +49,12 @@ Each overlay can independently control:
 
 RuneLite's normal overlay movement system is used for free-position overlays.
 
+### RGB animation (Beta)
+
+In each overlay's **Appearance** section, enable **Border** and **RGB Clockwise Border (Beta)** for a rainbow that travels around the rectangular perimeter clockwise. **Animated Text (Beta)** offers **Normal**, **RGB Cycle** (one changing color), and **RGB Wave** (a moving rainbow across the text). **RGB cycle (seconds)** sets the duration of one revolution; higher values are slower. Both effects are off by default and can be used independently.
+
+Animation affects only the custom overlay, including its names, timestamps and input preview. Animated text takes precedence over text colors and static rainbow rules while enabled; selecting Normal restores those styles. Icons retain their original colors. Wrapping, shadows, underline/strikethrough styling, message fading and attention flashes remain available. Border Color retains its transparency setting when RGB is enabled. Use **Preview (10 seconds)** while logged in to try the effects. These Beta effects still need live gameplay feedback.
+
 >  Overlay list and overlay editor.
 <img width="276" height="1305" alt="Screenshot 2026-10-03 185108" src="https://github.com/user-attachments/assets/39583041-3ec1-4c62-849f-cceadeef0761" />
 

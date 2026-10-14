@@ -271,7 +271,7 @@ public class DynamicChatOverlay extends Overlay {
         int y = paintHeight - paddingY - metrics.getDescent();
         if (inputSegments != null) {
             drawSegments(graphics, inputSegments, 255, y, widgetWidth,
-                    paddingX, fontSize, metrics, modIcons, drawShadow);
+                    paddingX, fontSize, metrics, modIcons, drawShadow, currentTime);
             y -= lineHeight;
         }
 
@@ -281,7 +281,7 @@ public class DynamicChatOverlay extends Overlay {
                 continue;
             }
             drawSegments(graphics, line.segments, line.alpha, y, widgetWidth,
-                    paddingX, fontSize, metrics, modIcons, drawShadow);
+                    paddingX, fontSize, metrics, modIcons, drawShadow, currentTime);
             y -= lineHeight;
         }
 
@@ -399,7 +399,7 @@ public class DynamicChatOverlay extends Overlay {
 
     private void drawSegments(Graphics2D graphics, List<TextSegment> segments, int alpha, int y,
             int widgetWidth, int paddingX, FontSize fontSize,
-            FontMetrics metrics, IndexedSprite[] modIcons, boolean drawShadow) {
+            FontMetrics metrics, IndexedSprite[] modIcons, boolean drawShadow, long now) {
         int lineWidth = calculateLineWidth(segments, metrics);
         int contentWidth = Math.max(0, widgetWidth - paddingX * 2);
         int x = calculateAlignedX(overlayConfig.getTextAlignment(), paddingX, contentWidth, lineWidth);
@@ -418,8 +418,11 @@ public class DynamicChatOverlay extends Overlay {
                     graphics.setColor(ChatRenderUtils.withAlpha(segment.shadow, alpha));
                     graphics.drawString(segment.text, x + 2, y + 1);
                 }
-                int width = ChatRenderUtils.drawText(graphics, segment.text, segmentColor, alpha, x, y,
-                        segment.shadow == null && drawShadow, metrics);
+                int width = overlayConfig.getAnimatedTextStyle() == com.improvedchat.model.AnimatedTextStyle.NORMAL
+                        ? ChatRenderUtils.drawText(graphics, segment.text, segmentColor, alpha, x, y,
+                                segment.shadow == null && drawShadow, metrics)
+                        : RgbAnimation.drawText(graphics, segment.text, alpha, x, y,
+                                segment.shadow == null && drawShadow, metrics, overlayConfig, now, paddingX);
                 if (segment.underline != null) {
                     graphics.setColor(ChatRenderUtils.withAlpha(segment.underline, alpha));
                     graphics.drawLine(x + 1, y + 1, x + width, y + 1);
