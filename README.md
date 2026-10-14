@@ -18,15 +18,23 @@ Most features are independent, so you can use only the parts you want.
 - **Dialogue text styling** for NPC, player, option-menu, and item/action dialogue.
 - **Compatibility safeguards** for RuneLite Chat Color, Chat Filter, Emojis, Resource Packs, and Modern Chat.
 
+## Settings layout and saved settings
+
+The native plugin menu has five collapsible sections: **Chatbox**, **Chat cleanup**, **Overlay setup: side panel**, **Dialogue text**, and **Advanced**. Secondary sizing and its hotkey remain in Chatbox. Clan, guest-clan, friends-chat and GIM name controls remain independent of their instruction controls.
+
+Use the side panel for individual overlays, custom text colors, RGB effects, notifications and Message highlights. Existing setting keys, overlay IDs, placements, filters and notification settings are retained. Former global color rules, their nine palette colors, RGB patterns, spread and fallback colors are copied into each existing overlay once. Old cycling remains full spectrum. The old overlay list is backed up under `overlayConfigsBeforeMenuCleanup`; legacy global values remain stored. New overlays have independent defaults. Unreadable configurations keep the existing recovery backup and are not overwritten merely by startup.
+
+A one-time chatbox overview lists this update's changes. Collection Log is excluded from generic modal refitting and script replays; its native window handlers retain responsibility for resizing. The reported live Collection Log symptom still needs confirmation in-game.
+
 ## Custom overlays
 
 Create and manage multiple overlays from the **Improved Chat** side panel.
 
-Start with a preset, then choose **Show overlay** and **Message Types** in General. New custom overlays have no message types selected until you choose them. An overlay appears only when it has messages or an input preview; choosing “With chatbox open or hidden” does not draw an empty frame.
+Start with a preset, then choose **Show overlay** and **Message Types** in the **Messages** tab. New custom overlays have no message types selected until you choose them. An overlay appears only when it has messages or an input preview; choosing “With chatbox open or hidden” does not draw an empty frame.
 
 Use **Preview (10 seconds)** while logged in to check appearance without waiting for chat. Preview bypasses content filters and normal visibility conditions; its sample messages never enter chat history. Use **Open Plugin Settings** for native chat features and global defaults.
 
-The overlay list has a direct Enabled switch. The editor supports duplicating an overlay, confirms deletion, preserves your scroll position when dependent controls change, and provides a background opacity percentage. Deleting every overlay stays empty after restart. Creating Game Alerts uses the same game-message selection as the first-run preset; existing saved selections are preserved.
+The compact overlay list stays above the editor. Select an overlay, then use **Messages**, **Appearance**, or **Notifications**. Each overlay has a direct enable switch. Changes save automatically as you edit. The editor supports duplicating an overlay, confirms deletion, preserves your scroll position when dependent controls change, and provides a background opacity percentage. Deleting every overlay stays empty after restart. Creating Game Alerts uses the same game-message selection as the first-run preset; existing saved selections are preserved.
 
 **Clear [overlay] history** clears only that overlay's view. Native chat-tab history clearing still applies to all overlays showing those message types. **Collapse Duplicates** groups consecutive matching messages within each overlay's filtered view and keeps channels, senders, and incoming/outgoing messages separate. Captured history remains intact so clearing or filtering one overlay cannot remove another overlay's messages. History is held for the current plugin session.
 
@@ -51,9 +59,9 @@ RuneLite's normal overlay movement system is used for free-position overlays.
 
 ### RGB animation (Beta)
 
-In each overlay's **Appearance** section, enable **Border** and **RGB Clockwise Border (Beta)** for a rainbow that travels around the rectangular perimeter clockwise. **Animated Text (Beta)** offers **Normal**, **RGB Cycle** (one changing color), and **RGB Wave** (a moving rainbow across the text). **RGB cycle (seconds)** sets the duration of one revolution; higher values are slower. Both effects are off by default and can be used independently.
+In each overlay's **Appearance** tab, enable **Border** and **RGB Clockwise Border (Beta)** for a rainbow that travels around the perimeter. **Text effect** offers solid/channel colors, **RGB Static** by word or character, **RGB Cycling (Beta)**, and **RGB Wave (Beta)**. Cycling can fade between **Color 1** and **Color 2**, or use the full spectrum. Wave uses all colors. **RGB cycle (seconds)** sets the duration; higher values are slower. Border and text effects are independent and off by default.
 
-Animation affects only the custom overlay, including its names, timestamps and input preview. Animated text takes precedence over text colors and static rainbow rules while enabled; selecting Normal restores those styles. Icons retain their original colors. Wrapping, shadows, underline/strikethrough styling, message fading and attention flashes remain available. Border Color retains its transparency setting when RGB is enabled. Use **Preview (10 seconds)** while logged in to try the effects. These Beta effects still need live gameplay feedback.
+Animation affects only the custom overlay, including its names, timestamps and input preview. Migrated overlays preserve their former precedence. **Messages → Message highlights → Highlights override defaults** lets a matching rule override the message body while unmatched messages retain the default effect. Icons retain their original colors. Wrapping, shadows, underline/strikethrough styling, message fading and attention flashes remain available. Border Color retains its transparency setting when RGB is enabled. Use **Preview (10 seconds)** while logged in to try the effects. These Beta effects still need live gameplay feedback.
 
 >  Overlay list and overlay editor.
 <img width="276" height="1305" alt="Screenshot 2026-10-03 185108" src="https://github.com/user-attachments/assets/39583041-3ec1-4c62-849f-cceadeef0761" />
@@ -63,6 +71,14 @@ Animation affects only the custom overlay, including its names, timestamps and i
 https://github.com/user-attachments/assets/95c6ba06-64a6-435d-8fb8-ad3857b9e662
 
 ## Overlay filtering
+
+### Message replacer (Beta)
+
+In an overlay's **Messages → Message replacer (Beta)** section, enable the feature and choose **Add replacement** for each message you want to customize. Each rule has **Original message**, **Show instead**, and its own enable checkbox. Edits save automatically. For example, match `Your thrall returns to the grave.` and show `You need to summon a thrall!`.
+
+Rules match the complete message, ignoring case and chat colors. The first enabled, complete rule wins. Replacement text is displayed literally and never triggers another replacement. Blank or disabled rules leave messages unchanged. **Test replacements** previews the result without logging in or adding anything to chat.
+
+Replacement affects only that overlay's displayed message body. The real chatbox, captured history, filters, message highlights and notification triggers still use the original message. Sender labels, timestamps, duplicate counts, wrapping and fading remain available. The feature is off by default and remains Beta pending live feedback.
 
 Filtering can be global or completely independent per overlay.
 
@@ -81,7 +97,7 @@ Filtering can be global or completely independent per overlay.
 
 Invalid custom regex lines are ignored safely.
 
-The editor reports invalid rule line numbers after you leave a field and warns when Show Only Matches has no usable rules. Use the sample player-name and message fields to test custom content rules. Literal names match part of a name; use `regex:^Alice$` for an exact name. The tester does not test channel selection or visibility.
+The editor reports invalid filter line numbers as you edit and warns when Show Only Matches has no usable rules. Use the sample player-name and message fields to test custom content rules. Literal names match part of a name; use `regex:^Alice$` for an exact name. The tester does not test channel selection or visibility.
 
 When the global override is active, custom controls are disabled but their saved values are retained. The editor also reports when RuneLite's Chat Filter plugin is disabled, in which case selecting the global filter does not apply content filtering.
 
@@ -103,7 +119,7 @@ Clan, guest-clan, and Group Ironman chat are supported.
 
 Overlay offline presentation is independent of the native-chat **Offline Clan Status** setting, so one can be enabled without the other.
 
-The native-chat offline status feature can also add an offline icon and/or recolor offline clan-member names.
+Native offline status adds an icon; native name colors remain under RuneLite Chat Color. Custom offline name colors remain available in each overlay.
 
 ## Message colors, rules, and alerts
 
@@ -111,7 +127,7 @@ Improved Chat can use RuneLite Chat Color as its baseline color source or config
 
 ### Message Color Rules
 
-Message Color Rules can affect the native chatbox and Improved Chat overlays.
+Rules affect only the selected overlay. Open **Messages → Message highlights** to edit its definitions and nine-color palette. Native chat text uses RuneLite Chat Color.
 
 Use one rule per line:
 
@@ -128,7 +144,7 @@ regex:^Your .* count is:.*::2
 
 ### Overlay Rainbow Rules
 
-Rainbow rules affect Improved Chat overlays only and can color by word or visible character.
+RGB highlight patterns affect the selected overlay only. Choose Use overlay default, RGB Static (by word or character), RGB Cycling, or RGB Wave. Existing rainbow patterns retain their static style and word/character selection.
 
 ```text
 achieved a new

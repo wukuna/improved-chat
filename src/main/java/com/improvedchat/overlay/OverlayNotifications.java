@@ -22,7 +22,7 @@ public final class OverlayNotifications {
         // Console notifications emitted by Notifier must not notify recursively.
         if (visible.stream().noneMatch(item -> item.getSequence() == message.getSequence())) return false;
         return config.getNotificationTrigger() == AttentionTrigger.ALL_NEW_MESSAGES
-                || MessageColorRuleEngine.flashFor(message.getMessage(), message.getType());
+                || MessageColorRuleEngine.flashFor(message.getMessage(), message.getType(), config.getTextSettings());
     }
 
     public static String message(OverlayConfig config, OverlayMessage message) {

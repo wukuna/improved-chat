@@ -31,7 +31,7 @@ public class ChatCollapsePresentationTest {
     public void keybindIsListedUnderCollapseAndKeepsExistingSavedKey() throws Exception {
         ConfigItem item = ImprovedChatConfig.class.getMethod("toggleShowChat").getAnnotation(ConfigItem.class);
         assertEquals("Collapse Chat Keybind", item.name());
-        assertEquals(ImprovedChatConfig.collapseChatSection, item.section());
+        assertEquals(ImprovedChatConfig.chatboxSection, item.section());
         assertEquals("toggleShowChat", item.keyName());
     }
 

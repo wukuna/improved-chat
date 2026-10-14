@@ -46,8 +46,7 @@ public class TopLevelModals {
         new RefitSpec(RawScripts.BANKMAIN_SIZE_CHECK_TIMER, 7, 3, 4, InterfaceID.Bankmain.UNIVERSE, -1),
         // All Settings: measures the settings group's own root
         new RefitSpec(RawScripts.SETTINGS_SIZE_CHECK_TIMER, 8, 6, 7, InterfaceID.Settings.UNIVERSE, -1),
-        // Collection Log: own-root too, and on a shared movable-window poll, so filterArg keeps out other windows
-        new RefitSpec(RawScripts.WINDOW_SIZE_CHECK_TIMER, 5, 1, 2, InterfaceID.Collection.UNIVERSE, 4),
+        // Collection Log owns its row geometry and selection. Never replay a guessed window script.
         // Seed Vault: measures the mounted root, then sizes its window absolutely, so nothing else can re-fit it
         new RefitSpec(RawScripts.SEED_VAULT_SIZE_CHECK_TIMER, 10, 3, 4, InterfaceID.SeedVault.UNIVERSE, -1),
     };
@@ -79,11 +78,15 @@ public class TopLevelModals {
     // Re-prime the cached open-state on enable; the singleton survives disable -> enable
     void reset() {
         modalOpen = isTopLevelModalOpen();
+        for (RefitSpec spec : refits) spec.captured = null;
     }
 
     // Re-fit the UI to current available space. The toplevel ID can flip a cycle before the swap completes,
     // so it is used for relayout target selection only; modal detection stays the scan-all above.
     void relayout() {
+        // A generic relayout/revalidate can rebuild or overlap Collection Log's interactive rows.
+        // Its native window handlers own resizing; leave the entire mounted view intact.
+        if (isCollectionLogOpen()) return;
         int controlId = -1, layoutEnum = -1;
         switch (client.getTopLevelInterfaceId()) {
             case InterfaceID.TOPLEVEL:
@@ -113,13 +116,23 @@ public class TopLevelModals {
         for (RefitSpec spec : refits) if (spec.captured != null && client.getWidget(spec.universe) != null) client.runScript(spec.captured);
     }
 
+    boolean isCollectionLogOpen() {
+        HashTable<WidgetNode> table = client.getComponentTable();
+        if (table == null) return false;
+        for (int slot : MODAL_SLOTS) {
+            WidgetNode node = table.get(slot);
+            if (node != null && node.getId() == InterfaceID.COLLECTION) return true;
+        }
+        return false;
+    }
+
     // Called for every pre-fired script; only the rows' timer scripts match
     void cacheRefit(int scriptId, ScriptEvent event) {
         if (event == null) return; // Only a root invocation carries the ScriptEvent whose args we replay
         for (RefitSpec spec : refits) {
             if (spec.timerScript != scriptId) continue;
             Object[] args = event.getArguments();
-            if (args.length != spec.argCount) return; // Different script shape -> not the poll we mean to replay
+            if (args == null || args.length != spec.argCount) return; // Different script shape -> not the poll we mean to replay
             // Shared-helper polls also fire for other windows; accept only this window's own root
             if (spec.filterArg >= 0 && (!(args[spec.filterArg] instanceof Integer) || (Integer) args[spec.filterArg] != spec.universe)) return;
             spec.captured = args.clone();

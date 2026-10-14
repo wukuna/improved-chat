@@ -386,6 +386,7 @@ public class ImprovedChatPlugin extends Plugin {
     }
 
     public void addConfiguredOverlay(OverlayConfig oc) {
+        oc.getTextSettings();
         overlayConfigs.add(oc);
         addOverlay(oc);
         saveOverlayConfigs();
@@ -432,6 +433,7 @@ public class ImprovedChatPlugin extends Plugin {
         overlayConfigs.add(OverlayConfig.defaultPrivateOverlay());
         overlayConfigs.add(OverlayConfig.defaultAllOverlay());
         for (OverlayConfig oc : overlayConfigs) {
+            oc.getTextSettings();
             addOverlay(oc);
         }
 
@@ -498,7 +500,13 @@ public class ImprovedChatPlugin extends Plugin {
             overlayConfigs.addAll(OverlayConfigStore.defaults());
             configRecoveryMessage = "Saved overlays could not be read. Defaults are shown; the original configuration was kept in an overlayConfigsBackup setting for recovery.";
         }
-        if (json == null || json.trim().isEmpty()) saveOverlayConfigs();
+        boolean migrated = false;
+        for (OverlayConfig overlay : overlayConfigs) migrated |= overlay.migrateTextSettings(config);
+        if (migrated && configRecoveryMessage == null && json != null && !json.trim().isEmpty()
+                && configManager.getConfiguration(CONFIG_GROUP, OVERLAY_CONFIGS_KEY + "BeforeMenuCleanup") == null) {
+            configManager.setConfiguration(CONFIG_GROUP, OVERLAY_CONFIGS_KEY + "BeforeMenuCleanup", json);
+        }
+        if (configRecoveryMessage == null && (migrated || json == null || json.trim().isEmpty())) saveOverlayConfigs();
     }
 
     public OverlayConfig duplicateOverlay(OverlayConfig original) {
@@ -717,7 +725,7 @@ public class ImprovedChatPlugin extends Plugin {
         // tick in onGameTick, catching the case where Emojis is registered after us and hasn't
         // converted yet at capture.
         MessageNode messageNode = event.getMessageNode();
-        MessageColorRuleEngine.applyToChatbox(client, event, config, message);
+        // Native message colors remain owned by RuneLite Chat Color; rules are overlay-only.
 
         boolean emojiWatched = EMOJI_WATCHED_TYPES.contains(type)
                 && !message.startsWith("!")

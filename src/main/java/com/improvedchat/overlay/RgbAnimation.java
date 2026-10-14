@@ -52,6 +52,21 @@ public final class RgbAnimation {
 
     static int drawText(Graphics2D g, String text, int alpha, int x, int y,
             boolean shadow, FontMetrics metrics, OverlayConfig cfg, long now, int originX) {
+        return drawText(g, text, alpha, x, y, shadow, metrics, cfg, now, originX, cfg.getAnimatedTextStyle());
+    }
+
+    static Color cycleColor(OverlayConfig cfg, long now, int alpha) {
+        double phase = phase(now, cfg.getRgbCycleSeconds());
+        if (!cfg.isCustomRgbCycle()) return hue(-phase, alpha);
+        double mix = (1 - Math.cos(phase * 2 * Math.PI)) / 2;
+        Color a = cfg.getRgbColor1(), b = cfg.getRgbColor2();
+        return new Color((int)Math.round(a.getRed() + (b.getRed()-a.getRed())*mix),
+                (int)Math.round(a.getGreen() + (b.getGreen()-a.getGreen())*mix),
+                (int)Math.round(a.getBlue() + (b.getBlue()-a.getBlue())*mix), Math.max(0,Math.min(255,alpha)));
+    }
+
+    static int drawText(Graphics2D g, String text, int alpha, int x, int y,
+            boolean shadow, FontMetrics metrics, OverlayConfig cfg, long now, int originX, AnimatedTextStyle style) {
         Paint old = g.getPaint();
         try {
             if (shadow) {
@@ -59,8 +74,8 @@ public final class RgbAnimation {
                 g.drawString(text, x + 2, y + 1);
             }
             double phase = phase(now, cfg.getRgbCycleSeconds());
-            g.setPaint(cfg.getAnimatedTextStyle() == AnimatedTextStyle.RGB_CYCLE
-                    ? hue(-phase, alpha)
+            g.setPaint(style == AnimatedTextStyle.RGB_CYCLE
+                    ? cycleColor(cfg, now, alpha)
                     : gradient(originX, y, 1, 0, 240, 0, phase, alpha));
             g.drawString(text, x + 1, y);
             return metrics.stringWidth(text);

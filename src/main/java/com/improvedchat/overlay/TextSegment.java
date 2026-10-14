@@ -5,6 +5,7 @@ import java.awt.Color;
 public final class TextSegment {
     public static final int LINE_BREAK = -2;
 
+    public com.improvedchat.model.AnimatedTextStyle textStyle;
     public final String text;
     public final int iconId;
     public final int width;
@@ -26,6 +27,8 @@ public final class TextSegment {
         this.color = color;
     }
     public TextSegment copy(String text, int width, Color color) {
-        return new TextSegment(text, iconId, width, color, underline, strikethrough, shadow);
+        TextSegment result = new TextSegment(text, iconId, width, color, underline, strikethrough, shadow);
+        result.textStyle = textStyle;
+        return result;
     }
 }

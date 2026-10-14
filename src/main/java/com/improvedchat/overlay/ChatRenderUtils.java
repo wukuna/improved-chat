@@ -222,6 +222,20 @@ public final class ChatRenderUtils {
             FontSize fontSize, IndexedSprite[] modIcons, boolean showTimestamp, String timestampFormat,
             boolean showChannelName, ChatColorConfig chatColorConfig,
             List<TextSegment> senderDecorations, Color senderColorOverride) {
+        return buildMessageLines(msg, metrics, widgetWidth, currentTime, fadeOutMs, wrapText,
+                textColor, retainContextualColours, hideDuplicateCount, fontSize, modIcons,
+                showTimestamp, timestampFormat, showChannelName, chatColorConfig,
+                senderDecorations, senderColorOverride, null);
+    }
+
+    public static List<RenderLine> buildMessageLines(OverlayMessage msg, FontMetrics metrics,
+            int widgetWidth, long currentTime, long fadeOutMs, boolean wrapText, Color textColor,
+            boolean retainContextualColours, boolean hideDuplicateCount,
+            FontSize fontSize, IndexedSprite[] modIcons, boolean showTimestamp, String timestampFormat,
+            boolean showChannelName, ChatColorConfig chatColorConfig,
+            List<TextSegment> senderDecorations, Color senderColorOverride, OverlayConfig overlay) {
+        com.improvedchat.ImprovedChatConfig rules = overlay == null ? null : overlay.getTextSettings();
+        boolean rulesActive = retainContextualColours || (overlay != null && overlay.getTextSettings().isHighlightsOverrideDefaults());
 
         List<RenderLine> lines = new ArrayList<>();
         int alpha = AttentionEngine.adjustAlpha(msg, currentTime, calculateAlpha(msg, currentTime, fadeOutMs));
@@ -233,7 +247,7 @@ public final class ChatRenderUtils {
 
         Color bodyBaseColor = textColor;
         if (retainContextualColours) {
-            Color configured = getConfiguredChatColor(type, false, chatColorConfig, OverlayColorRuleEngine.chatColorSource());
+            Color configured = getConfiguredChatColor(type, false, chatColorConfig, overlay == null ? OverlayColorRuleEngine.chatColorSource() : rules.chatColorSource());
             if (configured != null) {
                 bodyBaseColor = configured;
             }
@@ -308,24 +322,34 @@ public final class ChatRenderUtils {
             messageText = messageText + " (" + msg.getCount() + ")";
         }
 
-        // Overlay-only rainbow is below the per-overlay color override in precedence.
-        OverlayColorRuleEngine.Decision decision = retainContextualColours
-                ? OverlayColorRuleEngine.decide(messageText, type) : OverlayColorRuleEngine.Decision.none();
-        List<TextSegment> messageSegments = parseTextWithColoursAndIcons(messageText, metrics, modIcons,
-                retainContextualColours, bodyBaseColor, fontSize, chatColorConfig, type);
-
-        // Layer 2: Message Color Rules override RuneLite Chat Color and embedded message colors.
-        // A per-overlay color override disables contextual colors, so it intentionally bypasses this layer.
-        if (retainContextualColours) {
-            Color forceColor = MessageColorRuleEngine.colorFor(messageText, type);
-            if (forceColor != null) {
-                messageSegments = applySolidColor(messageSegments, forceColor);
-            }
+        // Migrated rules retain their old precedence; new rules may override overlay defaults.
+        OverlayColorRuleEngine.Decision decision = rulesActive
+                ? (overlay == null ? OverlayColorRuleEngine.decide(messageText, type) : OverlayColorRuleEngine.decide(messageText, type, rules))
+                : OverlayColorRuleEngine.Decision.none();
+        com.improvedchat.model.AnimatedTextStyle matchedStyle = decision.kind == OverlayColorRuleEngine.Kind.RAINBOW
+                ? (overlay == null ? com.improvedchat.model.AnimatedTextStyle.RGB_STATIC : overlay.getTextSettings().getHighlightStyle()) : null;
+        if (matchedStyle == com.improvedchat.model.AnimatedTextStyle.NORMAL) matchedStyle = null;
+        Color forceColor = rulesActive ? (overlay == null ? MessageColorRuleEngine.colorFor(messageText, type)
+                : MessageColorRuleEngine.colorFor(messageText, type, rules)) : null;
+        // Highlight/flash/filter rules still use the real message. Replace only the painted body.
+        String display = OverlayTextReplacements.displayText(overlay, msg.getMessage());
+        if (!java.util.Objects.equals(display, msg.getMessage())) {
+            messageText = display;
+            if (messageText.length() > MAX_MESSAGE_LENGTH) messageText = messageText.substring(0, MAX_MESSAGE_LENGTH) + "...";
+            if (msg.getCount() > 1 && !hideDuplicateCount) messageText += " (" + msg.getCount() + ")";
         }
+        List<TextSegment> messageSegments = parseTextWithColoursAndIcons(messageText, metrics, modIcons,
+                retainContextualColours, bodyBaseColor, fontSize, chatColorConfig, type,
+                overlay == null ? OverlayColorRuleEngine.chatColorSource() : rules.chatColorSource());
+
+        if (forceColor != null) messageSegments = applySolidColor(messageSegments, forceColor);
+        boolean staticRainbow = matchedStyle == com.improvedchat.model.AnimatedTextStyle.RGB_STATIC;
+        boolean defaultStatic = overlay != null && overlay.getAnimatedTextStyle() == com.improvedchat.model.AnimatedTextStyle.RGB_STATIC;
+        if (defaultStatic) headerSegments = rainbowSegments(headerSegments, overlay.getTextSettings().rainbowStyle(), metrics, new int[]{0});
 
         if (!wrapText) {
-            if (decision.kind == OverlayColorRuleEngine.Kind.RAINBOW) {
-                messageSegments = rainbowSegments(messageSegments, decision.rainbowStyle, metrics, new int[] {0});
+            if (staticRainbow || (defaultStatic && matchedStyle == null && forceColor == null)) {
+                messageSegments = rainbowSegments(messageSegments, (staticRainbow ? decision.rainbowStyle : overlay.getTextSettings().rainbowStyle()), metrics, new int[] {0});
             }
             List<TextSegment> singleLine = new ArrayList<>(headerSegments);
             singleLine.addAll(messageSegments);
@@ -334,14 +358,27 @@ public final class ChatRenderUtils {
             int firstLineRemaining = widgetWidth - headerWidth;
             List<List<TextSegment>> wrappedLines = wrapSegments(messageSegments, metrics,
                     firstLineRemaining, widgetWidth, bodyBaseColor);
-            if (decision.kind == OverlayColorRuleEngine.Kind.RAINBOW) {
+            if (staticRainbow || (defaultStatic && matchedStyle == null && forceColor == null)) {
                 int[] rainbowIndex = new int[] {0};
                 for (int lineIndex = 0; lineIndex < wrappedLines.size(); lineIndex++) {
                     wrappedLines.set(lineIndex, rainbowSegments(wrappedLines.get(lineIndex),
-                            decision.rainbowStyle, metrics, rainbowIndex));
+                            (staticRainbow ? decision.rainbowStyle : overlay.getTextSettings().rainbowStyle()), metrics, rainbowIndex));
                 }
             }
             addWrappedLines(lines, alpha, headerSegments, wrappedLines);
+        }
+
+        if (overlay != null) {
+            boolean override = overlay.getTextSettings().isHighlightsOverrideDefaults()
+                    || overlay.getAnimatedTextStyle() == com.improvedchat.model.AnimatedTextStyle.NORMAL;
+            com.improvedchat.model.AnimatedTextStyle bodyStyle = override
+                    ? (matchedStyle != null ? matchedStyle : forceColor != null ? com.improvedchat.model.AnimatedTextStyle.NORMAL : null) : null;
+            // Prefixes keep the overlay default. Only this matching message body is overridden.
+            for (RenderLine line : lines) {
+                for (TextSegment segment : line.segments) {
+                    if (!headerSegments.contains(segment)) segment.textStyle = bodyStyle;
+                }
+            }
         }
 
         return lines;
@@ -424,6 +461,13 @@ public final class ChatRenderUtils {
     public static List<TextSegment> parseTextWithColoursAndIcons(String text, FontMetrics metrics,
             IndexedSprite[] modIcons, boolean retainContextualColours, Color textColor,
             FontSize fontSize, ChatColorConfig chatColorConfig, ChatMessageType messageType) {
+        return parseTextWithColoursAndIcons(text, metrics, modIcons, retainContextualColours,
+                textColor, fontSize, chatColorConfig, messageType, OverlayColorRuleEngine.chatColorSource());
+    }
+
+    public static List<TextSegment> parseTextWithColoursAndIcons(String text, FontMetrics metrics,
+            IndexedSprite[] modIcons, boolean retainContextualColours, Color textColor,
+            FontSize fontSize, ChatColorConfig chatColorConfig, ChatMessageType messageType, ChatColorSource source) {
         List<TextSegment> segments = new ArrayList<>();
         if (text == null || text.isEmpty()) {
             return segments;
@@ -457,7 +501,7 @@ public final class ChatRenderUtils {
                     if (icon >= 0) segments.add(new TextSegment("", icon, calculateIconWidth(modIcons, icon, fontSize), currentColor));
                 } else if (tag.equals("colNORMAL") || tag.equals("/col")) currentColor = textColor;
                 else if (tag.equals("colHIGHLIGHT") && retainContextualColours) {
-                    Color highlight = getConfiguredChatColor(messageType, true, chatColorConfig, OverlayColorRuleEngine.chatColorSource());
+                    Color highlight = getConfiguredChatColor(messageType, true, chatColorConfig, source);
                     currentColor = highlight == null ? textColor : highlight;
                 } else if (tag.startsWith("col=") && retainContextualColours) currentColor = tagColor(tag.substring(4));
                 else if (tag.equals("u")) underline = Color.BLACK;
@@ -627,7 +671,7 @@ public final class ChatRenderUtils {
         new Color(191, 90, 242)
     };
 
-    private static List<TextSegment> rainbowSegments(List<TextSegment> input,
+    static List<TextSegment> rainbowSegments(List<TextSegment> input,
             RainbowStyle style, FontMetrics metrics, int[] colorIndexRef) {
         List<TextSegment> out = new ArrayList<>();
         int colorIndex = colorIndexRef[0];

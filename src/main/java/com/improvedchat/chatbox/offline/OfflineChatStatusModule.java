@@ -161,12 +161,7 @@ public final class OfflineChatStatusModule
         String result = base;
         if (presentation.isOffline())
         {
-            if (config.enableOfflineColor())
-            {
-                Color color = config.offlineColor();
-                result = String.format("<col=%02x%02x%02x>%s</col>",
-                    color.getRed(), color.getGreen(), color.getBlue(), result);
-            }
+            // Keep native name colors under RuneLite control. Overlay colors remain configurable.
 
             if (config.enableOfflineIcon() && presentation.getOfflineIconId() >= 0)
             {

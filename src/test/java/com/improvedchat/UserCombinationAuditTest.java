@@ -20,7 +20,7 @@ public class UserCombinationAuditTest {
   Field f=ImprovedChatPlugin.class.getDeclaredField("messages");f.setAccessible(true);List<OverlayMessage> history=(List<OverlayMessage>)f.get(p);OverlayConfig overlay=OverlayConfig.preset("Private","private");p.getOverlayConfigs().add(overlay);
   int cases=0;
   for(int flags=0;flags<1024;flags++)for(OverlayFilterMode mode:OverlayFilterMode.values()){
-   global[0]=(flags&1)!=0;global[1]=(flags&2)!=0;global[2]=(flags&4)!=0;global[3]=(flags&8)!=0;MessageColorRuleEngine.configure(c);
+   global[0]=(flags&1)!=0;global[1]=(flags&2)!=0;global[2]=(flags&4)!=0;global[3]=(flags&8)!=0;MessageColorRuleEngine.configure(c);overlay.getTextSettings().setSolidEnabled(global[2]);overlay.getTextSettings().setIncludePlayer(global[3]);overlay.getTextSettings().setSolidRules(c.messageColorRules());
    boolean shown=(flags&16)!=0,enabled=(flags&32)!=0,onlyFlash=(flags&64)!=0,outgoing=(flags&128)!=0,perGlobal=(flags&256)!=0,loggedIn=(flags&512)!=0;
    state[0]=loggedIn?GameState.LOGGED_IN:GameState.LOGIN_SCREEN;overlay.setShow(shown);overlay.setNotification(enabled?Notification.ON:Notification.OFF);overlay.setNotificationTrigger(onlyFlash?AttentionTrigger.FLASH_RULES_ONLY:AttentionTrigger.ALL_NEW_MESSAGES);overlay.setFilterMode(mode);overlay.setFilteredWords("hello");overlay.setUseGlobalChatFilter(perGlobal);
    history.clear();p.alerts.clear();boolean locallyVisible=global[1]||perGlobal||mode!=OverlayFilterMode.HIDE_MATCHES;

@@ -2,6 +2,8 @@ package com.improvedchat;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -26,15 +28,13 @@ public final class OverlayColorRuleEngine {
 
     private static final Decision NONE = Decision.none();
     private static volatile ImprovedChatConfig config;
-    private static volatile String cachedRainbowSource;
-    private static volatile List<TextRule> cachedRainbowRules = new ArrayList<>();
+    private static final Map<String, List<TextRule>> RULE_CACHE = new LinkedHashMap<>();
 
     private OverlayColorRuleEngine() {}
 
     public static void configure(ImprovedChatConfig newConfig) {
         config = newConfig;
-        cachedRainbowSource = null;
-        cachedRainbowRules = new ArrayList<>();
+        synchronized (RULE_CACHE) { RULE_CACHE.clear(); }
     }
 
     public static ChatColorSource chatColorSource() {
@@ -44,7 +44,10 @@ public final class OverlayColorRuleEngine {
 
     /** Returns only overlay-only decisions. Message Color Rules are applied by the preceding color layer. */
     public static Decision decide(String rawMessage, ChatMessageType type) {
-        ImprovedChatConfig c = config;
+        return decide(rawMessage, type, config);
+    }
+
+    public static Decision decide(String rawMessage, ChatMessageType type, ImprovedChatConfig c) {
         if (c == null || rawMessage == null || rawMessage.isEmpty() || !c.enableOverlayRainbowRules()) {
             return NONE;
         }
@@ -59,9 +62,9 @@ public final class OverlayColorRuleEngine {
 
     private static List<TextRule> rainbowRules(String source) {
         if (source == null) source = "";
-        if (source.equals(cachedRainbowSource)) return cachedRainbowRules;
-        synchronized (OverlayColorRuleEngine.class) {
-            if (source.equals(cachedRainbowSource)) return cachedRainbowRules;
+        synchronized (RULE_CACHE) {
+            List<TextRule> hit = RULE_CACHE.get(source);
+            if (hit != null) return hit;
             List<TextRule> out = new ArrayList<>();
             for (String line : source.split("\\R")) {
                 line = line.trim();
@@ -69,8 +72,8 @@ public final class OverlayColorRuleEngine {
                 TextRule rule = TextRule.compile(line);
                 if (rule != null) out.add(rule);
             }
-            cachedRainbowRules = out;
-            cachedRainbowSource = source;
+            if (RULE_CACHE.size() >= 64) RULE_CACHE.remove(RULE_CACHE.keySet().iterator().next());
+            RULE_CACHE.put(source, out);
             return out;
         }
     }

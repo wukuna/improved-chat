@@ -28,6 +28,8 @@ public final class OverlayConfig {
     private String filteredWords = "";
     private String filteredRegex = "";
     private String filteredNames = "";
+    private boolean messageReplacerEnabled;
+    private volatile java.util.List<OverlayTextReplacement> textReplacements = java.util.Collections.emptyList();
 
     private boolean showClanRankIcons = true;
     private boolean showOfflineStatus;
@@ -68,6 +70,11 @@ public final class OverlayConfig {
     private boolean rgbBorder;
     private AnimatedTextStyle animatedTextStyle = AnimatedTextStyle.NORMAL;
     private int rgbCycleSeconds = 8;
+    private boolean customRgbCycle; // Missing in old JSON means the existing full spectrum cycle.
+    private Color rgbColor1 = new Color(255, 102, 122);
+    private Color rgbColor2 = new Color(106, 203, 255);
+    private OverlayTextSettings textSettings; // null identifies overlays that still need migration.
+
 
     private volatile Notification notification = Notification.OFF;
     private AttentionTrigger notificationTrigger = AttentionTrigger.ALL_NEW_MESSAGES;
@@ -171,6 +178,17 @@ public final class OverlayConfig {
     }
 
     public boolean isUseGlobalChatFilter() { return useGlobalChatFilter; }
+    public boolean isMessageReplacerEnabled() { return messageReplacerEnabled; }
+    public void setMessageReplacerEnabled(boolean value) { messageReplacerEnabled = value; }
+    public java.util.List<OverlayTextReplacement> getTextReplacements() {
+        java.util.List<OverlayTextReplacement> current = textReplacements;
+        return current == null ? java.util.Collections.emptyList() : java.util.Collections.unmodifiableList(current);
+    }
+    public void setTextReplacements(java.util.List<OverlayTextReplacement> value) {
+        java.util.List<OverlayTextReplacement> copy = new java.util.ArrayList<>();
+        if (value != null) for (OverlayTextReplacement rule : value) if (rule != null) copy.add(rule);
+        textReplacements = copy;
+    }
     public void setUseGlobalChatFilter(boolean value) { useGlobalChatFilter = value; }
 
     public OverlayFilterMode getFilterMode() {
@@ -310,6 +328,22 @@ public final class OverlayConfig {
     public void setBorderEnabled(boolean value) { borderEnabled = value; }
 
     public Color getBorderColour() { return borderColour == null ? Color.WHITE : borderColour; }
+    public boolean migrateTextSettings(com.improvedchat.ImprovedChatConfig legacy) {
+        if (textSettings != null) return false;
+        textSettings = OverlayTextSettings.copyOf(legacy);
+        return true;
+    }
+    public boolean hasTextSettings() { return textSettings != null; }
+    public OverlayTextSettings getTextSettings() {
+        if (textSettings == null) textSettings = new OverlayTextSettings();
+        return textSettings;
+    }
+    public boolean isCustomRgbCycle() { return customRgbCycle; }
+    public void setCustomRgbCycle(boolean value) { customRgbCycle = value; }
+    public Color getRgbColor1() { return rgbColor1 == null ? new Color(255,102,122) : rgbColor1; }
+    public Color getRgbColor2() { return rgbColor2 == null ? new Color(106,203,255) : rgbColor2; }
+    public void setRgbColor1(Color value) { rgbColor1 = value; }
+    public void setRgbColor2(Color value) { rgbColor2 = value; }
     public boolean isRgbBorder() { return rgbBorder; }
     public void setRgbBorder(boolean value) { rgbBorder = value; }
     public AnimatedTextStyle getAnimatedTextStyle() {

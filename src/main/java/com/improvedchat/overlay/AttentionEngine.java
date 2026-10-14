@@ -99,7 +99,7 @@ public final class AttentionEngine {
 
     private static AlertState stateFor(OverlayConfig cfg, OverlayMessage msg, long now) {
         boolean focused = isClientFocused();
-        boolean ruleFlash = MessageColorRuleEngine.flashFor(msg.getMessage(), msg.getType());
+        boolean ruleFlash = MessageColorRuleEngine.flashFor(msg.getMessage(), msg.getType(), cfg.getTextSettings());
         boolean trigger = cfg.getAttentionTrigger() == AttentionTrigger.ALL_NEW_MESSAGES || ruleFlash;
         if (!trigger) return null;
 

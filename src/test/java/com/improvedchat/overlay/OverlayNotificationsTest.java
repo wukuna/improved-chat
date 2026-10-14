@@ -32,7 +32,7 @@ public class OverlayNotificationsTest {
         config.setShow(false); assertFalse(OverlayNotifications.eligible(config,message,Collections.singletonList(message)));
     }
     @Test public void outgoingAndNotifierConsoleMessagesCannotLoop() {
-        OverlayConfig config=new OverlayConfig(); config.setNotification(Notification.ON);
+        OverlayConfig config=new OverlayConfig(); config.getTextSettings().setSolidEnabled(true); config.getTextSettings().setSolidRules("expire::1::flash"); config.setNotification(Notification.ON);
         OverlayMessage outgoing=message(ChatMessageType.PRIVATECHATOUT,true), console=message(ChatMessageType.CONSOLE,false);
         assertFalse(OverlayNotifications.eligible(config,outgoing,Collections.singletonList(outgoing)));
         assertFalse(OverlayNotifications.eligible(config,console,Collections.singletonList(console)));
@@ -42,7 +42,7 @@ public class OverlayNotificationsTest {
             @Override public boolean enableMessageColorRules() { return true; }
             @Override public String messageColorRules() { return "expire::1::flash"; }
         });
-        OverlayConfig config=new OverlayConfig(); config.setNotification(Notification.ON);
+        OverlayConfig config=new OverlayConfig(); config.getTextSettings().setSolidEnabled(true); config.getTextSettings().setSolidRules("expire::1::flash"); config.setNotification(Notification.ON);
         config.setNotificationTrigger(AttentionTrigger.FLASH_RULES_ONLY);
         OverlayMessage hit=OverlayMessage.gameMessage("Your boost will expire",0,ChatMessageType.GAMEMESSAGE,false);
         assertTrue(OverlayNotifications.eligible(config,hit,Collections.singletonList(hit)));

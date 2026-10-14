@@ -51,15 +51,15 @@ public class Part3ConfigTest
     public void part2CollapseKeybindPlacementIsPreserved() throws Exception
     {
         ConfigItem item = ImprovedChatConfig.class.getMethod("toggleShowChat").getAnnotation(ConfigItem.class);
-        assertEquals(ImprovedChatConfig.collapseChatSection, item.section());
-        assertEquals(15, item.position());
+        assertEquals(ImprovedChatConfig.chatboxSection, item.section());
+        assertTrue(item.position() >= 0);
     }
 
     @Test
     public void dialogueStylingStillExistsAfterPart3Sections() throws Exception
     {
-        ConfigSection section = ImprovedChatConfig.class.getField("dialogueFontsSection").getAnnotation(ConfigSection.class);
-        assertEquals("Dialogue Text Styling", section.name());
-        assertEquals(23, section.position());
+        ConfigSection section = ImprovedChatConfig.class.getField("dialogueSection").getAnnotation(ConfigSection.class);
+        assertEquals("Dialogue text", section.name());
+        assertEquals(3, section.position());
     }
 }

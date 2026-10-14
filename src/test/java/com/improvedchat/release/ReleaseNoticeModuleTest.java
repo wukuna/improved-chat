@@ -15,13 +15,13 @@ public class ReleaseNoticeModuleTest
     }
 
     @Test
-    public void currentReleaseAdvancesExactlyTwice()
+    public void currentReleaseAppearsOnce()
     {
         String id = ReleaseNoticeModule.CURRENT_NOTICE_ID;
 
         assertEquals(1, ReleaseNoticeModule.nextReminderIndex(id, null));
         assertEquals(1, ReleaseNoticeModule.nextReminderIndex(id, "0"));
-        assertEquals(2, ReleaseNoticeModule.nextReminderIndex(id, "1"));
+        assertEquals(0, ReleaseNoticeModule.nextReminderIndex(id, "1"));
         assertEquals(0, ReleaseNoticeModule.nextReminderIndex(id, "2"));
         assertEquals(0, ReleaseNoticeModule.nextReminderIndex(id, "3"));
     }
@@ -36,13 +36,15 @@ public class ReleaseNoticeModuleTest
     }
 
     @Test
-    public void messagesUseRequestedReminderLabels()
+    public void overviewListsTheChangesAndSidePanelReminder()
     {
         String first = ReleaseNoticeModule.buildMessage(1);
         String second = ReleaseNoticeModule.buildMessage(2);
 
-        assertTrue(first.startsWith("Improved Chat has been updated:"));
-        assertTrue(first.endsWith("Reminder 1/2"));
-        assertTrue(second.endsWith("Reminder 2/2"));
+        assertTrue(first.startsWith("Improved Chat update overview:"));
+        assertTrue(first.contains("<br>- Overlays"));
+        assertTrue(first.contains("side panel"));
+        assertTrue(first.contains("saved overlays"));
+        assertEquals(first, second);
     }
 }
