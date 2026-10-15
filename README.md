@@ -7,6 +7,8 @@ Most features are independent, so you can use only the parts you want.
 ## Highlights
 
 - **Custom chat overlays** with independent message types, placement, size, fonts, colors, borders, timestamps, fade behavior, attention effects, and input preview.
+- **Overlay RGB effects (Beta)** with a clockwise rainbow border, static RGB text, two-color or full-spectrum cycling, and a full-spectrum wave.
+- **Message replacer (Beta)** with multiple independently enabled rules that show your own text in an overlay while leaving the original chat message unchanged.
 - **Per-overlay chat filtering** with Off, Hide Matches, Show Only Matches, word, regex, and sender/name rules.
 - **Clan presentation in overlays** with rank icons plus independently configurable offline status, icon, name color, and offline color.
 - **Native chat resizing** in resizable and fixed layouts, including drag resizing, private-chat rewrapping, secondary sizes, and keybind control.
@@ -24,13 +26,13 @@ The native plugin menu has five collapsible sections: **Chatbox**, **Chat cleanu
 
 Use the side panel for individual overlays, custom text colors, RGB effects, notifications and Message highlights. Existing setting keys, overlay IDs, placements, filters and notification settings are retained. Former global color rules, their nine palette colors, RGB patterns, spread and fallback colors are copied into each existing overlay once. Old cycling remains full spectrum. The old overlay list is backed up under `overlayConfigsBeforeMenuCleanup`; legacy global values remain stored. New overlays have independent defaults. Unreadable configurations keep the existing recovery backup and are not overwritten merely by startup.
 
-A one-time chatbox overview lists this update's changes. Collection Log is excluded from generic modal refitting and script replays; its native window handlers retain responsibility for resizing. The reported live Collection Log symptom still needs confirmation in-game.
+A one-time chatbox overview lists this update's changes. Added protection against Collection Log scrolling and rendering glitches by leaving that window's resizing to the game. Live confirmation of the reported issue is still pending.
 
 ## Custom overlays
 
 Create and manage multiple overlays from the **Improved Chat** side panel.
 
-Start with a preset, then choose **Show overlay** and **Message Types** in the **Messages** tab. New custom overlays have no message types selected until you choose them. An overlay appears only when it has messages or an input preview; choosing “With chatbox open or hidden” does not draw an empty frame.
+Start with a preset, then turn on **Enabled**, choose **Message Types**, and set **Show overlay** in the **Messages** tab. **Show overlay** selects whether the overlay appears only with the chatbox hidden or with it open too. New custom overlays have no message types selected until you choose them. An overlay appears only when it has messages or an input preview; choosing “With chatbox open or hidden” does not draw an empty frame.
 
 Use **Preview (10 seconds)** while logged in to check appearance without waiting for chat. Preview bypasses content filters and normal visibility conditions; its sample messages never enter chat history. Use **Open Plugin Settings** for native chat features and global defaults.
 
@@ -63,10 +65,10 @@ In each overlay's **Appearance** tab, enable **Border** and **RGB Clockwise Bord
 
 Animation affects only the custom overlay, including its names, timestamps and input preview. Migrated overlays preserve their former precedence. **Messages → Message highlights → Highlights override defaults** lets a matching rule override the message body while unmatched messages retain the default effect. Icons retain their original colors. Wrapping, shadows, underline/strikethrough styling, message fading and attention flashes remain available. Border Color retains its transparency setting when RGB is enabled. Use **Preview (10 seconds)** while logged in to try the effects. These Beta effects still need live gameplay feedback.
 
->  Overlay list and overlay editor.
+> Earlier overlay list and editor, before the current list-and-tabs layout. The settings instructions above describe the current release.
 <img width="276" height="1305" alt="Screenshot 2026-10-03 185108" src="https://github.com/user-attachments/assets/39583041-3ec1-4c62-849f-cceadeef0761" />
 
->  Creating an overlay, selecting message types, moving it, and changing its appearance.
+> Earlier editor walkthrough: creating an overlay, selecting message types, moving it, and changing its appearance. The current editor groups these controls into tabs.
 
 https://github.com/user-attachments/assets/95c6ba06-64a6-435d-8fb8-ad3857b9e662
 
@@ -358,7 +360,7 @@ Improved Chat is BSD 2-Clause licensed. See [LICENSE](LICENSE) and [THIRD_PARTY_
 
 ## Per-overlay notifications
 
-Each overlay has a **Notifications** section in its editor. Notifications start disabled. Enable them for all new matching messages or only messages matching a `::flash` color rule. Overlays disabled with **Show overlay**, filtered messages, your own messages and RuneLite console notifications do not trigger alerts. Notifications follow the Show overlay switch; an enabled overlay can still notify while its chatbox visibility condition temporarily hides it. Repainting, loading history and delayed message formatting do not replay notifications. Each enabled matching overlay sends its own alert.
+Each overlay has a **Notifications** tab in its editor. Notifications start disabled. Enable them for all new matching messages or only messages matching a `::flash` color rule. Overlays switched off with **Enabled**, filtered messages, outgoing messages and RuneLite console notifications do not trigger alerts. Notifications follow the **Enabled** switch; an enabled overlay can still notify while its **Show overlay** visibility condition temporarily hides it. Repainting, loading history and delayed message formatting do not replay notifications. Each enabled matching overlay sends its own alert.
 
 Use RuneLite defaults, or enable **Customize Notification** for independent desktop notifications, Native/Custom/Off sound, volume, focus behavior, window flashing and color, timeout, and chatbox notification. Custom sounds use a WAV filename in RuneLite's notifications folder; blank uses its default custom sound. Playback and operating-system notifications are handled by RuneLite's shared Notifier, as with Idle Notifier. These controls are independent of the existing overlay Attention flashing.
 
