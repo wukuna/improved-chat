@@ -36,15 +36,15 @@ public class ReleaseNoticeModuleTest
     }
 
     @Test
-    public void overviewListsTheChangesAndSidePanelReminder()
+    public void overviewDescribesTheChatboxPositionFix()
     {
         String first = ReleaseNoticeModule.buildMessage(1);
         String second = ReleaseNoticeModule.buildMessage(2);
 
         assertTrue(first.startsWith("Improved Chat update overview:"));
-        assertTrue(first.contains("<br>- Overlays"));
-        assertTrue(first.contains("side panel"));
-        assertTrue(first.contains("saved overlays"));
+        assertTrue(first.contains("<br>- Fixed a glitch"));
+        assertTrue(first.contains("logging out and back in"));
+        assertTrue(first.contains("saved position"));
         assertEquals(first, second);
     }
 }

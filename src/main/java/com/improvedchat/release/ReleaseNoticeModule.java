@@ -24,22 +24,15 @@ import net.runelite.client.eventbus.Subscribe;
 @Singleton
 public final class ReleaseNoticeModule
 {
-    static final String CURRENT_NOTICE_ID = "overlay-tabs-settings-cleanup-v1";
+    static final String CURRENT_NOTICE_ID = "chatbox-login-position-v1";
     static final int MAX_REMINDERS = 1;
 
     private static final String NOTICE_ID_KEY = "releaseNoticeId";
     private static final String NOTICE_COUNT_KEY = "releaseNoticeCount";
     private static final String[] NOTICE_LINES = {
         "Improved Chat update overview:",
-        "- Overlays are now listed together for easier access and editing.",
-        "- Each overlay has Messages, Appearance and Notifications tabs.",
-        "- Plugin settings are organized into fewer sections.",
-        "- Overlay colors, sounds and message highlights are managed in the side panel.",
-        "- RGB text can stay still, cycle between chosen colors or display a moving rainbow.",
-        "- Message replacer (Beta) lets each overlay show custom wording for specific messages.",
-        "- Your saved overlays and settings are preserved, and changes save automatically.",
-        "- Regular chatbox text uses RuneLite's Chat Color settings.",
-        "- Added protection against a glitch causing scrolling, display and selection issues in the Collection Log."
+        "- Fixed a glitch that could move a resized chatbox after logging out and back in.",
+        "- Chatbox placement now follows RuneLite's saved position when changing chat sizes."
     };
 
     /**

@@ -27,7 +27,6 @@ public class ResizableModeChat {
     private final ChatDialogBoxes dialogBoxes;
     private final TopLevelModals mainModals;
     private final RuneLiteHudAnchors hudAnchors;
-    private final RuneLiteMovedChat movedChat;
 
     private int lastOpenTab; // Tab open before the chat was hidden, reopened on unhide
     private boolean lastCollapsed; // Collapse state the last apply() sized the slot to
@@ -41,7 +40,7 @@ public class ResizableModeChat {
         Client client, ImprovedChatConfig config, SecondarySize swapSize,
         ChatBackgroundGraphic bgGraphic, PrivateMessageSplit pmSplit,
         ChatDialogBoxes dialogBoxes, TopLevelModals mainModals,
-        RuneLiteHudAnchors hudAnchors, RuneLiteMovedChat movedChat
+        RuneLiteHudAnchors hudAnchors
     ) {
         this.client = client;
         this.config = config;
@@ -51,7 +50,6 @@ public class ResizableModeChat {
         this.dialogBoxes = dialogBoxes;
         this.mainModals = mainModals;
         this.hudAnchors = hudAnchors;
-        this.movedChat = movedChat;
     }
 
     // Adopt the chat size, then re-fit and re-wrap; rebuilding mid-swap would blacken a transparent chat
@@ -110,7 +108,8 @@ public class ResizableModeChat {
         if (hudAnchors.consumeLayoutChanged()) {
             relayoutNeeded = true; // Child modal slots changed height; re-run the toplevel fit once settled
         }
-        movedChat.sync(slot, slotW, slotH); // Hold a RuneLite-moved chat's bottom edge still through the resize
+        // RuneLite owns the chat overlay position and bounds. Never shift its saved location
+        // to compensate for size changes: that point is reloaded independently at login.
 
         if (!force &&
             slot.getWidth() == slotW && slot.getHeight() == slotH &&
@@ -157,8 +156,6 @@ public class ResizableModeChat {
         lastAppliedWidth = -1;
         lastAppliedHeight = -1;
 
-        movedChat.restore(); // Before the slot goes back to stock height, which is what the point is handed back for
-
         Widget universe = client.getWidget(InterfaceID.Chatbox.UNIVERSE);
         if (universe == null) return;
 
@@ -166,7 +163,7 @@ public class ResizableModeChat {
         Widget slot = universe.getParent();
         if (slot != null && slot.getId() != InterfaceID.Toplevel.CHAT_CONTAINER) {
             slot.setSize(ChatGeometry.CHATBOX_SPRITE_W, ChatGeometry.CHATBOX_SLOT_H);
-            slot.setForcedPosition(-1, -1);
+            // Keep the slot position owned by RuneLite's movement overlay.
             slot.revalidate();
         }
 

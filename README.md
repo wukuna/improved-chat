@@ -170,6 +170,8 @@ Each overlay can independently configure:
 
 Improved Chat can resize RuneLite's native chatbox in both **resizable** and **fixed** layouts.
 
+RuneLite keeps ownership of the chatbox position. A freely moved chatbox keeps its saved top-left position when its size changes; the default bottom-anchored chatbox still uses the native bottom anchor. Improved Chat does not shift the saved location during resizing, logout/login or shutdown.
+
 Available controls include:
 
 - resizable height and width changes;
