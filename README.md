@@ -1,8 +1,8 @@
 # Improved Chat
 
-Improved Chat is an all-in-one RuneLite chat customization plugin with custom overlays, per-overlay filtering, native chat resizing and collapse controls, cleanup tools, clan presentation, message styling, alerts, opacity controls, and dialogue text customization.
+Keep the conversations and game messages you care about easy to read. Create multiple chat overlays with their own channels, filters, appearance and alerts, then adjust the native chatbox with resizing, collapse controls, opacity and message cleanup. Optional clan status, message colors and dialogue styling let you refine the details.
 
-Most features are independent, so you can use only the parts you want.
+Use RuneLite's Improved Chat settings for native chatbox features. Open the Improved Chat side panel to create overlays and edit their Messages, Appearance and Notifications tabs. Most features are independent, so you can enable just the changes you want.
 
 ## Highlights
 
@@ -117,9 +117,9 @@ Per-overlay controls include:
 
 Clan, guest-clan, and Group Ironman chat are supported.
 
-Overlay offline presentation is independent of the native-chat **Offline Clan Status** setting, so one can be enabled without the other.
+Overlay offline presentation is independent of the native-chat **Grey offline clan names** setting, so one can be enabled without the other.
 
-In native chat, **Enable Offline Clan Status** greys out offline clan member names. **Show Offline Icon** optionally adds an icon beside those names; turning the icon off keeps the grey styling. Online names return to their original colors. Custom offline name colors remain available in each overlay.
+In native chat, **Grey offline clan names** greys out offline clan member names. **Show offline icon** optionally adds an icon beside those names; turning the icon off keeps the grey styling. Online names return to their original colors. Custom offline name colors remain available in each overlay.
 
 ## Message colors, rules, and alerts
 

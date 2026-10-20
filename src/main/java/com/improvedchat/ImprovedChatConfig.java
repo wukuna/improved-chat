@@ -418,10 +418,10 @@ public interface ImprovedChatConfig extends Config {
     @ConfigItem(keyName = "removeLookupChatOption", name = "Remove Lookup", description = "Also remove the player Lookup entry from chat-message menus", section = cleanupSection, position = 23)
     default boolean removeLookupChatOption() { return false; }
 
-    @ConfigItem(keyName = "enableOfflineChatStatus", name = "Enable Offline Clan Status", description = "Grey out offline clan member names in native clan chat", section = cleanupSection, position = 24)
+    @ConfigItem(keyName = "enableOfflineChatStatus", name = "Grey offline clan names", description = "Grey out offline clan member names in native clan chat", section = cleanupSection, position = 24)
     default boolean enableOfflineChatStatus() { return false; }
 
-    @ConfigItem(keyName = "enableOfflineIcon", name = "Show Offline Icon", description = "Also add an offline icon beside greyed-out names when Offline Clan Status is enabled", section = cleanupSection, position = 25)
+    @ConfigItem(keyName = "enableOfflineIcon", name = "Show offline icon", description = "Add an icon beside offline clan names. Requires Grey offline clan names; turning this off keeps the grey styling.", section = cleanupSection, position = 25)
     default boolean enableOfflineIcon() { return true; }
 
     @ConfigItem(hidden = true, keyName = "enableOfflineColor", name = "Color Offline Names", description = "Recolor offline clan member names", section = cleanupSection, position = 26)
