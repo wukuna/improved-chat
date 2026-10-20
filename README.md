@@ -119,7 +119,7 @@ Clan, guest-clan, and Group Ironman chat are supported.
 
 Overlay offline presentation is independent of the native-chat **Offline Clan Status** setting, so one can be enabled without the other.
 
-Native offline status adds an icon; native name colors remain under RuneLite Chat Color. Custom offline name colors remain available in each overlay.
+In native chat, **Enable Offline Clan Status** greys out offline clan member names. **Show Offline Icon** optionally adds an icon beside those names; turning the icon off keeps the grey styling. Online names return to their original colors. Custom offline name colors remain available in each overlay.
 
 ## Message colors, rules, and alerts
 

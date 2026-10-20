@@ -1,7 +1,6 @@
 package com.improvedchat.chatbox.offline;
 
 import com.improvedchat.ImprovedChatConfig;
-import java.awt.Color;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -161,12 +160,7 @@ public final class OfflineChatStatusModule
         String result = base;
         if (presentation.isOffline())
         {
-            // Keep native name colors under RuneLite control. Overlay colors remain configurable.
-
-            if (config.enableOfflineIcon() && presentation.getOfflineIconId() >= 0)
-            {
-                result = "<img=" + presentation.getOfflineIconId() + ">" + result;
-            }
+            result = offlineName(base, config.enableOfflineIcon(), presentation.getOfflineIconId());
         }
 
         boolean changed = !result.equals(currentName);
@@ -176,6 +170,14 @@ public final class OfflineChatStatusModule
         }
         state.recordApplied(result);
         return changed;
+    }
+
+    static String offlineName(String base, boolean showIcon, int iconId)
+    {
+        // Existing inline colors must not override the offline grey. Keep rank icons and
+        // retain the exact original name in ClanNameState for online/disabled restoration.
+        String result = "<col=808080>" + base.replaceAll("(?i)</?col(?:=[^>]*)?>", "") + "</col>";
+        return showIcon && iconId >= 0 ? "<img=" + iconId + ">" + result : result;
     }
 
     private void restoreAll()
