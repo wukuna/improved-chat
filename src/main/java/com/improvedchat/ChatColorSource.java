@@ -5,7 +5,7 @@ public enum ChatColorSource {
     AUTOMATIC("Automatic"),
     TRANSPARENT("Transparent"),
     OPAQUE("Opaque"),
-    WIDGET("Improved Chat fallback");
+    WIDGET("Improved Chat and Overlays fallback");
 
     private final String label;
 

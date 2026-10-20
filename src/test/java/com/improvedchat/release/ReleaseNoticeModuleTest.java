@@ -36,15 +36,13 @@ public class ReleaseNoticeModuleTest
     }
 
     @Test
-    public void overviewDescribesTheChatboxPositionFix()
+    public void noticeExplainsRenameAndPreservedSettings()
     {
         String first = ReleaseNoticeModule.buildMessage(1);
         String second = ReleaseNoticeModule.buildMessage(2);
 
-        assertTrue(first.startsWith("Improved Chat update overview:"));
-        assertTrue(first.contains("<br>- Fixed a glitch"));
-        assertTrue(first.contains("logging out and back in"));
-        assertTrue(first.contains("saved position"));
+        assertTrue(first.startsWith("Improved Chat is now Improved Chat and Overlays."));
+        assertTrue(first.contains("saved settings and overlay positions are unchanged"));
         assertEquals(first, second);
     }
 }

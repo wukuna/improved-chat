@@ -24,15 +24,14 @@ import net.runelite.client.eventbus.Subscribe;
 @Singleton
 public final class ReleaseNoticeModule
 {
-    static final String CURRENT_NOTICE_ID = "chatbox-login-position-v1";
+    static final String CURRENT_NOTICE_ID = "chat-and-overlays-rename-v1";
     static final int MAX_REMINDERS = 1;
 
     private static final String NOTICE_ID_KEY = "releaseNoticeId";
     private static final String NOTICE_COUNT_KEY = "releaseNoticeCount";
     private static final String[] NOTICE_LINES = {
-        "Improved Chat update overview:",
-        "- Fixed a glitch that could move a resized chatbox after logging out and back in.",
-        "- Chatbox placement now follows RuneLite's saved position when changing chat sizes."
+        "Improved Chat is now Improved Chat and Overlays.",
+        "Your saved settings and overlay positions are unchanged. Find us under the new name in plugin settings."
     };
 
     /**

@@ -59,7 +59,7 @@ import net.runelite.client.config.RequestFocusType;
 import net.runelite.client.config.FlashNotification;
 import net.runelite.client.ui.PluginPanel;
 
-/** Compact side panel for Improved Chat. */
+/** Compact side panel for Improved Chat and Overlays. */
 public class ImprovedChatPanel extends PluginPanel {
     private static final Color BG = new Color(31, 34, 39);
     private static final Color CARD = new Color(41, 45, 52);
@@ -121,7 +121,7 @@ public class ImprovedChatPanel extends PluginPanel {
         root.setBorder(BorderFactory.createEmptyBorder(9, 7, 7, 7));
 
 
-        JLabel title = label("IMPROVED CHAT", TEXT, 15, Font.BOLD);
+        JLabel title = label("<html>IMPROVED CHAT<br>AND OVERLAYS</html>", TEXT, 15, Font.BOLD);
         title.setAlignmentX(Component.LEFT_ALIGNMENT);
         root.add(title);
         root.add(help("Create and edit overlays here. Chatbox and cleanup options are in plugin settings."));
@@ -612,7 +612,7 @@ public class ImprovedChatPanel extends PluginPanel {
         boolean usesGlobal = overridden || oc.isUseGlobalChatFilter();
         if (usesGlobal) {
             filtering.add(help(overridden
-                    ? "Global override is on. Change ‘Use Chat Filter Globally’ in Improved Chat settings to use these custom rules."
+                    ? "Global override is on. Change ‘Use Chat Filter Globally’ in Improved Chat and Overlays settings to use these custom rules."
                     : "This overlay uses RuneLite's Chat Filter rules."));
             filtering.add(help(plugin.isGlobalFilterAvailable()
                     ? "RuneLite Chat Filter is enabled. Custom rules below are saved but inactive."

@@ -76,6 +76,7 @@ public class DynamicChatOverlay extends Overlay {
 
     @Override
     public String getName() {
+        // Keep the legacy overlay name: RuneLite uses it to restore saved positions.
         return "Improved Chat " + (overlayConfig == null ? "Overlay" : overlayConfig.getId());
     }
 

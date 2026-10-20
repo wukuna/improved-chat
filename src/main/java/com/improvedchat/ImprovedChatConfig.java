@@ -19,7 +19,7 @@ public interface ImprovedChatConfig extends Config {
     String chatboxSection = "chatbox";
     @ConfigSection(name = "Chat cleanup", description = "Independent channel names, instructions, status icons and message cleanup", position = 1, closedByDefault = true)
     String cleanupSection = "cleanup";
-    @ConfigSection(name = "Overlay setup: side panel", description = "Open the Improved Chat side panel to create overlays and configure colors, RGB effects, sounds and Message highlights. These options apply across overlays.", position = 2, closedByDefault = false)
+    @ConfigSection(name = "Overlay setup: side panel", description = "Open the Improved Chat and Overlays side panel to create overlays and configure colors, RGB effects, sounds and Message highlights. These options apply across overlays.", position = 2, closedByDefault = false)
     String overlayBehaviorSection = "overlayBehavior";
     @ConfigSection(name = "Dialogue text", description = "Fonts and readability for supported dialogue", position = 3, closedByDefault = true)
     String dialogueSection = "dialogue";
@@ -28,8 +28,8 @@ public interface ImprovedChatConfig extends Config {
 
     @ConfigItem(
         keyName = "hideSidePanel",
-        name = "Hide Improved Chat Panel",
-        description = "Hide the Improved Chat side panel",
+        name = "Hide side panel",
+        description = "Hide the Improved Chat and Overlays side panel",
         position = 0,
         section = overlayBehaviorSection
     )
@@ -267,7 +267,7 @@ public interface ImprovedChatConfig extends Config {
     @ConfigItem(keyName = TOGGLE_SHOW_CHAT, name = "Collapse Chat Keybind", description = "Open or close native chat with a keybind (for example, backtick). Works with Collapsible Chat or Resizable Chat enabled; fixed layout also requires Hideable Fixed Chat.", section = chatboxSection, position = 17)
     default Keybind toggleShowChat() { return Keybind.NOT_SET; }
 
-    @ConfigItem(keyName = NO_BORDERS, name = "Don't Draw Resize Borders", description = "Hide Improved Chat's resize frame; native dialogue and option-menu borders remain untouched", section = advancedSection, position = 4)
+    @ConfigItem(keyName = NO_BORDERS, name = "Don't Draw Resize Borders", description = "Hide Improved Chat and Overlays's resize frame; native dialogue and option-menu borders remain untouched", section = advancedSection, position = 4)
     default boolean noBorders() { return false; }
 
     @ConfigItem(keyName = NO_BACKGROUND_ZOOM, name = "Don't Zoom Background", description = "Keep the normal opaque chat background at its native artwork scale", section = advancedSection, position = 5)

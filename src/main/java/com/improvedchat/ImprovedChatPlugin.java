@@ -83,9 +83,9 @@ import java.util.regex.Pattern;
  * that each filter and render a subset of the pool based on their {@link OverlayConfig}.
  */
 @PluginDescriptor(
-        name = "Improved Chat",
+        name = "Improved Chat and Overlays",
         configName = "improvedchat",
-        description = "Create filtered chat overlays, customize chatbox size and opacity, clean up messages, and add highlights and alerts.",
+        description = "Customize your chatbox and create filtered overlays with independent styles, highlights and alerts.",
         tags = {"chat", "message", "overlay", "color", "customize", "private", "clan"},
         conflicts = {"Chat Widgets", "Force Recolor"})
 public class ImprovedChatPlugin extends Plugin {
@@ -330,7 +330,7 @@ public class ImprovedChatPlugin extends Plugin {
             icon = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
         }
         navButton = NavigationButton.builder()
-                .tooltip("Improved Chat")
+                .tooltip("Improved Chat and Overlays")
                 .icon(icon)
                 .priority(10)
                 .panel(panel)
@@ -528,7 +528,7 @@ public class ImprovedChatPlugin extends Plugin {
         };
         eventBus.post(new OverlayMenuClicked(
                 new net.runelite.client.ui.overlay.OverlayMenuEntry(net.runelite.api.MenuAction.RUNELITE_OVERLAY_CONFIG,
-                        OverlayManager.OPTION_CONFIGURE, "Improved Chat"), settingsTarget));
+                        OverlayManager.OPTION_CONFIGURE, "Improved Chat and Overlays"), settingsTarget));
     }
 
     public boolean isGlobalFilterAvailable() { return isChatFilterEnabled(); }
