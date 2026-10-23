@@ -1,8 +1,16 @@
-# Improved Chat
+# Improved Chat and Overlays
 
-Improved Chat is an all-in-one RuneLite chat customization plugin with custom overlays, per-overlay filtering, native chat resizing and collapse controls, cleanup tools, clan presentation, message styling, alerts, opacity controls, and dialogue text customization.
+Improved Chat and Overlays is an all-in-one RuneLite chat customization plugin with custom overlays, per-overlay filtering, native chat resizing and collapse controls, cleanup tools, clan presentation, message styling, alerts, opacity controls, and dialogue text customization.
 
 Most features are independent, so you can use only the parts you want.
+
+## Getting started
+
+1. Use the normal plugin settings for native chatbox size, collapse controls, cleanup, opacity and dialogue styling.
+2. Open the side panel to create an overlay. Choose its message types and when it should appear.
+3. Use **Messages**, **Appearance** and **Notifications** to configure that overlay, then try **Preview (10 seconds)** while logged in.
+
+Previously **Improved Chat**. Existing settings, overlay positions and profiles are retained.
 
 ## Highlights
 
@@ -26,11 +34,11 @@ The native plugin menu has five collapsible sections: **Chatbox**, **Chat cleanu
 
 Use the side panel for individual overlays, custom text colors, RGB effects, notifications and Message highlights. Existing setting keys, overlay IDs, placements, filters and notification settings are retained. Former global color rules, their nine palette colors, RGB patterns, spread and fallback colors are copied into each existing overlay once. Old cycling remains full spectrum. The old overlay list is backed up under `overlayConfigsBeforeMenuCleanup`; legacy global values remain stored. New overlays have independent defaults. Unreadable configurations keep the existing recovery backup and are not overwritten merely by startup.
 
-A one-time chatbox overview lists this update's changes. Added protection against Collection Log scrolling and rendering glitches by leaving that window's resizing to the game. Live confirmation of the reported issue is still pending.
+A one-time chatbox notice explains the rename. Collection Log keeps its native window handling.
 
 ## Custom overlays
 
-Create and manage multiple overlays from the **Improved Chat** side panel.
+Create and manage multiple overlays from the **Improved Chat and Overlays** side panel.
 
 Start with a preset, then turn on **Enabled**, choose **Message Types**, and set **Show overlay** in the **Messages** tab. **Show overlay** selects whether the overlay appears only with the chatbox hidden or with it open too. New custom overlays have no message types selected until you choose them. An overlay appears only when it has messages or an input preview; choosing “With chatbox open or hidden” does not draw an empty frame.
 
@@ -125,7 +133,7 @@ Native offline status adds an icon; native name colors remain under RuneLite Cha
 
 ## Message colors, rules, and alerts
 
-Improved Chat can use RuneLite Chat Color as its baseline color source or configured fallback colors for game, public, private, friends, clan, guest clan, Group Ironman, trade, challenge, broadcast, autochat, and other supported message types.
+Improved Chat and Overlays can use RuneLite Chat Color as its baseline color source or configured fallback colors for game, public, private, friends, clan, guest clan, Group Ironman, trade, challenge, broadcast, autochat, and other supported message types.
 
 ### Message Color Rules
 
@@ -170,7 +178,7 @@ Each overlay can independently configure:
 
 ## Native chat resizing
 
-Improved Chat can resize RuneLite's native chatbox in both **resizable** and **fixed** layouts.
+Improved Chat and Overlays can resize RuneLite's native chatbox in both **resizable** and **fixed** layouts.
 
 Available controls include:
 
@@ -302,7 +310,7 @@ Styling can be enabled independently for:
 
 ### RuneLite Chat Color, Chat Filter, and Emojis
 
-Improved Chat integrates with RuneLite's built-in chat systems rather than replacing them. Overlay rendering preserves supported emoji/icon tags, can use RuneLite Chat Color as a baseline, and can opt overlays into the RuneLite global Chat Filter path.
+Improved Chat and Overlays integrates with RuneLite's built-in chat systems rather than replacing them. Overlay rendering preserves supported emoji/icon tags, can use RuneLite Chat Color as a baseline, and can opt overlays into the RuneLite global Chat Filter path.
 
 ### Resource Packs
 
@@ -310,17 +318,17 @@ If a Resource Pack uses custom chatbox artwork, **Don't Draw Resize Borders** an
 
 ### Modern Chat
 
-Improved Chat can run alongside **Modern Chat** by **BenDol**. When Modern Chat owns conflicting native-chat geometry, visibility, or presentation, Improved Chat yields those conflicting native features while unrelated Improved Chat features remain available.
+Improved Chat and Overlays can run alongside **Modern Chat** by **BenDol**. When Modern Chat owns conflicting native-chat geometry, visibility, or presentation, Improved Chat and Overlays yields those conflicting native features while unrelated Improved Chat and Overlays features remain available.
 
 ### Chat Widgets
 
-Improved Chat declares a conflict with **Chat Widgets** because both plugins provide overlapping custom chat-overlay systems. Do not enable both at the same time.
+Improved Chat and Overlays declares a conflict with **Chat Widgets** because both plugins provide overlapping custom chat-overlay systems. Do not enable both at the same time.
 
 ## Focused alternatives and original projects
 
-Improved Chat intentionally consolidates functionality that previously required several focused RuneLite plugins. It also contains BSD-2-Clause-derived work from several of those projects; full legal attribution is in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+Improved Chat and Overlays intentionally consolidates functionality that previously required several focused RuneLite plugins. It also contains BSD-2-Clause-derived work from several of those projects; full legal attribution is in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-If Improved Chat includes more than you need, the original focused plugins are still good choices for users who only want one feature:
+If Improved Chat and Overlays includes more than you need, the original focused plugins are still good choices for users who only want one feature:
 
 | Plugin | Author | Best fit if you mainly want... |
 | --- | --- | --- |
@@ -330,12 +338,12 @@ If Improved Chat includes more than you need, the original focused plugins are s
 | [ChatboxOpacity](https://github.com/Trevor159/runelite-external-plugins) | **Trevor** | Native chatbox opacity control only. |
 | [Dialogue Fonts](https://github.com/theOranguzang/osrs-dialogue-fonts-plugin) | **theOranguzang** | Dialogue font/readability customization only. |
 | [Clean Chat](https://github.com/ldavid432/chat-cleanup) | **ldavid432** | Focused clan/friends/GIM channel cleanup and timestamp presentation. |
-| [Remove Chat Options](https://github.com/96jonesa/remove-chat-options) | **McLovin1981 (Andrew Jones)** | Removing chatbox right-click options without the rest of Improved Chat. |
+| [Remove Chat Options](https://github.com/96jonesa/remove-chat-options) | **McLovin1981 (Andrew Jones)** | Removing chatbox right-click options without the rest of Improved Chat and Overlays. |
 | [Offline Chat Icon](https://github.com/fatfingers23/RuneliteOfflineChatIcon) | **Bailey Townsend** | A focused offline clan-member indicator. |
 
 ### Compatible alternative: Modern Chat
 
-[Modern Chat](https://github.com/BenDol/Modern-Chat) by **BenDol** is a broader modern-chat redesign rather than a plugin Improved Chat replaces. Improved Chat includes runtime safeguards so the two can coexist where their responsibilities do not overlap.
+[Modern Chat](https://github.com/BenDol/Modern-Chat) by **BenDol** is a broader modern-chat redesign rather than a plugin Improved Chat and Overlays replaces. Improved Chat and Overlays includes runtime safeguards so the two can coexist where their responsibilities do not overlap.
 
 ## Support
 
@@ -343,7 +351,7 @@ If something does not look or behave correctly, check whether another enabled pl
 
 When reporting a problem, include:
 
-- the Improved Chat feature being used;
+- the Improved Chat and Overlays feature being used;
 - fixed or resizable RuneLite layout;
 - steps to reproduce;
 - a screenshot or short video for visual problems;
@@ -352,11 +360,11 @@ When reporting a problem, include:
 
 Report issues at:
 
-https://github.com/wukuna/improved-chat/issues
+https://github.com/wukuna/improved-chat-and-overlays/issues
 
 ## License and attribution
 
-Improved Chat is BSD 2-Clause licensed. See [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for license and attribution details.
+Improved Chat and Overlays is BSD 2-Clause licensed. See [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for license and attribution details.
 
 ## Per-overlay notifications
 
