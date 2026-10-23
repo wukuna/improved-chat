@@ -4,15 +4,9 @@ Improved Chat and Overlays is an all-in-one RuneLite chat customization plugin w
 
 Most features are independent, so you can use only the parts you want.
 
-## Getting started
+[Features](#features) · [Getting started](#getting-started) · [Usage](#usage) · [Saved settings](#saved-settings) · [Compatibility](#compatibility) · [Related plugins and sources](#related-plugins-and-sources) · [Development](#development) · [Support](#support) · [License and attribution](#license-and-attribution)
 
-1. Use the normal plugin settings for native chatbox size, collapse controls, cleanup, opacity and dialogue styling.
-2. Open the side panel to create an overlay. Choose its message types and when it should appear.
-3. Use **Messages**, **Appearance** and **Notifications** to configure that overlay, then try **Preview (10 seconds)** while logged in.
-
-Previously **Improved Chat**. Existing settings, overlay positions and profiles are retained.
-
-## Highlights
+## Features
 
 - **Custom chat overlays** with independent message types, placement, size, fonts, colors, borders, timestamps, fade behavior, attention effects, and input preview.
 - **Overlay RGB effects (Beta)** with a clockwise rainbow border, static RGB text, two-color or full-spectrum cycling, and a full-spectrum wave.
@@ -28,15 +22,17 @@ Previously **Improved Chat**. Existing settings, overlay positions and profiles 
 - **Dialogue text styling** for NPC, player, option-menu, and item/action dialogue.
 - **Compatibility safeguards** for RuneLite Chat Color, Chat Filter, Emojis, Resource Packs, and Modern Chat.
 
-## Settings layout and saved settings
+## Getting started
 
-The native plugin menu has five collapsible sections: **Chatbox**, **Chat cleanup**, **Overlay setup: side panel**, **Dialogue text**, and **Advanced**. Secondary sizing and its hotkey remain in Chatbox. Clan, guest-clan, friends-chat and GIM name controls remain independent of their instruction controls.
+1. Use the normal plugin settings for native chatbox size, collapse controls, cleanup, opacity and dialogue styling.
+2. Open the side panel to create an overlay. Choose its message types and when it should appear.
+3. Use **Messages**, **Appearance** and **Notifications** to configure that overlay, then try **Preview (10 seconds)** while logged in.
 
-Use the side panel for individual overlays, custom text colors, RGB effects, notifications and Message highlights. Existing setting keys, overlay IDs, placements, filters and notification settings are retained. Former global color rules, their nine palette colors, RGB patterns, spread and fallback colors are copied into each existing overlay once. Old cycling remains full spectrum. The old overlay list is backed up under `overlayConfigsBeforeMenuCleanup`; legacy global values remain stored. New overlays have independent defaults. Unreadable configurations keep the existing recovery backup and are not overwritten merely by startup.
+Previously **Improved Chat**. Existing settings, overlay positions and profiles are retained.
 
-A one-time chatbox notice explains the rename. Collection Log keeps its native window handling.
+## Usage
 
-## Custom overlays
+### Custom overlays
 
 Create and manage multiple overlays from the **Improved Chat and Overlays** side panel.
 
@@ -67,7 +63,7 @@ Each overlay can independently control:
 
 RuneLite's normal overlay movement system is used for free-position overlays.
 
-### RGB animation (Beta)
+#### RGB animation (Beta)
 
 In each overlay's **Appearance** tab, enable **Border** and **RGB Clockwise Border (Beta)** for a rainbow that travels around the perimeter. **Text effect** offers solid/channel colors, **RGB Static** by word or character, **RGB Cycling (Beta)**, and **RGB Wave (Beta)**. Cycling can fade between **Color 1** and **Color 2**, or use the full spectrum. Wave uses all colors. **RGB cycle (seconds)** sets the duration; higher values are slower. Border and text effects are independent and off by default.
 
@@ -80,9 +76,9 @@ Animation affects only the custom overlay, including its names, timestamps and i
 
 https://github.com/user-attachments/assets/95c6ba06-64a6-435d-8fb8-ad3857b9e662
 
-## Overlay filtering
+### Overlay filtering
 
-### Message replacer (Beta)
+#### Message replacer (Beta)
 
 In an overlay's **Messages → Message replacer (Beta)** section, enable the feature and choose **Add replacement** for each message you want to customize. Each rule has **Original message**, **Show instead**, and its own enable checkbox. Edits save automatically. For example, match `Your thrall returns to the grave.` and show `You need to summon a thrall!`.
 
@@ -113,7 +109,7 @@ When the global override is active, custom controls are disabled but their saved
 
 Different overlays can therefore show different subsets of the same shared chat history without removing messages from the shared message pool.
 
-## Clan display and offline status
+### Clan display and offline status
 
 Clan presentation can be configured separately for every overlay.
 
@@ -131,11 +127,11 @@ Overlay offline presentation is independent of the native-chat **Offline Clan St
 
 Native offline status adds an icon; native name colors remain under RuneLite Chat Color. Custom offline name colors remain available in each overlay.
 
-## Message colors, rules, and alerts
+### Message colors, rules, and alerts
 
 Improved Chat and Overlays can use RuneLite Chat Color as its baseline color source or configured fallback colors for game, public, private, friends, clan, guest clan, Group Ironman, trade, challenge, broadcast, autochat, and other supported message types.
 
-### Message Color Rules
+#### Message Color Rules
 
 Rules affect only the selected overlay. Open **Messages → Message highlights** to edit its definitions and nine-color palette. Native chat text uses RuneLite Chat Color.
 
@@ -152,7 +148,7 @@ regex:^Your .* count is:.*::2
 - Add `::flash` to trigger overlay attention behavior.
 - Player-authored chat is excluded by default and can be enabled separately.
 
-### Overlay Rainbow Rules
+#### Overlay Rainbow Rules
 
 RGB highlight patterns affect the selected overlay only. Choose Use overlay default, RGB Static (by word or character), RGB Cycling, or RGB Wave. Existing rainbow patterns retain their static style and word/character selection.
 
@@ -162,7 +158,7 @@ has reached
 regex:^Collection log.*
 ```
 
-### Overlay attention controls
+#### Overlay attention controls
 
 Each overlay can independently configure:
 
@@ -176,7 +172,7 @@ Each overlay can independently configure:
 - border flashing;
 - background flashing.
 
-## Native chat resizing
+### Native chat resizing
 
 Improved Chat and Overlays can resize RuneLite's native chatbox in both **resizable** and **fixed** layouts.
 
@@ -192,7 +188,7 @@ Available controls include:
 - automatic reversion for dialogue and interface/modal screens;
 - Resource Pack compatibility controls to avoid drawing resize borders or stretching custom chatbox artwork.
 
-### Drag resizing
+#### Drag resizing
 
 Set a **Drag-Resize Modifier** and hold it while dragging a chat border.
 
@@ -201,13 +197,13 @@ Drag resizing also supports:
 - live rewrapping;
 - a configurable drag indicator color.
 
-### Secondary chat size
+#### Secondary chat size
 
 Configure a second chat size and switch to it with a keybind.
 
 The secondary size supports its own height/width changes and hold/toggle behavior.
 
-## Collapsible chat
+### Collapsible chat
 
 The native chatbox can collapse to a single compact button.
 
@@ -219,11 +215,11 @@ Controls include:
 - configurable button and hover text;
 - unread colors for public, private, friends chat, clan, and trade activity.
 
-## Native chat cleanup and presentation
+### Native chat cleanup and presentation
 
 Cleanup options work independently and can be enabled only where wanted.
 
-### General cleanup
+#### General cleanup
 
 - remove the welcome message;
 - wrapped-message indentation controls;
@@ -231,7 +227,7 @@ Cleanup options work independently and can be enabled only where wanted.
 - remove special-attack chat text;
 - fixed-width timestamps with a reserved pixel column for consistent alignment.
 
-### Channel color bar
+#### Channel color bar
 
 Add an optional per-message channel color marker with configurable offset and width.
 
@@ -243,7 +239,7 @@ Separate colors can be configured for:
 - guest clan;
 - Group Ironman.
 
-### Clan cleanup
+#### Clan cleanup
 
 Controls include:
 
@@ -251,21 +247,21 @@ Controls include:
 - remove or replace the clan name;
 - remove clan rank icons.
 
-### Guest clan cleanup
+#### Guest clan cleanup
 
 Controls include:
 
 - remove reconnecting messages;
 - remove or replace the guest-clan name.
 
-### Group Ironman cleanup
+#### Group Ironman cleanup
 
 Controls include:
 
 - remove or replace the Group Ironman name;
 - move Group Ironman broadcasts.
 
-### Friends Chat cleanup
+#### Friends Chat cleanup
 
 Controls include:
 
@@ -273,13 +269,13 @@ Controls include:
 - remove "Attempting to join" messages;
 - remove "Now talking in" messages.
 
-### Chat menu cleanup
+#### Chat menu cleanup
 
 **Remove Chat Options** simplifies right-click menus on chat messages.
 
 An optional **Remove Lookup** setting can remove the player Lookup entry as well. Holding Control provides temporary access to the normal options.
 
-## Chatbox opacity
+### Chatbox opacity
 
 Native-chat opacity controls include:
 
@@ -287,7 +283,7 @@ Native-chat opacity controls include:
 - chat-button opacity;
 - optional opacity for dialogue and menus shown in the chat area.
 
-## Dialogue text styling
+### Dialogue text styling
 
 Customize supported RuneLite/OSRS dialogue text with:
 
@@ -305,6 +301,22 @@ Styling can be enabled independently for:
 - player dialogue;
 - option menus;
 - item/action dialogue.
+
+### Per-overlay notifications
+
+Each overlay has a **Notifications** tab in its editor. Notifications start disabled. Enable them for all new matching messages or only messages matching a `::flash` color rule. Overlays switched off with **Enabled**, filtered messages, outgoing messages and RuneLite console notifications do not trigger alerts. Notifications follow the **Enabled** switch; an enabled overlay can still notify while its **Show overlay** visibility condition temporarily hides it. Repainting, loading history and delayed message formatting do not replay notifications. Each enabled matching overlay sends its own alert.
+
+Use RuneLite defaults, or enable **Customize Notification** for independent desktop notifications, Native/Custom/Off sound, volume, focus behavior, window flashing and color, timeout, and chatbox notification. Custom sounds use a WAV filename in RuneLite's notifications folder; blank uses its default custom sound. Playback and operating-system notifications are handled by RuneLite's shared Notifier, as with Idle Notifier. These controls are independent of the existing overlay Attention flashing.
+
+Native private-chat hiding keeps the system-update timer visible. Overlay login/logout messages respect the game's Off setting. Game and clan payload prefixes are removed only for their native message types; literal pipes in player chat stay intact. Overlay text supports native underline, strike, shadow, line-break and quest-name template formatting.
+
+## Saved settings
+
+The native plugin menu has five collapsible sections: **Chatbox**, **Chat cleanup**, **Overlay setup: side panel**, **Dialogue text**, and **Advanced**. Secondary sizing and its hotkey remain in Chatbox. Clan, guest-clan, friends-chat and GIM name controls remain independent of their instruction controls.
+
+Use the side panel for individual overlays, custom text colors, RGB effects, notifications and Message highlights. Existing setting keys, overlay IDs, placements, filters and notification settings are retained. Former global color rules, their nine palette colors, RGB patterns, spread and fallback colors are copied into each existing overlay once. Old cycling remains full spectrum. The old overlay list is backed up under `overlayConfigsBeforeMenuCleanup`; legacy global values remain stored. New overlays have independent defaults. Unreadable configurations keep the existing recovery backup and are not overwritten merely by startup.
+
+A one-time chatbox notice explains the rename. Collection Log keeps its native window handling.
 
 ## Compatibility
 
@@ -324,26 +336,30 @@ Improved Chat and Overlays can run alongside **Modern Chat** by **BenDol**. When
 
 Improved Chat and Overlays declares a conflict with **Chat Widgets** because both plugins provide overlapping custom chat-overlay systems. Do not enable both at the same time.
 
-## Focused alternatives and original projects
+## Related plugins and sources
 
 Improved Chat and Overlays intentionally consolidates functionality that previously required several focused RuneLite plugins. It also contains BSD-2-Clause-derived work from several of those projects; full legal attribution is in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 If Improved Chat and Overlays includes more than you need, the original focused plugins are still good choices for users who only want one feature:
 
-| Plugin | Author | Best fit if you mainly want... |
+| Project | Relationship | Relevant features and limits |
 | --- | --- | --- |
-| [Chat Widgets](https://github.com/cnnnr/chat-widgets) | **Proven** | Custom game/private chat overlay widgets without the broader native-chat toolset. |
-| [Chat Resizer / Better Resizable Chat](https://github.com/shanktank/better-resizable-chat) | **Shanktank** | Native chat resizing, private-chat rewrapping, drag resizing, and secondary chat sizes. |
-| [Collapse Chat](https://github.com/stutify/runelite-plugins) | **stutify** | A focused way to collapse native chat to a single button. |
-| [ChatboxOpacity](https://github.com/Trevor159/runelite-external-plugins) | **Trevor** | Native chatbox opacity control only. |
-| [Dialogue Fonts](https://github.com/theOranguzang/osrs-dialogue-fonts-plugin) | **theOranguzang** | Dialogue font/readability customization only. |
-| [Clean Chat](https://github.com/ldavid432/chat-cleanup) | **ldavid432** | Focused clan/friends/GIM channel cleanup and timestamp presentation. |
-| [Remove Chat Options](https://github.com/96jonesa/remove-chat-options) | **McLovin1981 (Andrew Jones)** | Removing chatbox right-click options without the rest of Improved Chat and Overlays. |
-| [Offline Chat Icon](https://github.com/fatfingers23/RuneliteOfflineChatIcon) | **Bailey Townsend** | A focused offline clan-member indicator. |
+| [Chat Widgets](https://github.com/cnnnr/chat-widgets) (**Proven**) | Focused alternative; see source notices for attribution | Custom game/private chat overlay widgets without the broader native-chat toolset. |
+| [Chat Resizer / Better Resizable Chat](https://github.com/shanktank/better-resizable-chat) (**Shanktank**) | Focused alternative; see source notices for attribution | Native chat resizing, private-chat rewrapping, drag resizing, and secondary chat sizes. |
+| [Collapse Chat](https://github.com/stutify/runelite-plugins) (**stutify**) | Focused alternative; see source notices for attribution | A focused way to collapse native chat to a single button. |
+| [ChatboxOpacity](https://github.com/Trevor159/runelite-external-plugins) (**Trevor**) | Focused alternative; see source notices for attribution | Native chatbox opacity control only. |
+| [Dialogue Fonts](https://github.com/theOranguzang/osrs-dialogue-fonts-plugin) (**theOranguzang**) | Focused alternative; see source notices for attribution | Dialogue font/readability customization only. |
+| [Clean Chat](https://github.com/ldavid432/chat-cleanup) (**ldavid432**) | Focused alternative; see source notices for attribution | Focused clan/friends/GIM channel cleanup and timestamp presentation. |
+| [Remove Chat Options](https://github.com/96jonesa/remove-chat-options) (**McLovin1981 (Andrew Jones)**) | Focused alternative; see source notices for attribution | Removing chatbox right-click options without the rest of Improved Chat and Overlays. |
+| [Offline Chat Icon](https://github.com/fatfingers23/RuneliteOfflineChatIcon) (**Bailey Townsend**) | Focused alternative; see source notices for attribution | A focused offline clan-member indicator. |
 
 ### Compatible alternative: Modern Chat
 
 [Modern Chat](https://github.com/BenDol/Modern-Chat) by **BenDol** is a broader modern-chat redesign rather than a plugin Improved Chat and Overlays replaces. Improved Chat and Overlays includes runtime safeguards so the two can coexist where their responsibilities do not overlap.
+
+## Development
+
+Use Java 11 and the repository's Gradle wrapper. Run `./gradlew test build` (Windows: `gradlew.bat test build`). Release commits are selected explicitly in the Plugin Hub manifest; the default branch and the Hub build can differ.
 
 ## Support
 
@@ -365,11 +381,3 @@ https://github.com/wukuna/improved-chat-and-overlays/issues
 ## License and attribution
 
 Improved Chat and Overlays is BSD 2-Clause licensed. See [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for license and attribution details.
-
-## Per-overlay notifications
-
-Each overlay has a **Notifications** tab in its editor. Notifications start disabled. Enable them for all new matching messages or only messages matching a `::flash` color rule. Overlays switched off with **Enabled**, filtered messages, outgoing messages and RuneLite console notifications do not trigger alerts. Notifications follow the **Enabled** switch; an enabled overlay can still notify while its **Show overlay** visibility condition temporarily hides it. Repainting, loading history and delayed message formatting do not replay notifications. Each enabled matching overlay sends its own alert.
-
-Use RuneLite defaults, or enable **Customize Notification** for independent desktop notifications, Native/Custom/Off sound, volume, focus behavior, window flashing and color, timeout, and chatbox notification. Custom sounds use a WAV filename in RuneLite's notifications folder; blank uses its default custom sound. Playback and operating-system notifications are handled by RuneLite's shared Notifier, as with Idle Notifier. These controls are independent of the existing overlay Attention flashing.
-
-Native private-chat hiding keeps the system-update timer visible. Overlay login/logout messages respect the game's Off setting. Game and clan payload prefixes are removed only for their native message types; literal pipes in player chat stay intact. Overlay text supports native underline, strike, shadow, line-break and quest-name template formatting.
