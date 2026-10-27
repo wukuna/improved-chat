@@ -1,3 +1,32 @@
+/*
+ * Adapted portions from ChatboxOpacity by Trevor.
+ *
+ * BSD 2-Clause License
+ * 
+ * Copyright (c) 2019, Trevor
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 package com.improvedchat.chatbox.opacity;
 
 import com.improvedchat.ImprovedChatConfig;
@@ -24,7 +53,6 @@ import net.runelite.client.events.ConfigChanged;
 public final class ChatboxOpacityModule {
     private static final int CHATBOX_GROUP_ID = 162;
     private static final int BUTTON_BACKGROUND_CHILD = 3;
-    private static final int ORIGINAL_BUTTON_TYPE = 5;
     private static final int FILLED_BUTTON_TYPE = 3;
 
     @Inject private Client client;
@@ -32,13 +60,12 @@ public final class ChatboxOpacityModule {
     @Inject private ImprovedChatConfig config;
     @Inject private EventBus eventBus;
 
-    private final Map<Widget, Integer> backgroundOpacity = new IdentityHashMap<>();
+    private final Map<Widget, BackgroundOpacity> backgroundOpacity = new IdentityHashMap<>();
     private boolean started;
     private boolean deferredApplyQueued;
-    private int buttonSprite = -1;
-    private int buttonOpacity = -1;
-    private boolean buttonFilled;
-    private int buttonType = ORIGINAL_BUTTON_TYPE;
+    private Widget ownedButton;
+    private ButtonStyle originalButton;
+    private ButtonStyle appliedButton;
 
     public synchronized void startUp() {
         if (started || !config.enableChatboxOpacity()) return;
@@ -107,51 +134,48 @@ public final class ChatboxOpacityModule {
             if (!config.opacityDialogueMenus() && isDialogueOrMenuSurface(children)) {
                 restoreBackground();
             } else {
-                boolean generationChanged = backgroundOpacity.size() != liveCount(children);
-                if (!generationChanged) {
-                    for (Widget child : children) {
-                        if (child != null && !backgroundOpacity.containsKey(child)) {
-                            generationChanged = true;
-                            break;
-                        }
-                    }
-                }
-                if (generationChanged) {
-                    backgroundOpacity.clear();
-                    for (Widget child : children) {
-                        if (child != null) {
-                            backgroundOpacity.put(child, child.getOpacity());
-                        }
-                    }
-                }
-
+                Map<Widget, Boolean> live = new IdentityHashMap<>();
+                for (Widget child : children) if (child != null) live.put(child, Boolean.TRUE);
+                backgroundOpacity.entrySet().removeIf(entry -> {
+                    if (live.containsKey(entry.getKey())) return false;
+                    restoreBackgroundChild(entry.getKey(), entry.getValue());
+                    return true;
+                });
                 if (config.chatboxOpacity() == -1) {
                     restoreBackground();
                 } else {
                     for (Widget child : children) {
-                        if (child != null) {
-                            child.setOpacity(config.chatboxOpacity());
+                        if (child == null) continue;
+                        BackgroundOpacity snapshot = backgroundOpacity.get(child);
+                        if (snapshot == null || child.getOpacity() != snapshot.applied) {
+                            snapshot = new BackgroundOpacity(child.getOpacity());
+                            backgroundOpacity.put(child, snapshot);
                         }
+                        child.setOpacity(config.chatboxOpacity());
+                        snapshot.applied = child.getOpacity();
                     }
                 }
             }
+        } else {
+            restoreBackground();
         }
 
         Widget button = client.getWidget(CHATBOX_GROUP_ID, BUTTON_BACKGROUND_CHILD);
-        if (button == null) return;
+        if (button == null) { restoreButton(); return; }
         if (config.buttonOpacity() == -1) {
             restoreButton();
         } else {
-            if (buttonSprite == -1) {
-                buttonSprite = button.getSpriteId();
-                buttonOpacity = button.getOpacity();
-                buttonFilled = button.isFilled();
-                buttonType = button.getType();
+            if (ownedButton != button || appliedButton == null || !appliedButton.matches(button)) {
+                // Release only values we still own before capturing a fresh widget/style.
+                restoreButton();
+                ownedButton = button;
+                originalButton = new ButtonStyle(button);
             }
             button.setSpriteId(-1);
             button.setType(FILLED_BUTTON_TYPE);
             button.setFilled(true);
             button.setOpacity(config.buttonOpacity());
+            appliedButton = new ButtonStyle(button);
         }
     }
 
@@ -164,33 +188,55 @@ public final class ChatboxOpacityModule {
         return false;
     }
 
-    private static int liveCount(Widget[] widgets) {
-        int count = 0;
-        for (Widget widget : widgets) if (widget != null) count++;
-        return count;
+    private static final class BackgroundOpacity {
+        final int original;
+        int applied;
+
+        BackgroundOpacity(int opacity) {
+            original = opacity;
+            applied = opacity;
+        }
+    }
+
+    private static void restoreBackgroundChild(Widget widget, BackgroundOpacity snapshot) {
+        if (widget.getOpacity() == snapshot.applied) widget.setOpacity(snapshot.original);
     }
 
     private void restoreBackground() {
-        for (Map.Entry<Widget, Integer> entry : backgroundOpacity.entrySet()) {
-            try {
-                entry.getKey().setOpacity(entry.getValue());
-            } catch (Exception ignored) {
-                // Widget generations are transient; stale instances can safely be dropped.
-            }
+        for (Map.Entry<Widget, BackgroundOpacity> entry : backgroundOpacity.entrySet()) {
+            restoreBackgroundChild(entry.getKey(), entry.getValue());
         }
         backgroundOpacity.clear();
     }
 
     private void restoreButton() {
-        if (buttonSprite == -1) return;
-        Widget button = client.getWidget(CHATBOX_GROUP_ID, BUTTON_BACKGROUND_CHILD);
-        if (button != null) {
-            button.setSpriteId(buttonSprite);
-            button.setOpacity(buttonOpacity);
-            button.setFilled(buttonFilled);
-            button.setType(buttonType);
+        if (ownedButton != null && originalButton != null && appliedButton != null) {
+            // A native rebuild or another plugin can change individual properties.
+            // Never write an old widget's snapshot onto its replacement.
+            if (ownedButton.getSpriteId() == appliedButton.sprite) ownedButton.setSpriteId(originalButton.sprite);
+            if (ownedButton.getOpacity() == appliedButton.opacity) ownedButton.setOpacity(originalButton.opacity);
+            if (ownedButton.isFilled() == appliedButton.filled) ownedButton.setFilled(originalButton.filled);
+            if (ownedButton.getType() == appliedButton.type) ownedButton.setType(originalButton.type);
         }
-        buttonSprite = -1;
-        buttonOpacity = -1;
+        ownedButton = null;
+        originalButton = null;
+        appliedButton = null;
+    }
+
+    private static final class ButtonStyle {
+        final int sprite, opacity, type;
+        final boolean filled;
+
+        ButtonStyle(Widget widget) {
+            sprite = widget.getSpriteId();
+            opacity = widget.getOpacity();
+            type = widget.getType();
+            filled = widget.isFilled();
+        }
+
+        boolean matches(Widget widget) {
+            return sprite == widget.getSpriteId() && opacity == widget.getOpacity()
+                    && type == widget.getType() && filled == widget.isFilled();
+        }
     }
 }

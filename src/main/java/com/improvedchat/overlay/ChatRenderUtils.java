@@ -49,11 +49,6 @@ import java.util.regex.Pattern;
 public final class ChatRenderUtils {
 
     private static final Pattern IMG_TAG_PATTERN = Pattern.compile("<img=(\\d+)>");
-    private static final Pattern COL_TAG_PATTERN = Pattern.compile("<col=([0-9a-fA-F]{6})>");
-    private static final Pattern COL_NAMED_PATTERN = Pattern.compile("<col(NORMAL|HIGHLIGHT)>");
-    private static final Pattern COL_UNKNOWN_PATTERN = Pattern.compile("<col[^>]*>");
-    private static final Pattern COL_END_PATTERN = Pattern.compile("</col>");
-    private static final Pattern BR_TAG_PATTERN = Pattern.compile("<br>");
     private static final int MAX_MESSAGE_LENGTH = 500;
 
     private static IndexedSprite[] cachedModIconsRef;
@@ -227,6 +222,20 @@ public final class ChatRenderUtils {
             FontSize fontSize, IndexedSprite[] modIcons, boolean showTimestamp, String timestampFormat,
             boolean showChannelName, ChatColorConfig chatColorConfig,
             List<TextSegment> senderDecorations, Color senderColorOverride) {
+        return buildMessageLines(msg, metrics, widgetWidth, currentTime, fadeOutMs, wrapText,
+                textColor, retainContextualColours, hideDuplicateCount, fontSize, modIcons,
+                showTimestamp, timestampFormat, showChannelName, chatColorConfig,
+                senderDecorations, senderColorOverride, null);
+    }
+
+    public static List<RenderLine> buildMessageLines(OverlayMessage msg, FontMetrics metrics,
+            int widgetWidth, long currentTime, long fadeOutMs, boolean wrapText, Color textColor,
+            boolean retainContextualColours, boolean hideDuplicateCount,
+            FontSize fontSize, IndexedSprite[] modIcons, boolean showTimestamp, String timestampFormat,
+            boolean showChannelName, ChatColorConfig chatColorConfig,
+            List<TextSegment> senderDecorations, Color senderColorOverride, OverlayConfig overlay) {
+        com.improvedchat.ImprovedChatConfig rules = overlay == null ? null : overlay.getTextSettings();
+        boolean rulesActive = retainContextualColours || (overlay != null && overlay.getTextSettings().isHighlightsOverrideDefaults());
 
         List<RenderLine> lines = new ArrayList<>();
         int alpha = AttentionEngine.adjustAlpha(msg, currentTime, calculateAlpha(msg, currentTime, fadeOutMs));
@@ -238,7 +247,7 @@ public final class ChatRenderUtils {
 
         Color bodyBaseColor = textColor;
         if (retainContextualColours) {
-            Color configured = getConfiguredChatColor(type, false, chatColorConfig, OverlayColorRuleEngine.chatColorSource());
+            Color configured = getConfiguredChatColor(type, false, chatColorConfig, overlay == null ? OverlayColorRuleEngine.chatColorSource() : rules.chatColorSource());
             if (configured != null) {
                 bodyBaseColor = configured;
             }
@@ -313,24 +322,34 @@ public final class ChatRenderUtils {
             messageText = messageText + " (" + msg.getCount() + ")";
         }
 
-        // Overlay-only rainbow is below the per-overlay color override in precedence.
-        OverlayColorRuleEngine.Decision decision = retainContextualColours
-                ? OverlayColorRuleEngine.decide(messageText, type) : OverlayColorRuleEngine.Decision.none();
-        List<TextSegment> messageSegments = parseTextWithColoursAndIcons(messageText, metrics, modIcons,
-                retainContextualColours, bodyBaseColor, fontSize, chatColorConfig, type);
-
-        // Layer 2: Message Color Rules override RuneLite Chat Color and embedded message colors.
-        // A per-overlay color override disables contextual colors, so it intentionally bypasses this layer.
-        if (retainContextualColours) {
-            Color forceColor = MessageColorRuleEngine.colorFor(messageText, type);
-            if (forceColor != null) {
-                messageSegments = applySolidColor(messageSegments, forceColor);
-            }
+        // Migrated rules retain their old precedence; new rules may override overlay defaults.
+        OverlayColorRuleEngine.Decision decision = rulesActive
+                ? (overlay == null ? OverlayColorRuleEngine.decide(messageText, type) : OverlayColorRuleEngine.decide(messageText, type, rules))
+                : OverlayColorRuleEngine.Decision.none();
+        com.improvedchat.model.AnimatedTextStyle matchedStyle = decision.kind == OverlayColorRuleEngine.Kind.RAINBOW
+                ? (overlay == null ? com.improvedchat.model.AnimatedTextStyle.RGB_STATIC : overlay.getTextSettings().getHighlightStyle()) : null;
+        if (matchedStyle == com.improvedchat.model.AnimatedTextStyle.NORMAL) matchedStyle = null;
+        Color forceColor = rulesActive ? (overlay == null ? MessageColorRuleEngine.colorFor(messageText, type)
+                : MessageColorRuleEngine.colorFor(messageText, type, rules)) : null;
+        // Highlight/flash/filter rules still use the real message. Replace only the painted body.
+        String display = OverlayTextReplacements.displayText(overlay, msg.getMessage());
+        if (!java.util.Objects.equals(display, msg.getMessage())) {
+            messageText = display;
+            if (messageText.length() > MAX_MESSAGE_LENGTH) messageText = messageText.substring(0, MAX_MESSAGE_LENGTH) + "...";
+            if (msg.getCount() > 1 && !hideDuplicateCount) messageText += " (" + msg.getCount() + ")";
         }
+        List<TextSegment> messageSegments = parseTextWithColoursAndIcons(messageText, metrics, modIcons,
+                retainContextualColours, bodyBaseColor, fontSize, chatColorConfig, type,
+                overlay == null ? OverlayColorRuleEngine.chatColorSource() : rules.chatColorSource());
+
+        if (forceColor != null) messageSegments = applySolidColor(messageSegments, forceColor);
+        boolean staticRainbow = matchedStyle == com.improvedchat.model.AnimatedTextStyle.RGB_STATIC;
+        boolean defaultStatic = overlay != null && overlay.getAnimatedTextStyle() == com.improvedchat.model.AnimatedTextStyle.RGB_STATIC;
+        if (defaultStatic) headerSegments = rainbowSegments(headerSegments, overlay.getTextSettings().rainbowStyle(), metrics, new int[]{0});
 
         if (!wrapText) {
-            if (decision.kind == OverlayColorRuleEngine.Kind.RAINBOW) {
-                messageSegments = rainbowSegments(messageSegments, decision.rainbowStyle, metrics, new int[] {0});
+            if (staticRainbow || (defaultStatic && matchedStyle == null && forceColor == null)) {
+                messageSegments = rainbowSegments(messageSegments, (staticRainbow ? decision.rainbowStyle : overlay.getTextSettings().rainbowStyle()), metrics, new int[] {0});
             }
             List<TextSegment> singleLine = new ArrayList<>(headerSegments);
             singleLine.addAll(messageSegments);
@@ -339,14 +358,27 @@ public final class ChatRenderUtils {
             int firstLineRemaining = widgetWidth - headerWidth;
             List<List<TextSegment>> wrappedLines = wrapSegments(messageSegments, metrics,
                     firstLineRemaining, widgetWidth, bodyBaseColor);
-            if (decision.kind == OverlayColorRuleEngine.Kind.RAINBOW) {
+            if (staticRainbow || (defaultStatic && matchedStyle == null && forceColor == null)) {
                 int[] rainbowIndex = new int[] {0};
                 for (int lineIndex = 0; lineIndex < wrappedLines.size(); lineIndex++) {
                     wrappedLines.set(lineIndex, rainbowSegments(wrappedLines.get(lineIndex),
-                            decision.rainbowStyle, metrics, rainbowIndex));
+                            (staticRainbow ? decision.rainbowStyle : overlay.getTextSettings().rainbowStyle()), metrics, rainbowIndex));
                 }
             }
             addWrappedLines(lines, alpha, headerSegments, wrappedLines);
+        }
+
+        if (overlay != null) {
+            boolean override = overlay.getTextSettings().isHighlightsOverrideDefaults()
+                    || overlay.getAnimatedTextStyle() == com.improvedchat.model.AnimatedTextStyle.NORMAL;
+            com.improvedchat.model.AnimatedTextStyle bodyStyle = override
+                    ? (matchedStyle != null ? matchedStyle : forceColor != null ? com.improvedchat.model.AnimatedTextStyle.NORMAL : null) : null;
+            // Prefixes keep the overlay default. Only this matching message body is overridden.
+            for (RenderLine line : lines) {
+                for (TextSegment segment : line.segments) {
+                    if (!headerSegments.contains(segment)) segment.textStyle = bodyStyle;
+                }
+            }
         }
 
         return lines;
@@ -429,110 +461,76 @@ public final class ChatRenderUtils {
     public static List<TextSegment> parseTextWithColoursAndIcons(String text, FontMetrics metrics,
             IndexedSprite[] modIcons, boolean retainContextualColours, Color textColor,
             FontSize fontSize, ChatColorConfig chatColorConfig, ChatMessageType messageType) {
+        return parseTextWithColoursAndIcons(text, metrics, modIcons, retainContextualColours,
+                textColor, fontSize, chatColorConfig, messageType, OverlayColorRuleEngine.chatColorSource());
+    }
+
+    public static List<TextSegment> parseTextWithColoursAndIcons(String text, FontMetrics metrics,
+            IndexedSprite[] modIcons, boolean retainContextualColours, Color textColor,
+            FontSize fontSize, ChatColorConfig chatColorConfig, ChatMessageType messageType, ChatColorSource source) {
         List<TextSegment> segments = new ArrayList<>();
         if (text == null || text.isEmpty()) {
             return segments;
         }
 
+        text = com.improvedchat.ChatDisplayText.expandTemplates(text);
         Color currentColor = textColor;
+        Color underline = null, strike = null, shadow = null;
         StringBuilder currentText = new StringBuilder();
-        int i = 0;
-
-        while (i < text.length()) {
-            Matcher imgMatcher = IMG_TAG_PATTERN.matcher(text.substring(i));
-            Matcher colMatcher = COL_TAG_PATTERN.matcher(text.substring(i));
-            Matcher colNamedMatcher = COL_NAMED_PATTERN.matcher(text.substring(i));
-            Matcher colEndMatcher = COL_END_PATTERN.matcher(text.substring(i));
-            Matcher brMatcher = BR_TAG_PATTERN.matcher(text.substring(i));
-
-            if (brMatcher.lookingAt()) {
-                if (currentText.length() > 0) {
-                    String str = currentText.toString();
-                    segments.add(new TextSegment(str, -1, metrics.stringWidth(str), currentColor));
-                    currentText = new StringBuilder();
-                }
-                segments.add(new TextSegment("", TextSegment.LINE_BREAK, 0, currentColor));
-                i += brMatcher.end();
-            } else if (imgMatcher.lookingAt()) {
-                if (currentText.length() > 0) {
-                    String str = currentText.toString();
-                    segments.add(new TextSegment(str, -1, metrics.stringWidth(str), currentColor));
-                    currentText = new StringBuilder();
-                }
-                try {
-                    int iconId = Integer.parseInt(imgMatcher.group(1));
-                    int iconWidth = calculateIconWidth(modIcons, iconId, fontSize);
-                    segments.add(new TextSegment("", iconId, iconWidth, currentColor));
-                } catch (NumberFormatException e) {
-                    currentText.append(imgMatcher.group(0));
-                }
-                i += imgMatcher.end();
-            } else if (colNamedMatcher.lookingAt()) {
-                if (currentText.length() > 0) {
-                    String str = currentText.toString();
-                    segments.add(new TextSegment(str, -1, metrics.stringWidth(str), currentColor));
-                    currentText = new StringBuilder();
-                }
-                String colorName = colNamedMatcher.group(1);
-                if ("NORMAL".equals(colorName) || !retainContextualColours) {
-                    currentColor = textColor;
-                } else if ("HIGHLIGHT".equals(colorName)) {
-                    Color highlight = getConfiguredChatColor(messageType, true, chatColorConfig, OverlayColorRuleEngine.chatColorSource());
-                    currentColor = highlight != null ? highlight : textColor;
-                }
-                i += colNamedMatcher.end();
-            } else if (colMatcher.lookingAt() && retainContextualColours) {
-                if (currentText.length() > 0) {
-                    String str = currentText.toString();
-                    segments.add(new TextSegment(str, -1, metrics.stringWidth(str), currentColor));
-                    currentText = new StringBuilder();
-                }
-                try {
-                    currentColor = Color.decode("#" + colMatcher.group(1));
-                } catch (NumberFormatException e) {
-                    currentColor = textColor;
-                }
-                i += colMatcher.end();
-            } else if (colEndMatcher.lookingAt() && retainContextualColours) {
-                if (currentText.length() > 0) {
-                    String str = currentText.toString();
-                    segments.add(new TextSegment(str, -1, metrics.stringWidth(str), currentColor));
-                    currentText = new StringBuilder();
-                }
-                currentColor = textColor;
-                i += colEndMatcher.end();
-            } else if (colMatcher.lookingAt()) {
-                i += colMatcher.end();
-            } else if (colEndMatcher.lookingAt()) {
-                i += colEndMatcher.end();
-            } else if (text.startsWith("<lt>", i)) {
-                currentText.append('<');
-                i += 4;
-            } else if (text.startsWith("<gt>", i)) {
-                currentText.append('>');
-                i += 4;
-            } else if (text.startsWith("<at>", i)) {
-                currentText.append('@');
-                i += 4;
-            } else {
-                Matcher colUnknownMatcher = COL_UNKNOWN_PATTERN.matcher(text.substring(i));
-                if (colUnknownMatcher.lookingAt()) {
-                    i += colUnknownMatcher.end();
-                } else {
-                    currentText.append(text.charAt(i));
-                    i++;
-                }
+        for (int i = 0; i < text.length();) {
+            if (text.charAt(i) != '<') { currentText.append(text.charAt(i++)); continue; }
+            int end = text.indexOf('>', i);
+            if (end < 0) { currentText.append(text.charAt(i++)); continue; }
+            String tag = text.substring(i + 1, end);
+            i = end + 1;
+            if (tag.equals("lt") || tag.equals("gt") || tag.equals("at") || tag.equals("nbh")) {
+                currentText.append(tag.equals("lt") ? '<' : tag.equals("gt") ? '>' : tag.equals("at") ? '@' : '-');
+                continue;
+            }
+            if (currentText.length() > 0) {
+                String value = currentText.toString();
+                segments.add(new TextSegment(value, -1, metrics.stringWidth(value), currentColor, underline, strike, shadow));
+                currentText.setLength(0);
+            }
+            try {
+                if (tag.equals("br") || tag.equals("n")) {
+                    segments.add(new TextSegment("", TextSegment.LINE_BREAK, 0, currentColor));
+                    currentColor = textColor; underline = null; strike = null; shadow = null;
+                } else if (tag.startsWith("img=")) {
+                    int icon = Integer.parseInt(tag.substring(4));
+                    if (icon >= 0) segments.add(new TextSegment("", icon, calculateIconWidth(modIcons, icon, fontSize), currentColor));
+                } else if (tag.equals("colNORMAL") || tag.equals("/col")) currentColor = textColor;
+                else if (tag.equals("colHIGHLIGHT") && retainContextualColours) {
+                    Color highlight = getConfiguredChatColor(messageType, true, chatColorConfig, source);
+                    currentColor = highlight == null ? textColor : highlight;
+                } else if (tag.startsWith("col=") && retainContextualColours) currentColor = tagColor(tag.substring(4));
+                else if (tag.equals("u")) underline = Color.BLACK;
+                else if (tag.startsWith("u=")) underline = tagColor(tag.substring(2));
+                else if (tag.equals("/u")) underline = null;
+                else if (tag.equals("str")) strike = new Color(0x800000);
+                else if (tag.startsWith("str=")) strike = tagColor(tag.substring(4));
+                else if (tag.equals("/str")) strike = null;
+                else if (tag.equals("shad")) shadow = Color.BLACK;
+                else if (tag.startsWith("shad=")) shadow = tagColor(tag.substring(5));
+                else if (tag.equals("/shad")) shadow = null;
+                // Native font rendering skips unknown tags; escaped angle brackets remain text.
+            } catch (NumberFormatException ignored) {
+                // Malformed native formatting tags must not break a chat overlay.
             }
         }
-
         if (currentText.length() > 0) {
-            String str = currentText.toString();
-            segments.add(new TextSegment(str, -1, metrics.stringWidth(str), currentColor));
+            String value = currentText.toString();
+            segments.add(new TextSegment(value, -1, metrics.stringWidth(value), currentColor, underline, strike, shadow));
         }
 
         return segments;
     }
 
+
+    private static Color tagColor(String hex) {
+        if (hex.isEmpty() || hex.length() > 6 || !hex.matches("[0-9a-fA-F]+")) throw new NumberFormatException();
+        return new Color(Integer.parseInt(hex, 16));
+    }
 
     private static Color getConfiguredChatColor(ChatMessageType type, boolean highlight,
             ChatColorConfig chatColorConfig, ChatColorSource source) {
@@ -657,8 +655,7 @@ public final class ChatRenderUtils {
     private static List<TextSegment> applySolidColor(List<TextSegment> input, Color color) {
         List<TextSegment> out = new ArrayList<>(input.size());
         for (TextSegment seg : input) {
-            out.add(new TextSegment(seg.text, seg.iconId, seg.width,
-                    seg.iconId == TextSegment.LINE_BREAK ? seg.color : color));
+            out.add(seg.copy(seg.text, seg.width, seg.iconId == TextSegment.LINE_BREAK ? seg.color : color));
         }
         return out;
     }
@@ -674,7 +671,7 @@ public final class ChatRenderUtils {
         new Color(191, 90, 242)
     };
 
-    private static List<TextSegment> rainbowSegments(List<TextSegment> input,
+    static List<TextSegment> rainbowSegments(List<TextSegment> input,
             RainbowStyle style, FontMetrics metrics, int[] colorIndexRef) {
         List<TextSegment> out = new ArrayList<>();
         int colorIndex = colorIndexRef[0];
@@ -694,7 +691,7 @@ public final class ChatRenderUtils {
                     } else {
                         c = RAINBOW[colorIndex++ % RAINBOW.length];
                     }
-                    out.add(new TextSegment(ch, -1, metrics.stringWidth(ch), c));
+                    out.add(seg.copy(ch, metrics.stringWidth(ch), c));
                     offset += Character.charCount(cp);
                 }
             } else {
@@ -705,7 +702,7 @@ public final class ChatRenderUtils {
                     Color c = whitespace
                             ? RAINBOW[(Math.max(0, colorIndex - 1)) % RAINBOW.length]
                             : RAINBOW[colorIndex++ % RAINBOW.length];
-                    out.add(new TextSegment(token, -1, metrics.stringWidth(token), c));
+                    out.add(seg.copy(token, metrics.stringWidth(token), c));
                 }
             }
         }
@@ -760,7 +757,7 @@ public final class ChatRenderUtils {
                     if (word.isEmpty() && wi < words.length - 1) {
                         int spaceWidth = metrics.stringWidth(" ");
                         if (spaceWidth <= currentWidth) {
-                            currentLine.add(new TextSegment(" ", -1, spaceWidth, segment.color));
+                            currentLine.add(segment.copy(" ", spaceWidth, segment.color));
                             currentWidth -= spaceWidth;
                         }
                         continue;
@@ -773,10 +770,10 @@ public final class ChatRenderUtils {
 
                     if (neededWidth <= currentWidth) {
                         if (needsSpace) {
-                            currentLine.add(new TextSegment(" ", -1, spaceWidth, segment.color));
+                            currentLine.add(segment.copy(" ", spaceWidth, segment.color));
                             currentWidth -= spaceWidth;
                         }
-                        currentLine.add(new TextSegment(word, -1, wordWidth, segment.color));
+                        currentLine.add(segment.copy(word, wordWidth, segment.color));
                         currentWidth -= wordWidth;
                     } else {
                         if (!currentLine.isEmpty()) {
@@ -784,7 +781,7 @@ public final class ChatRenderUtils {
                             currentLine = new ArrayList<>();
                             currentWidth = subsequentLineWidth;
                         }
-                        currentLine.add(new TextSegment(word, -1, wordWidth, segment.color));
+                        currentLine.add(segment.copy(word, wordWidth, segment.color));
                         currentWidth -= wordWidth;
                     }
                 }

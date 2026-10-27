@@ -44,8 +44,8 @@ public class ChatPresentationConfigTest {
     @Test
     public void dialogueSectionUsesCurrentName() throws Exception {
         ConfigSection section = ImprovedChatConfig.class
-            .getField("dialogueFontsSection")
+            .getField("dialogueSection")
             .getAnnotation(ConfigSection.class);
-        assertEquals("Dialogue Text Styling", section.name());
+        assertEquals("Dialogue text", section.name());
     }
 }

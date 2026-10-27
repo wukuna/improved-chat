@@ -1,10 +1,8 @@
 # Improved Chat and Overlays
 
-Improved Chat and Overlays is an all-in-one RuneLite chat customization plugin with custom overlays, per-overlay filtering, native chat resizing and collapse controls, cleanup tools, clan presentation, message styling, alerts, opacity controls, and dialogue text customization.
+Give each conversation its own space. Create chat overlays with independent channels, filters, fonts, colours and alerts, including optional RGB text and borders. Resize or collapse the native chatbox, tidy channel labels and menus, distinguish offline clan members, and make dialogue easier to read. Enable only the features you want.
 
-Most features are independent, so you can use only the parts you want.
-
-[Features](#features) · [Getting started](#getting-started) · [Usage](#usage) · [Saved settings](#saved-settings) · [Compatibility](#compatibility) · [Related plugins and sources](#related-plugins-and-sources) · [Development](#development) · [Support](#support) · [License and attribution](#license-and-attribution)
+[Features](#features) · [Getting started](#getting-started) · [Usage](#usage) · [Saved settings](#saved-settings) · [Compatibility](#compatibility) · [Inspiration and recipe](#inspiration-and-recipe) · [Development](#development) · [Support](#support) · [License and attribution](#license-and-attribution)
 
 ## Features
 
@@ -312,6 +310,10 @@ Native private-chat hiding keeps the system-update timer visible. Overlay login/
 
 ## Saved settings
 
+Custom text rules have safety limits to keep chat responsive. Expressions may contain up to 1,024 characters, with up to 128 rules per list and 32,768 characters per rule source. Matching stops when a rule exceeds its work budget; the rule is skipped until it is recompiled after an edit. If an overlay filter cannot be evaluated safely, its messages remain visible. The side panel explains when a limit was reached, and saved rule text is retained. These limits apply to Improved Chat's evaluation, not other plugins' matching engines.
+
+Saved overlay lists are limited to 64 overlays and two million JSON characters, with a nesting limit checked before parsing. Unreadable bounded configurations retain a recovery backup. Oversized configurations remain in their original setting and automatic saving pauses; export the RuneLite profile before using the existing Reset overlays action to deliberately replace them.
+
 The native plugin menu has five collapsible sections: **Chatbox**, **Chat cleanup**, **Overlay setup: side panel**, **Dialogue text**, and **Advanced**. Secondary sizing and its hotkey remain in Chatbox. Clan, guest-clan, friends-chat and GIM name controls remain independent of their instruction controls.
 
 Use the side panel for individual overlays, custom text colors, RGB effects, notifications and Message highlights. Existing setting keys, overlay IDs, placements, filters and notification settings are retained. Former global color rules, their nine palette colors, RGB patterns, spread and fallback colors are copied into each existing overlay once. Old cycling remains full spectrum. The old overlay list is backed up under `overlayConfigsBeforeMenuCleanup`; legacy global values remain stored. New overlays have independent defaults. Unreadable configurations keep the existing recovery backup and are not overwritten merely by startup.
@@ -332,30 +334,33 @@ If a Resource Pack uses custom chatbox artwork, **Don't Draw Resize Borders** an
 
 Improved Chat and Overlays can run alongside **Modern Chat** by **BenDol**. When Modern Chat owns conflicting native-chat geometry, visibility, or presentation, Improved Chat and Overlays yields those conflicting native features while unrelated Improved Chat and Overlays features remain available.
 
-### Chat Widgets
+### Chat Widgets and Force Recolor
 
-Improved Chat and Overlays declares a conflict with **Chat Widgets** because both plugins provide overlapping custom chat-overlay systems. Do not enable both at the same time.
+Improved Chat and Overlays declares conflicts with **Chat Widgets** and **Force Recolor**. Use one plugin for each overlapping overlay or recolouring role. The recipe below explains their contributions and the features available here.
 
-## Related plugins and sources
+## Inspiration and recipe
 
-Improved Chat and Overlays intentionally consolidates functionality that previously required several focused RuneLite plugins. It also contains BSD-2-Clause-derived work from several of those projects; full legal attribution is in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+The recipe is movable chat widgets, a flexible native chatbox and clear message presentation. Improved Chat and Overlays builds on work from Chat Widgets, Chat Resizer, Collapse Chat, ChatboxOpacity, Dialogue Fonts, Clean Chat, Remove Chat Options and Offline Chat Icon. Force Recolor also informed the familiar text::number colour-rule style. Each contribution is credited in the code notices.
 
-If Improved Chat and Overlays includes more than you need, the original focused plugins are still good choices for users who only want one feature:
-
-| Project | Relationship | Relevant features and limits |
+| Project | Connection | What it contributes or complements |
 | --- | --- | --- |
-| [Chat Widgets](https://github.com/cnnnr/chat-widgets) (**Proven**) | Focused alternative; see source notices for attribution | Custom game/private chat overlay widgets without the broader native-chat toolset. |
-| [Chat Resizer / Better Resizable Chat](https://github.com/shanktank/better-resizable-chat) (**Shanktank**) | Focused alternative; see source notices for attribution | Native chat resizing, private-chat rewrapping, drag resizing, and secondary chat sizes. |
-| [Collapse Chat](https://github.com/stutify/runelite-plugins) (**stutify**) | Focused alternative; see source notices for attribution | A focused way to collapse native chat to a single button. |
-| [ChatboxOpacity](https://github.com/Trevor159/runelite-external-plugins) (**Trevor**) | Focused alternative; see source notices for attribution | Native chatbox opacity control only. |
-| [Dialogue Fonts](https://github.com/theOranguzang/osrs-dialogue-fonts-plugin) (**theOranguzang**) | Focused alternative; see source notices for attribution | Dialogue font/readability customization only. |
-| [Clean Chat](https://github.com/ldavid432/chat-cleanup) (**ldavid432**) | Focused alternative; see source notices for attribution | Focused clan/friends/GIM channel cleanup and timestamp presentation. |
-| [Remove Chat Options](https://github.com/96jonesa/remove-chat-options) (**McLovin1981 (Andrew Jones)**) | Focused alternative; see source notices for attribution | Removing chatbox right-click options without the rest of Improved Chat and Overlays. |
-| [Offline Chat Icon](https://github.com/fatfingers23/RuneliteOfflineChatIcon) (**Bailey Townsend**) | Focused alternative; see source notices for attribution | A focused offline clan-member indicator. |
+| [Chat Widgets](https://github.com/cnnnr/chat-widgets) | Adapted foundation | Independently configurable chat overlays. Credit to the project and retained original author 117. Declared conflict; choose one overlay system. |
+| [Chat Resizer](https://github.com/shanktank/better-resizable-chat) | Adapted foundation | Chatbox sizing and private-message layout. Credit to Shanktank; use one controller for overlapping resize features. |
+| [Collapse Chat](https://github.com/stutify/runelite-plugins/tree/e5136344122cd2c12390a288b83d3c087946cafd) | Adapted foundation | Single-button chat collapse. Credit to stutify; avoid enabling two collapse controllers. |
+| [ChatboxOpacity](https://github.com/Trevor159/runelite-external-plugins/tree/1b998572d00db6aad78251ba2bf9fa1bae3b309a) | Adapted foundation | Chatbox transparency controls. Credit to Trevor; overlapping opacity settings can compete. |
+| [Dialogue Fonts](https://github.com/theOranguzang/osrs-dialogue-fonts-plugin) | Adapted foundation | Readable dialogue fonts. Credit to theOranguzang; choose one dialogue-font renderer. |
+| [Clean Chat](https://github.com/ldavid432/chat-cleanup) | Adapted foundation | Channel labels, presentation and cleanup. Credit to ldavid432 and the additional authors retained in adapted files. |
+| [Remove Chat Options](https://github.com/96jonesa/remove-chat-options) | Adapted foundation | Chatbox menu cleanup. Credit to Andrew Jones; overlapping removal rules can hide options twice. |
+| [Offline Chat Icon](https://github.com/fatfingers23/RuneliteOfflineChatIcon) | Adapted foundation | An offline indicator beside clan names. Credit to Bailey Townsend; avoid duplicate indicators. |
+| [Force Recolor](https://github.com/Alexsuperfly/RuneLite-Hub-Plugins/tree/01fd487d13a0a66b061d60baea5b0f8b70d98e02) | Rule-design inspiration | Text matching with numbered colour groups. Our rule engine is independent. Declared conflict; native text colour stays under RuneLite Chat Color. |
+| [Chat Color (built-in settings)](https://github.com/runelite/runelite/blob/master/runelite-client/src/main/java/net/runelite/client/config/ChatColorConfig.java) | Built-in companion | Base chat colours; overlays can use that palette or their own styling. |
+| [Chat Filter (built in)](https://github.com/runelite/runelite/tree/master/runelite-client/src/main/java/net/runelite/client/plugins/chatfilter) | Built-in companion | Global filtering. Each overlay can use that filter or its own content rules. |
+| [Chat Notifications (built in)](https://github.com/runelite/runelite/tree/master/runelite-client/src/main/java/net/runelite/client/plugins/chatnotifications) | Related alerts tool | Chat highlights and notifications. Overlapping triggers can produce duplicate alerts; keep only the rules you need. |
+| [Emojis (built in)](https://github.com/runelite/runelite/tree/master/runelite-client/src/main/java/net/runelite/client/plugins/emojis) | Built-in companion | Emoticon conversion; overlays preserve supported emoji/image tags. |
+| [Resource Packs](https://github.com/melkypie/resource-packs) | Optional appearance tool | Chatbox artwork. The resize-border and background-zoom options help accommodate custom packs. |
+| [Modern Chat](https://github.com/BenDol/Modern-Chat) | Alternative chat experience | A different chat redesign. Our compatibility guards yield conflicting native-chat features; unrelated overlays can remain active. |
 
-### Compatible alternative: Modern Chat
-
-[Modern Chat](https://github.com/BenDol/Modern-Chat) by **BenDol** is a broader modern-chat redesign rather than a plugin Improved Chat and Overlays replaces. Improved Chat and Overlays includes runtime safeguards so the two can coexist where their responsibilities do not overlap.
+These connections describe specific features, not a promise that every option is duplicated or every combination is interchangeable. Original copyright and license text is retained separately in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and packaged license files.
 
 ## Development
 

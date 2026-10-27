@@ -18,6 +18,10 @@ import com.improvedchat.model.OverlayMessage;
 import com.improvedchat.overlay.AttentionEngine;
 import com.improvedchat.overlay.DynamicChatOverlay;
 import com.improvedchat.overlay.OverlayConfig;
+import com.improvedchat.overlay.OverlayNotifications;
+import net.runelite.client.Notifier;
+import net.runelite.client.config.Notification;
+import net.runelite.client.config.RuneLiteConfig;
 import com.improvedchat.overlay.OverlayMessageFilter;
 import com.google.gson.Gson;
 import com.improvedchat.overlay.OverlayHistory;
@@ -79,9 +83,9 @@ import java.util.regex.Pattern;
  * that each filter and render a subset of the pool based on their {@link OverlayConfig}.
  */
 @PluginDescriptor(
-        name = "Improved Chat",
+        name = "Improved Chat and Overlays",
         configName = "improvedchat",
-        description = "All-in-one RuneLite chat customization with overlays, per-overlay filters, resizing, collapse, cleanup, clan status, colors, alerts, opacity, and dialogue styling.",
+        description = "Create filtered chat overlays with custom styles, RGB effects and alerts. Resize or collapse the chatbox, tidy messages and improve dialogue readability.",
         tags = {"chat", "message", "overlay", "color", "customize", "private", "clan"},
         conflicts = {"Chat Widgets", "Force Recolor"})
 public class ImprovedChatPlugin extends Plugin {
@@ -167,6 +171,8 @@ public class ImprovedChatPlugin extends Plugin {
 
     @Inject
     private Client client;
+    @Inject private Notifier notifier;
+    @Inject private RuneLiteConfig runeLiteConfig;
 
     @Inject
     private ImprovedChatConfig config;
@@ -234,6 +240,8 @@ public class ImprovedChatPlugin extends Plugin {
     private final List<OverlayConfig> overlayConfigs = new CopyOnWriteArrayList<>();
     private final Map<String, Long> clearedThrough = new ConcurrentHashMap<>();
     private String configRecoveryMessage;
+    private boolean overlayPersistenceBlocked;
+    private boolean ruleWarningShown;
 
     @Inject
     private net.runelite.client.eventbus.EventBus eventBus;
@@ -291,8 +299,13 @@ public class ImprovedChatPlugin extends Plugin {
         }
     }
 
+    private volatile boolean nativeChatActive;
+    private volatile long nativeChatGeneration;
+
     @Override
     protected void startUp() {
+        nativeChatGeneration++;
+        nativeChatActive = true;
         loadOverlayConfigs();
         MessageColorRuleEngine.configure(config);
         OverlayColorRuleEngine.configure(config);
@@ -319,7 +332,7 @@ public class ImprovedChatPlugin extends Plugin {
             icon = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
         }
         navButton = NavigationButton.builder()
-                .tooltip("Improved Chat")
+                .tooltip("Improved Chat and Overlays")
                 .icon(icon)
                 .priority(10)
                 .panel(panel)
@@ -331,6 +344,8 @@ public class ImprovedChatPlugin extends Plugin {
 
     @Override
     protected void shutDown() {
+        nativeChatActive = false;
+        nativeChatGeneration++;
         releaseNoticeModule.shutDown();
         dialogueFontsModule.shutDown();
         offlineChatStatusModule.shutDown();
@@ -373,6 +388,12 @@ public class ImprovedChatPlugin extends Plugin {
     }
 
     public void addConfiguredOverlay(OverlayConfig oc) {
+        if (overlayConfigs.size() >= OverlayConfigStore.MAX_OVERLAYS) {
+            configRecoveryMessage = "Use at most 64 overlays. Existing overlays were kept.";
+            refreshPanel();
+            return;
+        }
+        oc.getTextSettings();
         overlayConfigs.add(oc);
         addOverlay(oc);
         saveOverlayConfigs();
@@ -408,6 +429,8 @@ public class ImprovedChatPlugin extends Plugin {
      * (same set and order as {@link #loadOverlayConfigs()}). Destructive — callers should confirm.
      */
     public void resetOverlays() {
+        overlayPersistenceBlocked = false;
+        configRecoveryMessage = null;
         for (DynamicChatOverlay overlay : overlays) {
             overlayManager.remove(overlay);
         }
@@ -419,6 +442,7 @@ public class ImprovedChatPlugin extends Plugin {
         overlayConfigs.add(OverlayConfig.defaultPrivateOverlay());
         overlayConfigs.add(OverlayConfig.defaultAllOverlay());
         for (OverlayConfig oc : overlayConfigs) {
+            oc.getTextSettings();
             addOverlay(oc);
         }
 
@@ -476,16 +500,28 @@ public class ImprovedChatPlugin extends Plugin {
     private void loadOverlayConfigs() {
         overlayConfigs.clear();
         configRecoveryMessage = null;
+        overlayPersistenceBlocked = false;
         String json = configManager.getConfiguration(CONFIG_GROUP, OVERLAY_CONFIGS_KEY);
         try {
             overlayConfigs.addAll(OverlayConfigStore.read(gson, json));
         } catch (RuntimeException ex) {
             // Preserve the original before later edits can replace an unreadable configuration.
-            configManager.setConfiguration(CONFIG_GROUP, OVERLAY_CONFIGS_KEY + "Backup", json);
             overlayConfigs.addAll(OverlayConfigStore.defaults());
-            configRecoveryMessage = "Saved overlays could not be read. Defaults are shown; the original configuration was kept in an overlayConfigsBackup setting for recovery.";
+            if (json != null && json.length() > OverlayConfigStore.MAX_JSON) {
+                overlayPersistenceBlocked = true;
+                configRecoveryMessage = "Saved overlays exceed the storage safety limit. The original remains unchanged; automatic saving is paused. Export your RuneLite profile for recovery before explicitly resetting overlays.";
+            } else {
+                configManager.setConfiguration(CONFIG_GROUP, OVERLAY_CONFIGS_KEY + "Backup", json);
+                configRecoveryMessage = "Saved overlays could not be read. Defaults are shown; the original configuration was kept in an overlayConfigsBackup setting for recovery.";
+            }
         }
-        if (json == null || json.trim().isEmpty()) saveOverlayConfigs();
+        boolean migrated = false;
+        for (OverlayConfig overlay : overlayConfigs) migrated |= overlay.migrateTextSettings(config);
+        if (migrated && configRecoveryMessage == null && json != null && !json.trim().isEmpty()
+                && configManager.getConfiguration(CONFIG_GROUP, OVERLAY_CONFIGS_KEY + "BeforeMenuCleanup") == null) {
+            configManager.setConfiguration(CONFIG_GROUP, OVERLAY_CONFIGS_KEY + "BeforeMenuCleanup", json);
+        }
+        if (configRecoveryMessage == null && (migrated || json == null || json.trim().isEmpty())) saveOverlayConfigs();
     }
 
     public OverlayConfig duplicateOverlay(OverlayConfig original) {
@@ -499,7 +535,10 @@ public class ImprovedChatPlugin extends Plugin {
 
     public boolean isGlobalFilterOverride() { return config.useChatFilter(); }
 
-    public String getConfigRecoveryMessage() { return configRecoveryMessage; }
+    public String getConfigRecoveryMessage() {
+        String warning = BoundedPattern.warning();
+        return configRecoveryMessage == null ? warning : configRecoveryMessage + (warning == null ? "" : " " + warning);
+    }
 
     public void openSettings() {
         net.runelite.client.ui.overlay.Overlay settingsTarget = new net.runelite.client.ui.overlay.Overlay(this) {
@@ -507,7 +546,7 @@ public class ImprovedChatPlugin extends Plugin {
         };
         eventBus.post(new OverlayMenuClicked(
                 new net.runelite.client.ui.overlay.OverlayMenuEntry(net.runelite.api.MenuAction.RUNELITE_OVERLAY_CONFIG,
-                        OverlayManager.OPTION_CONFIGURE, "Improved Chat"), settingsTarget));
+                        OverlayManager.OPTION_CONFIGURE, "Improved Chat and Overlays"), settingsTarget));
     }
 
     public boolean isGlobalFilterAvailable() { return isChatFilterEnabled(); }
@@ -546,7 +585,14 @@ public class ImprovedChatPlugin extends Plugin {
     }
 
     public void saveOverlayConfigs() {
+        if (overlayPersistenceBlocked) return;
         String json = gson.toJson(overlayConfigs);
+        try { OverlayConfigStore.validateSize(json); }
+        catch (com.google.gson.JsonParseException ex) {
+            configRecoveryMessage = "Overlay changes exceed the storage safety limit and were not saved. Shorten text or remove overlays. The previous saved configuration is unchanged.";
+            refreshPanel();
+            return;
+        }
         configManager.setConfiguration(CONFIG_GROUP, OVERLAY_CONFIGS_KEY, json);
     }
 
@@ -559,6 +605,17 @@ public class ImprovedChatPlugin extends Plugin {
     }
 
     // --- Event handlers ---
+
+    @Subscribe
+    public void onBeforeRender(net.runelite.api.events.BeforeRender event) {
+        if (!ruleWarningShown && BoundedPattern.warning() != null) {
+            ruleWarningShown = true;
+            refreshPanel();
+        }
+        if (nativeChatActive && pmWidgetsHidden && client.getGameState() == GameState.LOGGED_IN) {
+            setPmWidgetsHidden(true);
+        }
+    }
 
     @Subscribe
     public void onFocusChanged(FocusChanged event) {
@@ -666,6 +723,11 @@ public class ImprovedChatPlugin extends Plugin {
             return;
         }
 
+        if (type == ChatMessageType.LOGINLOGOUTNOTIFICATION) {
+            int permanent = client.getVarbitValue(net.runelite.api.gameval.VarbitID.LOGINLOGOUT_PERMANENT);
+            int setting = permanent != 0 ? permanent : client.getVarbitValue(net.runelite.api.gameval.VarbitID.LOGINLOGOUT_SETTING);
+            if (setting == 2) return;
+        }
         String message = event.getMessage();
         if (message == null || message.trim().isEmpty()) {
             return;
@@ -692,7 +754,7 @@ public class ImprovedChatPlugin extends Plugin {
         // tick in onGameTick, catching the case where Emojis is registered after us and hasn't
         // converted yet at capture.
         MessageNode messageNode = event.getMessageNode();
-        MessageColorRuleEngine.applyToChatbox(client, event, config, message);
+        // Native message colors remain owned by RuneLite Chat Color; rules are overlay-only.
 
         boolean emojiWatched = EMOJI_WATCHED_TYPES.contains(type)
                 && !message.startsWith("!")
@@ -703,6 +765,9 @@ public class ImprovedChatPlugin extends Plugin {
                 message = nodeValue.trim();
             }
         }
+
+        message = ChatDisplayText.normalize(type, message);
+        if (message.trim().isEmpty()) return;
 
         // Keep the shared pool unfiltered. Global/per-overlay filtering is applied when each
         // overlay selects messages so one overlay can hide a message while another still shows it.
@@ -728,6 +793,7 @@ public class ImprovedChatPlugin extends Plugin {
                     OverlayMessage mergedMsg = OverlayMessage.gameMessage(
                             merged, System.currentTimeMillis(), lastMsg.getType(), lastMsg.isBossKc());
                     messages.set(messages.size() - 1, mergedMsg);
+                    notifyOverlays(mergedMsg);
                     return;
                 }
             }
@@ -747,6 +813,7 @@ public class ImprovedChatPlugin extends Plugin {
         }
 
         messages.add(newMsg);
+        notifyOverlays(newMsg);
 
         while (messages.size() > MAX_POOL_SIZE) {
             messages.remove(0);
@@ -806,14 +873,16 @@ public class ImprovedChatPlugin extends Plugin {
         if (idx < 0) {
             return;
         }
-        messages.set(idx, old.withBody(newBody));
+        messages.set(idx, old.withBody(ChatDisplayText.normalize(old.getType(), newBody)));
     }
 
     private void reconcileNativeChatOwnership() {
+        if (!nativeChatActive) return;
         reconcileNativeChatOwnership(modernChatCompatibility.snapshot());
     }
 
     private void reconcileNativeChatOwnership(ModernChatOwnership ownership) {
+        if (!nativeChatActive) return;
         if (config.enableResizableChat() && !ownership.blocksGeometry()) {
             chatResizeModule.startUp();
         } else {
@@ -874,7 +943,14 @@ public class ImprovedChatPlugin extends Plugin {
     private void scheduleNativeChatOwnershipReconcile() {
         // Defer once past the current event dispatch, then queue at tick end. This lets Modern Chat
         // enqueue its own start/stop restoration first, including its tick-end legacy-chat restore.
-        clientThread.invokeLater(() -> clientThread.invokeAtTickEnd(this::reconcileNativeChatOwnership));
+        if (!nativeChatActive) return;
+        long generation = nativeChatGeneration;
+        clientThread.invokeLater(() -> {
+            if (!nativeChatActive || generation != nativeChatGeneration) return;
+            clientThread.invokeAtTickEnd(() -> {
+                if (nativeChatActive && generation == nativeChatGeneration) reconcileNativeChatOwnership();
+            });
+        });
     }
 
     @Subscribe
@@ -992,6 +1068,30 @@ public class ImprovedChatPlugin extends Plugin {
         }
         return emojiPlugin != null && pluginManager.isPluginEnabled(emojiPlugin);
     }
+
+    public Notification customizeNotification(Notification original) {
+        if (original.isInitialized()) return original.withOverride(true);
+        return new Notification(original.isEnabled(), true, true,
+                runeLiteConfig.enableTrayNotifications(), java.awt.TrayIcon.MessageType.NONE,
+                runeLiteConfig.notificationRequestFocus(), runeLiteConfig.notificationSound(), null,
+                runeLiteConfig.notificationVolume(), runeLiteConfig.notificationTimeout(),
+                runeLiteConfig.enableGameMessageNotification(), runeLiteConfig.flashNotification(),
+                runeLiteConfig.notificationFlashColor(), runeLiteConfig.sendNotificationsWhenFocused());
+    }
+
+    void notifyOverlays(OverlayMessage message) {
+        if (client.getGameState() != GameState.LOGGED_IN || message.isOutgoing()) return;
+        if (message.getSender() != null && client.getLocalPlayer() != null
+                && net.runelite.client.util.Text.removeTags(message.getSender()).equalsIgnoreCase(client.getLocalPlayer().getName())) return;
+        for (OverlayConfig overlay : overlayConfigs) {
+            if (!overlay.getNotification().isEnabled() || !overlay.isShow()) continue;
+            if (OverlayNotifications.eligible(overlay, message, getMessagesForOverlay(overlay))) {
+                sendOverlayNotification(overlay.getNotification(), OverlayNotifications.message(overlay, message));
+            }
+        }
+    }
+
+    protected void sendOverlayNotification(Notification notification, String message) { notifier.notify(notification, message); }
 
     // --- Message access for overlays ---
 
@@ -1165,30 +1265,43 @@ public class ImprovedChatPlugin extends Plugin {
                 || position == OverlayPosition.CANVAS_TOP_RIGHT;
     }
 
-    private void setPmWidgetsHidden(boolean hidden) {
-        setGameframePmContainerHidden(InterfaceID.TOPLEVEL, 36, hidden);
-        setGameframePmContainerHidden(InterfaceID.TOPLEVEL_OSRS_STRETCH, 93, hidden);
-        setGameframePmContainerHidden(InterfaceID.TOPLEVEL_PRE_EOC, 90, hidden);
+    private final Map<Widget, Boolean> hiddenPmRows = new java.util.IdentityHashMap<>();
 
-        Widget pmContainer = client.getWidget(InterfaceID.PM_CHAT, 0);
-        if (pmContainer != null) {
-            pmContainer.setHidden(hidden);
-            Widget[] dynamicChildren = pmContainer.getDynamicChildren();
-            if (dynamicChildren != null) {
-                for (Widget child : dynamicChildren) {
-                    if (child != null) {
-                        child.setHidden(hidden);
+    private void setPmWidgetsHidden(boolean hidden) {
+        Map<Widget, Boolean> live = new java.util.IdentityHashMap<>();
+        Widget container = client.getWidget(InterfaceID.PM_CHAT, 0);
+        if (hidden && container != null) {
+            Widget[] children = container.getDynamicChildren();
+            if (children != null) {
+                // Native PM rows have four dynamic parts. The same parent also contains the
+                // system-update timer; hiding its parent suppresses that safety information.
+                for (int row = 0; row < children.length; row += 4) {
+                    boolean timer = false;
+                    for (int i = row; i < Math.min(row + 4, children.length); i++) {
+                        Widget child = children[i];
+                        if (child != null && child.getText() != null
+                            && net.runelite.client.util.Text.removeTags(child.getText()).startsWith("System update in:")) timer = true;
+                    }
+                    if (!timer) {
+                        for (int i = row; i < Math.min(row + 4, children.length); i++) {
+                            if (children[i] != null) live.put(children[i], Boolean.TRUE);
+                        }
+                        Widget[] clickboxes = container.getStaticChildren();
+                        int index = row / 4;
+                        if (clickboxes != null && index < clickboxes.length && clickboxes[index] != null) live.put(clickboxes[index], Boolean.TRUE);
                     }
                 }
             }
         }
-    }
-
-    private void setGameframePmContainerHidden(int group, int child, boolean hidden) {
-        Widget container = client.getWidget(group, child);
-        if (container != null) {
-            container.setHidden(hidden);
-        }
+        hiddenPmRows.entrySet().removeIf(entry -> {
+            if (live.containsKey(entry.getKey())) return false;
+            if (entry.getKey().isSelfHidden()) entry.getKey().setHidden(entry.getValue());
+            return true;
+        });
+        live.keySet().forEach(widget -> {
+            if (!hiddenPmRows.containsKey(widget) || !widget.isSelfHidden()) hiddenPmRows.put(widget, widget.isSelfHidden());
+            widget.setHidden(true);
+        });
     }
 
     @Provides

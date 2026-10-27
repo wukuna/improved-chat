@@ -76,6 +76,7 @@ public class DynamicChatOverlay extends Overlay {
 
     @Override
     public String getName() {
+        // Keep the legacy overlay name: RuneLite uses it to restore saved positions.
         return "Improved Chat " + (overlayConfig == null ? "Overlay" : overlayConfig.getId());
     }
 
@@ -226,7 +227,7 @@ public class DynamicChatOverlay extends Overlay {
                         globalConfig.showChannelName(),
                         chatColorConfig,
                         senderDecorations,
-                        senderColorOverride);
+                        senderColorOverride, overlayConfig);
 
                 for (RenderLine line : msgLines) {
                     if (line.alpha > 0) {
@@ -251,19 +252,27 @@ public class DynamicChatOverlay extends Overlay {
             translateToPlayer(graphics, placementMode, widgetWidth, widgetHeight);
         }
 
+        int paintHeight = widgetHeight;
+        OverlayPosition anchor = getPreferredPosition() == null ? getPosition() : getPreferredPosition();
+        if (!followPlayer && useDynamicHeight && getPreferredLocation() == null
+                && (anchor == OverlayPosition.BOTTOM_LEFT || anchor == OverlayPosition.BOTTOM_RIGHT
+                    || anchor == OverlayPosition.ABOVE_CHATBOX_RIGHT) && getBounds().height > 0) {
+            // RuneLite places bottom-anchored overlays using the previous frame's bounds.
+            paintHeight = getBounds().height;
+        }
         Shape originalClip = graphics.getClip();
-        graphics.setClip(0, 0, widgetWidth, widgetHeight);
+        graphics.setClip(0, 0, widgetWidth, paintHeight);
 
         Color background = overlayConfig.getRenderBackgroundColour();
         if (background.getAlpha() > 0) {
             graphics.setColor(background);
-            graphics.fillRect(0, 0, widgetWidth, widgetHeight);
+            graphics.fillRect(0, 0, widgetWidth, paintHeight);
         }
 
-        int y = widgetHeight - paddingY - metrics.getDescent();
+        int y = paintHeight - paddingY - metrics.getDescent();
         if (inputSegments != null) {
             drawSegments(graphics, inputSegments, 255, y, widgetWidth,
-                    paddingX, fontSize, metrics, modIcons, drawShadow);
+                    paddingX, fontSize, metrics, modIcons, drawShadow, currentTime);
             y -= lineHeight;
         }
 
@@ -273,12 +282,12 @@ public class DynamicChatOverlay extends Overlay {
                 continue;
             }
             drawSegments(graphics, line.segments, line.alpha, y, widgetWidth,
-                    paddingX, fontSize, metrics, modIcons, drawShadow);
+                    paddingX, fontSize, metrics, modIcons, drawShadow, currentTime);
             y -= lineHeight;
         }
 
         graphics.setClip(originalClip);
-        AttentionEngine.drawBorder(graphics, overlayConfig, widgetWidth, widgetHeight, currentTime);
+        AttentionEngine.drawBorder(graphics, overlayConfig, widgetWidth, paintHeight, currentTime);
 
         return followPlayer ? null : new Dimension(widgetWidth, widgetHeight);
     }
@@ -333,36 +342,36 @@ public class DynamicChatOverlay extends Overlay {
 
     private Color getCategoryColour(ChatMessageType type) {
         if (type == ChatMessageType.DIDYOUKNOW) {
-            return globalConfig.didYouKnowColour();
+            return overlayConfig.getTextSettings().didYouKnowColour();
         }
         if (type == ChatMessageType.BROADCAST) {
-            return globalConfig.broadcastColour();
+            return overlayConfig.getTextSettings().broadcastColour();
         }
 
         switch (MessageCategory.fromType(type)) {
             case GAME:
             case GAME_CLAN:
-                return globalConfig.gameColour();
+                return overlayConfig.getTextSettings().gameColour();
             case TRADE:
-                return globalConfig.tradeColour();
+                return overlayConfig.getTextSettings().tradeColour();
             case CHALLENGE:
-                return globalConfig.challengeColour();
+                return overlayConfig.getTextSettings().challengeColour();
             case PUBLIC_CHAT:
-                return globalConfig.publicColour();
+                return overlayConfig.getTextSettings().publicColour();
             case AUTO:
-                return globalConfig.autoColour();
+                return overlayConfig.getTextSettings().autoColour();
             case FRIENDS_CHAT:
-                return globalConfig.friendsColour();
+                return overlayConfig.getTextSettings().friendsColour();
             case CLAN_CHAT:
-                return globalConfig.clanColour();
+                return overlayConfig.getTextSettings().clanColour();
             case GUEST_CLAN_CHAT:
-                return globalConfig.guestClanColour();
+                return overlayConfig.getTextSettings().guestClanColour();
             case GIM_CLAN_CHAT:
-                return globalConfig.gimClanColour();
+                return overlayConfig.getTextSettings().gimClanColour();
             case PRIVATE:
-                return globalConfig.privateColour();
+                return overlayConfig.getTextSettings().privateColour();
             default:
-                return globalConfig.gameColour();
+                return overlayConfig.getTextSettings().gameColour();
         }
     }
 
@@ -391,7 +400,7 @@ public class DynamicChatOverlay extends Overlay {
 
     private void drawSegments(Graphics2D graphics, List<TextSegment> segments, int alpha, int y,
             int widgetWidth, int paddingX, FontSize fontSize,
-            FontMetrics metrics, IndexedSprite[] modIcons, boolean drawShadow) {
+            FontMetrics metrics, IndexedSprite[] modIcons, boolean drawShadow, long now) {
         int lineWidth = calculateLineWidth(segments, metrics);
         int contentWidth = Math.max(0, widgetWidth - paddingX * 2);
         int x = calculateAlignedX(overlayConfig.getTextAlignment(), paddingX, contentWidth, lineWidth);
@@ -406,8 +415,27 @@ public class DynamicChatOverlay extends Overlay {
                 }
             } else {
                 Color segmentColor = segment.color == null ? Color.WHITE : segment.color;
-                x += ChatRenderUtils.drawText(graphics, segment.text, segmentColor, alpha, x, y,
-                        drawShadow, metrics);
+                if (segment.shadow != null) {
+                    graphics.setColor(ChatRenderUtils.withAlpha(segment.shadow, alpha));
+                    graphics.drawString(segment.text, x + 2, y + 1);
+                }
+                com.improvedchat.model.AnimatedTextStyle style = segment.textStyle == null
+                        ? overlayConfig.getAnimatedTextStyle() : segment.textStyle;
+                int width = style == com.improvedchat.model.AnimatedTextStyle.NORMAL || style == com.improvedchat.model.AnimatedTextStyle.RGB_STATIC
+                        ? ChatRenderUtils.drawText(graphics, segment.text, segmentColor, alpha, x, y,
+                                segment.shadow == null && drawShadow, metrics)
+                        : RgbAnimation.drawText(graphics, segment.text, alpha, x, y,
+                                segment.shadow == null && drawShadow, metrics, overlayConfig, now, paddingX, style);
+                if (segment.underline != null) {
+                    graphics.setColor(ChatRenderUtils.withAlpha(segment.underline, alpha));
+                    graphics.drawLine(x + 1, y + 1, x + width, y + 1);
+                }
+                if (segment.strikethrough != null) {
+                    graphics.setColor(ChatRenderUtils.withAlpha(segment.strikethrough, alpha));
+                    int strikeY = y - metrics.getAscent() + (int) (metrics.getAscent() * 0.7);
+                    graphics.drawLine(x + 1, strikeY, x + width, strikeY);
+                }
+                x += width;
             }
         }
     }
@@ -429,7 +457,7 @@ public class DynamicChatOverlay extends Overlay {
             return null;
         }
 
-        Color inherited = hasTyped ? globalConfig.publicColour() : Color.WHITE;
+        Color inherited = hasTyped ? overlayConfig.getTextSettings().publicColour() : Color.WHITE;
         Color messageColor = OverlayStyleEngine.resolveTextColor(overlayConfig, inherited);
         Color nameColor = overlayConfig.isOverlayColorOverrideEnabled() ? messageColor : Color.WHITE;
 
@@ -446,7 +474,8 @@ public class DynamicChatOverlay extends Overlay {
             segments.addAll(ChatRenderUtils.parseTextWithColoursAndIcons(
                     text, metrics, modIcons, false, messageColor, fontSize, chatColorConfig));
         }
-        return segments;
+        return overlayConfig.getAnimatedTextStyle() == com.improvedchat.model.AnimatedTextStyle.RGB_STATIC
+                ? ChatRenderUtils.rainbowSegments(segments, overlayConfig.getTextSettings().rainbowStyle(), metrics, new int[]{0}) : segments;
     }
 
     private String resolveInputText(String typed) {

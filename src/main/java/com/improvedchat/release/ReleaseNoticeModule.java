@@ -18,24 +18,25 @@ import net.runelite.client.eventbus.Subscribe;
  * Shows a short in-chat release notice for the current Improved Chat update.
  *
  * The notice is intentionally stateful but not user-configurable: each release id is shown at most
- * twice in total, and never more than once per RuneLite client session. Future releases only need
- * to change CURRENT_NOTICE_ID and NOTICE_TEXT.
+ * once per configuration profile, and never more than once per RuneLite client session. Future releases only need
+ * to change CURRENT_NOTICE_ID and NOTICE_LINES.
  */
 @Singleton
 public final class ReleaseNoticeModule
 {
-    static final String CURRENT_NOTICE_ID = "overlay-history-usability-hotfix-v1";
-    static final int MAX_REMINDERS = 2;
+    static final String CURRENT_NOTICE_ID = "chat-and-overlays-rename-v1";
+    static final int MAX_REMINDERS = 1;
 
     private static final String NOTICE_ID_KEY = "releaseNoticeId";
     private static final String NOTICE_COUNT_KEY = "releaseNoticeCount";
-    private static final String NOTICE_TEXT =
-        "Improved Chat has been updated: overlay history clearing and duplicate counts are now independent, "
-            + "with clearer visibility controls, filter feedback, sample previews, and saved empty overlay lists.";
+    private static final String[] NOTICE_LINES = {
+        "Improved Chat is now Improved Chat and Overlays.",
+        "Your saved settings and overlay positions are unchanged. Find us under the new name in plugin settings."
+    };
 
     /**
      * External plugins can be toggled without restarting RuneLite. Keep this static so toggling
-     * Improved Chat off/on cannot consume both reminders in one client session.
+     * Improved Chat off/on cannot repeat the overview in one client session.
      */
     private static volatile boolean shownThisClientSession;
 
@@ -103,10 +104,12 @@ public final class ReleaseNoticeModule
             return;
         }
 
-        chatMessageManager.queue(QueuedMessage.builder()
-            .type(ChatMessageType.CONSOLE)
-            .value(buildMessage(reminderIndex))
-            .build());
+        for (String line : NOTICE_LINES) {
+            chatMessageManager.queue(QueuedMessage.builder()
+                .type(ChatMessageType.CONSOLE)
+                .value(line)
+                .build());
+        }
 
         configManager.setConfiguration(ImprovedChatConfig.GROUP, NOTICE_ID_KEY, CURRENT_NOTICE_ID);
         configManager.setConfiguration(
@@ -147,6 +150,6 @@ public final class ReleaseNoticeModule
 
     static String buildMessage(int reminderIndex)
     {
-        return NOTICE_TEXT + " Reminder " + reminderIndex + "/" + MAX_REMINDERS;
+        return String.join("<br>", NOTICE_LINES);
     }
 }

@@ -1,8 +1,8 @@
 # Third-party notices
 
-Names and repositories listed here are included solely for license attribution and do not imply affiliation, endorsement, partnership, or a runtime relationship with Improved Chat.
+Names and repositories listed here are included solely for license attribution and do not imply affiliation, endorsement, partnership, or a runtime relationship with Improved Chat and Overlays.
 
-Improved Chat is derived in part from the open-source **Chat Widgets** RuneLite plugin:
+Improved Chat and Overlays is derived in part from the open-source **Chat Widgets** RuneLite plugin:
 
 - Repository: `https://github.com/cnnnr/chat-widgets`
 - Original copyright: Copyright (c) 2021, 117
@@ -69,3 +69,7 @@ Offline clan-status behavior includes BSD-2-Clause code derived from **RuneLite 
 - Repository: `https://github.com/fatfingers23/RuneliteOfflineChatIcon`
 - Copyright: Copyright (c) 2022, Bailey Townsend
 - License: BSD 2-Clause
+
+## Packaged license copies
+
+Complete third-party notices are included under `META-INF/licenses/`, alongside this notice and the project license. These include the original copyrights, redistribution terms and disclaimers. `ChatBlocker` additionally retains Magic fTail, osrs-music-map and Lake David credits; its complete header is also packaged. The existing CleanChatUtil reference to JamesShelton140/aqp-finder is retained. Upstream license copies were checked against the Hub-selected repositories on 2026-10-27; this does not mean their latest code was imported.

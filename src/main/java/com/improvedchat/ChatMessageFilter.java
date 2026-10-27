@@ -17,12 +17,15 @@ public final class ChatMessageFilter {
         List<Pattern> compiled = new ArrayList<>();
         stripAccents = cfg.stripAccents();
 
-        Text.fromCSV(cfg.filteredWords()).stream()
+        List<String> words = Text.fromCSV(BoundedPattern.source(cfg.filteredWords()));
+        if (words.size() > BoundedPattern.MAX_RULES) BoundedPattern.reportLimit();
+        words.stream()
+                .limit(BoundedPattern.MAX_RULES)
                 .map(this::maybeStripAccents)
                 .map(s -> Pattern.compile(Pattern.quote(s), Pattern.CASE_INSENSITIVE))
                 .forEach(compiled::add);
 
-        for (String line : cfg.filteredRegex().split("\\n")) {
+        for (String line : BoundedPattern.lines(cfg.filteredRegex())) {
             String trimmed = maybeStripAccents(line.trim());
             if (trimmed.isEmpty()) {
                 continue;
@@ -48,7 +51,7 @@ public final class ChatMessageFilter {
                 .replace("<at>", "@"));
 
         for (Pattern pattern : patterns) {
-            if (pattern.matcher(normalized).find()) {
+            if (BoundedPattern.find(pattern, normalized)) {
                 return true;
             }
         }
@@ -61,7 +64,7 @@ public final class ChatMessageFilter {
 
     private static Pattern compilePattern(String pattern) {
         try {
-            return Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
+            return BoundedPattern.compile(pattern, Pattern.CASE_INSENSITIVE);
         } catch (PatternSyntaxException ex) {
             return null;
         }

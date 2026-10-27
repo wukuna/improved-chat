@@ -1,3 +1,31 @@
+/*
+ * Adapted portions from Chat Resizer by shanktank.
+ *
+ * BSD 2-Clause License
+ * 
+ * Copyright (c) 2026, shanktank
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 /* Derived from Chat Resizer by shanktank under BSD 2-Clause. See THIRD_PARTY_NOTICES.md. */
 package com.improvedchat.chatbox.resize.internal;
 
@@ -25,7 +53,7 @@ public final class RawScripts {
     // Ontimer wrappers of self-refitting windows' size polls
     public static final int BANKMAIN_SIZE_CHECK_TIMER = 839; // cs2 bankmain_size_check
     public static final int SETTINGS_SIZE_CHECK_TIMER = 3831; // cs2 settings_window_resize
-    public static final int WINDOW_SIZE_CHECK_TIMER = 2599; // Shared movable-window poll (Collection Log, others)
+    // Collection Log refitting is intentionally left to its native window handlers.
     public static final int SEED_VAULT_SIZE_CHECK_TIMER = 742; // Ontimer wrapper of cs2 2852
 
     // cs2 chat_button_onop, the tab stones' click handler; (1, tabIdx) switches tab or collapses chat if already active

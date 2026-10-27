@@ -3,34 +3,34 @@ package com.improvedchat;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import net.runelite.api.ChatMessageType;
-import net.runelite.api.Client;
-import net.runelite.api.MessageNode;
-import net.runelite.api.events.ChatMessage;
 
 /**
- * Message Color Rules shared by RuneLite chat and Improved Chat overlays.
- * Color precedence: RuneLite Chat Color -> Message Color Rules -> overlay-only override.
+ * Message Color Rules for Improved Chat overlays only.
+ * Migrated overlays retain their previous color precedence; new highlights may override defaults.
  */
 public final class MessageColorRuleEngine {
     private static volatile ImprovedChatConfig config;
-    private static volatile String cachedSource;
-    private static volatile List<SolidRule> cachedRules = new ArrayList<>();
+    private static final Map<String, List<SolidRule>> RULE_CACHE = new LinkedHashMap<>();
 
     private MessageColorRuleEngine() {}
 
     public static void configure(ImprovedChatConfig newConfig) {
         config = newConfig;
-        cachedSource = null;
-        cachedRules = new ArrayList<>();
+        synchronized (RULE_CACHE) { RULE_CACHE.clear(); }
     }
 
     /** Returns the Message Color Rules color for a message, or null when this layer does not apply. */
     public static Color colorFor(String rawMessage, ChatMessageType type) {
-        ImprovedChatConfig c = config;
+        return colorFor(rawMessage, type, config);
+    }
+
+    public static Color colorFor(String rawMessage, ChatMessageType type, ImprovedChatConfig c) {
         if (c == null || rawMessage == null || rawMessage.isEmpty() || !c.enableMessageColorRules()) return null;
         if (!c.includePlayerChatInColorRules() && isPlayerChat(type)) return null;
 
@@ -44,7 +44,10 @@ public final class MessageColorRuleEngine {
 
     /** True when a matching Message Color Rule includes the optional ::flash modifier. */
     public static boolean flashFor(String rawMessage, ChatMessageType type) {
-        ImprovedChatConfig c = config;
+        return flashFor(rawMessage, type, config);
+    }
+
+    public static boolean flashFor(String rawMessage, ChatMessageType type, ImprovedChatConfig c) {
         if (c == null || rawMessage == null || rawMessage.isEmpty() || !c.enableMessageColorRules()) return false;
         if (!c.includePlayerChatInColorRules() && isPlayerChat(type)) return false;
         String plain = plainText(rawMessage);
@@ -55,57 +58,29 @@ public final class MessageColorRuleEngine {
         return false;
     }
 
-    /**
-     * Applies Message Color Rules to the live RuneLite chatbox. The Improved Chat capture body is deliberately
-     * left untouched so filtering, merging, emoji reconciliation, and duplicate detection still operate
-     * on the original semantic message. The renderer independently calls {@link #colorFor}.
-     */
-    public static void applyToChatbox(Client client, ChatMessage event, ImprovedChatConfig c, String message) {
-        if (client == null || event == null || c == null || message == null || message.isEmpty()) return;
-        // Keep the static renderer view synchronized even during config hot reloads.
-        if (config != c) configure(c);
-
-        ChatMessageType type = event.getType();
-        Color color = colorFor(message, type);
-        if (color == null) return;
-
-        String expanded = message;
-        try {
-            if (expanded.indexOf('@') >= 0) {
-                String m = client.macroExpand(expanded);
-                if (m != null && !m.isEmpty()) expanded = m;
-            }
-        } catch (RuntimeException ignored) {
-            // Keep original message if macro expansion changes unexpectedly.
-        }
-
-        String recolored = forceColor(expanded, color);
-        MessageNode node = event.getMessageNode();
-        if (node == null) return;
-        try {
-            node.setValue(recolored);
-            node.setRuneLiteFormatMessage(recolored);
-            client.refreshChat();
-        } catch (RuntimeException ignored) {
-            // Chat rendering must never fail because another plugin rewrote the node first.
-        }
-    }
-
-    private static String forceColor(String message, Color color) {
+    static String forceColor(String message, Color color, ChatMessageType type) {
         String prefix = "";
+        String suffix = "";
         String body = message;
-        if (body.startsWith("CA_ID:")) {
-            int pipe = body.indexOf('|');
-            if (pipe >= 0 && pipe + 1 < body.length()) {
-                prefix = body.substring(0, pipe + 1);
-                body = body.substring(pipe + 1);
-            }
+        if ((type == ChatMessageType.CLAN_GIM_MESSAGE || type == ChatMessageType.CLAN_GIM_CHAT)
+                && body.startsWith("|")) {
+            prefix = "|";
+            body = body.substring(1);
+        }
+        int pipe = body.indexOf('|');
+        if (pipe >= 0 && (type == ChatMessageType.GAMEMESSAGE || type == ChatMessageType.CLAN_MESSAGE
+                || type == ChatMessageType.CLAN_GIM_MESSAGE)) {
+            prefix += body.substring(0, pipe + 1);
+            body = body.substring(pipe + 1);
+        } else if (pipe >= 0 && type == ChatMessageType.BROADCAST) {
+            suffix = body.substring(pipe);
+            body = body.substring(0, pipe);
         }
 
         // Force means force: remove only color-control tags so embedded colors cannot beat this layer.
         body = body.replaceAll("(?i)</?col(?:=[0-9a-f]{6}|NORMAL|HIGHLIGHT)?[^>]*>", "");
         String hex = String.format("%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
-        return prefix + "<col=" + hex + ">" + body + "</col>";
+        return prefix + "<col=" + hex + ">" + body + "</col>" + suffix;
     }
 
     public static String plainText(String text) {
@@ -153,12 +128,12 @@ public final class MessageColorRuleEngine {
     }
 
     private static List<SolidRule> rules(String source) {
-        if (source == null) source = "";
-        if (source.equals(cachedSource)) return cachedRules;
-        synchronized (MessageColorRuleEngine.class) {
-            if (source.equals(cachedSource)) return cachedRules;
+        source = BoundedPattern.source(source);
+        synchronized (RULE_CACHE) {
+            List<SolidRule> hit = RULE_CACHE.get(source);
+            if (hit != null) return hit;
             List<SolidRule> out = new ArrayList<>();
-            for (String line : source.split("\\R")) {
+            for (String line : BoundedPattern.lines(source)) {
                 line = line.trim();
                 if (line.isEmpty()) continue;
                 boolean flash = false;
@@ -178,8 +153,8 @@ public final class MessageColorRuleEngine {
                     // Ignore malformed rules instead of affecting chat stability.
                 }
             }
-            cachedRules = out;
-            cachedSource = source;
+            if (RULE_CACHE.size() >= 64) RULE_CACHE.remove(RULE_CACHE.keySet().iterator().next());
+            RULE_CACHE.put(source, out);
             return out;
         }
     }
@@ -201,14 +176,14 @@ public final class MessageColorRuleEngine {
                 String pattern = expression.substring(6).trim();
                 if (pattern.isEmpty()) return null;
                 try {
-                    return new TextRule(null, Pattern.compile(pattern, Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE));
+                    return new TextRule(null, BoundedPattern.compile(pattern, Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE));
                 } catch (PatternSyntaxException ignored) { return null; }
             }
             return new TextRule(expression.toLowerCase(Locale.ROOT), null);
         }
 
         boolean matches(String text) {
-            return regex != null ? regex.matcher(text).find() : text.toLowerCase(Locale.ROOT).contains(literalLower);
+            return regex != null ? BoundedPattern.find(regex, text) : text.toLowerCase(Locale.ROOT).contains(literalLower);
         }
     }
 }
