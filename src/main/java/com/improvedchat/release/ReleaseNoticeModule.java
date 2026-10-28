@@ -1,6 +1,5 @@
 package com.improvedchat.release;
 
-import com.improvedchat.ImprovedChatConfig;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import net.runelite.api.ChatMessageType;
@@ -8,148 +7,75 @@ import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.client.callback.ClientThread;
+import net.runelite.client.chat.ChatColorType;
+import net.runelite.client.chat.ChatMessageBuilder;
 import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.chat.QueuedMessage;
 import net.runelite.client.config.ConfigManager;
-import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.ProfileChanged;
 
-/**
- * Shows a short in-chat release notice for the current Improved Chat update.
- *
- * The notice is intentionally stateful but not user-configurable: each release id is shown at most
- * once per configuration profile, and never more than once per RuneLite client session. Future releases only need
- * to change CURRENT_NOTICE_ID and NOTICE_LINES.
- */
+/** Bundled release notes, shown once per release in each RuneLite profile. */
 @Singleton
 public final class ReleaseNoticeModule
 {
-    static final String CURRENT_NOTICE_ID = "chat-and-overlays-rename-v1";
-    static final int MAX_REMINDERS = 1;
-
-    private static final String NOTICE_ID_KEY = "releaseNoticeId";
-    private static final String NOTICE_COUNT_KEY = "releaseNoticeCount";
-    private static final String[] NOTICE_LINES = {
-        "Improved Chat is now Improved Chat and Overlays.",
-        "Your saved settings and overlay positions are unchanged. Find us under the new name in plugin settings."
+    static final String RELEASE = "2026-10-28-performance";
+    static final String SEEN_KEY = "releaseNoticeId";
+    private static final String[] RECENT = {
+        "Fixed repeated chat-resizing rebuilds that could cause game and camera stuttering.",
+        "Reduced repeated work while drawing chat overlays and rainbow text.",
+        "Custom text rules stop overly expensive expressions while keeping messages visible.",
+        "Saved overlays have safer size limits and recovery for unreadable settings.",
+        "Offline clan names can stay grey with an optional separate offline icon."
     };
 
-    /**
-     * External plugins can be toggled without restarting RuneLite. Keep this static so toggling
-     * Improved Chat off/on cannot repeat the overview in one client session.
-     */
-    private static volatile boolean shownThisClientSession;
+    @Inject private Client client;
+    @Inject private ClientThread clientThread;
+    @Inject private ConfigManager configManager;
+    @Inject private ChatMessageManager chat;
+    @Inject private net.runelite.client.eventbus.EventBus eventBus;
+    private volatile boolean running;
+    private volatile int generation;
 
-    @Inject
-    private Client client;
+    public synchronized void startUp() { if (running) return; running = true; generation++; eventBus.register(this); schedule(); }
+    public synchronized void shutDown() { if (!running) return; running = false; generation++; eventBus.unregister(this); }
 
-    @Inject
-    private ClientThread clientThread;
-
-    @Inject
-    private ChatMessageManager chatMessageManager;
-
-    @Inject
-    private ConfigManager configManager;
-
-    @Inject
-    private EventBus eventBus;
-
-    private boolean started;
-
-    public synchronized void startUp()
+    private void schedule()
     {
-        if (started)
-        {
+        final int scheduledGeneration = generation;
+        clientThread.invokeLater(() -> {
+            if (running && generation == scheduledGeneration) showIfNeeded();
+        });
+    }
+
+    private void showIfNeeded()
+    {
+        if (client.getGameState() != GameState.LOGGED_IN
+            || RELEASE.equals(configManager.getConfiguration("improvedchat", SEEN_KEY)))
             return;
-        }
-
-        started = true;
-        eventBus.register(this);
-        clientThread.invokeLater(this::maybeShowNotice);
+        send("Recent updates (newest first):");
+        for (int i = 0; i < Math.min(5, RECENT.length); i++) send((i + 1) + ". " + RECENT[i]);
+        configManager.setConfiguration("improvedchat", SEEN_KEY, RELEASE);
     }
 
-    public synchronized void shutDown()
+    private void send(String text)
     {
-        if (!started)
-        {
-            return;
-        }
-
-        started = false;
-        eventBus.unregister(this);
+        String message = new ChatMessageBuilder().append(ChatColorType.NORMAL).append("[")
+            .append(ChatColorType.HIGHLIGHT).append("Improved Chat and Overlays")
+            .append(ChatColorType.NORMAL).append("] ").append(text).build();
+        chat.queue(QueuedMessage.builder().type(ChatMessageType.CONSOLE)
+            .runeLiteFormattedMessage(message).build());
     }
 
-    @Subscribe
-    public void onGameStateChanged(GameStateChanged event)
+    @Subscribe public void onGameStateChanged(GameStateChanged event)
     {
-        if (event.getGameState() == GameState.LOGGED_IN)
-        {
-            maybeShowNotice();
-        }
+        if (running && event.getGameState() == GameState.LOGGED_IN) schedule();
     }
 
-    private void maybeShowNotice()
+    @Subscribe public void onProfileChanged(ProfileChanged event)
     {
-        if (!started || shownThisClientSession || client.getGameState() != GameState.LOGGED_IN)
-        {
-            return;
-        }
-
-        String storedId = configManager.getConfiguration(ImprovedChatConfig.GROUP, NOTICE_ID_KEY);
-        String storedCount = configManager.getConfiguration(ImprovedChatConfig.GROUP, NOTICE_COUNT_KEY);
-        int reminderIndex = nextReminderIndex(storedId, storedCount);
-        if (reminderIndex == 0)
-        {
-            return;
-        }
-
-        for (String line : NOTICE_LINES) {
-            chatMessageManager.queue(QueuedMessage.builder()
-                .type(ChatMessageType.CONSOLE)
-                .value(line)
-                .build());
-        }
-
-        configManager.setConfiguration(ImprovedChatConfig.GROUP, NOTICE_ID_KEY, CURRENT_NOTICE_ID);
-        configManager.setConfiguration(
-            ImprovedChatConfig.GROUP,
-            NOTICE_COUNT_KEY,
-            Integer.toString(reminderIndex));
-
-        shownThisClientSession = true;
-    }
-
-    static int nextReminderIndex(String storedId, String storedCount)
-    {
-        if (!CURRENT_NOTICE_ID.equals(storedId))
-        {
-            return 1;
-        }
-
-        int count = 0;
-        if (storedCount != null)
-        {
-            try
-            {
-                count = Integer.parseInt(storedCount);
-            }
-            catch (NumberFormatException ignored)
-            {
-                count = 0;
-            }
-        }
-
-        if (count < 0)
-        {
-            count = 0;
-        }
-
-        return count >= MAX_REMINDERS ? 0 : count + 1;
-    }
-
-    static String buildMessage(int reminderIndex)
-    {
-        return String.join("<br>", NOTICE_LINES);
+        // An old queued callback must not announce against a replacement profile.
+        generation++;
+        if (running) schedule();
     }
 }

@@ -66,6 +66,8 @@ public final class RuneLiteHudAnchors {
     private boolean swapped; // A snap-corner read is currently seeing a fake stock height, to be restored after
     private int swappedHudId = -1; // Restore the exact HUD temporarily presented, even if the layout flips mid-frame
     private boolean layoutChanged; // HUD reserve changed; mounted interfaces need one fresh toplevel re-fit
+    private Widget lastLayoutHud;
+    private int lastLayoutReserve = -1;
 
     // Hold that fake height in place for as long as a snap corner can be dragged against it
     private boolean dragHotkeyHeld; // RuneLite's hotkey for moving HUD items and HUD snap anchors
@@ -113,13 +115,20 @@ public final class RuneLiteHudAnchors {
 
         int base = stockReserve.computeIfAbsent(id, k -> hud.getOriginalHeight());
         int target = Math.max(0, base + delta);
+        // The native toplevel-resize script restores its stock reserve. Repair that drift,
+        // but only a new target (or recreated HUD) needs another complete interface refit.
+        // Treating every repair as a resize makes our own refit queue itself every frame.
+        if (hud != lastLayoutHud || target != lastLayoutReserve) {
+            lastLayoutHud = hud;
+            lastLayoutReserve = target;
+            layoutChanged = true;
+        }
         if (hud.getOriginalHeight() != target) {
             hud.setOriginalHeight(target);
             hud.revalidate();
             // A plain parent revalidate updates the HUD itself but can leave its child modal slots
             // at their previous height until some unrelated toplevel layout event occurs.
             Widgets.revalidateChildren(hud);
-            layoutChanged = true;
         }
 
         applied = true;
@@ -172,6 +181,8 @@ public final class RuneLiteHudAnchors {
 
     void restore() {
         applied = false;
+        lastLayoutHud = null;
+        lastLayoutReserve = -1;
         swapped = false;
         swappedHudId = -1;
         restore(InterfaceID.ToplevelPreEoc.HUD_CONTAINER_FRONT);

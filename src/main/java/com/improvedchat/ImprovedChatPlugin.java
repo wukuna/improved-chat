@@ -1097,9 +1097,7 @@ public class ImprovedChatPlugin extends Plugin {
 
     public List<OverlayMessage> getMessagesForOverlay(OverlayConfig overlayConfig) {
         Set<ChatMessageType> types = overlayConfig.getMessageTypes();
-        List<OverlayMessage> snapshot = new ArrayList<>(messages);
-        int size = snapshot.size();
-        if (size == 0 || types.isEmpty()) {
+        if (messages.isEmpty() || types.isEmpty()) {
             return new ArrayList<>(0);
         }
 
@@ -1118,7 +1116,8 @@ public class ImprovedChatPlugin extends Plugin {
 
         int maxMessages = overlayConfig.getMaxMessages();
         List<OverlayMessage> filtered = new ArrayList<>(maxMessages);
-        for (OverlayMessage msg : snapshot) {
+        // CopyOnWriteArrayList's iterator already provides a stable snapshot.
+        for (OverlayMessage msg : messages) {
 
             if (!types.contains(msg.getType())) {
                 continue;

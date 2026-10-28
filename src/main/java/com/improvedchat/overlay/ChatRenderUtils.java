@@ -49,6 +49,7 @@ import java.util.regex.Pattern;
 public final class ChatRenderUtils {
 
     private static final Pattern IMG_TAG_PATTERN = Pattern.compile("<img=(\\d+)>");
+    private static final Pattern RAINBOW_TOKEN_PATTERN = Pattern.compile("\\s+|\\S+");
     private static final int MAX_MESSAGE_LENGTH = 500;
 
     private static IndexedSprite[] cachedModIconsRef;
@@ -695,7 +696,7 @@ public final class ChatRenderUtils {
                     offset += Character.charCount(cp);
                 }
             } else {
-                Matcher tokenMatcher = Pattern.compile("\\s+|\\S+").matcher(seg.text);
+                Matcher tokenMatcher = RAINBOW_TOKEN_PATTERN.matcher(seg.text);
                 while (tokenMatcher.find()) {
                     String token = tokenMatcher.group();
                     boolean whitespace = Character.isWhitespace(token.codePointAt(0));

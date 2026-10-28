@@ -1,48 +1,82 @@
 package com.improvedchat.release;
 
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
+import net.runelite.api.Client;
+import net.runelite.api.GameState;
+import net.runelite.api.events.GameStateChanged;
+import net.runelite.client.callback.ClientThread;
+import net.runelite.client.chat.ChatMessageManager;
+import net.runelite.client.chat.QueuedMessage;
+import net.runelite.client.config.ConfigManager;
+import net.runelite.client.events.ProfileChanged;
+import org.junit.Before;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import org.mockito.ArgumentCaptor;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 public class ReleaseNoticeModuleTest
 {
-    @Test
-    public void newReleaseStartsAtReminderOne()
+    private final ReleaseNoticeModule notice=new ReleaseNoticeModule();
+    private final Client client=mock(Client.class);
+    private final ClientThread thread=mock(ClientThread.class);
+    private final ConfigManager config=mock(ConfigManager.class);
+    private final ChatMessageManager chat=mock(ChatMessageManager.class);
+    private final List<Runnable> pending=new ArrayList<>();
+    private String seen;
+
+    @Before public void setup() throws Exception
     {
-        assertEquals(1, ReleaseNoticeModule.nextReminderIndex(null, null));
-        assertEquals(1, ReleaseNoticeModule.nextReminderIndex("older-release", "2"));
+        inject("eventBus",mock(net.runelite.client.eventbus.EventBus.class));
+        inject("client",client); inject("clientThread",thread); inject("configManager",config); inject("chat",chat);
+        when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
+        when(config.getConfiguration("improvedchat",ReleaseNoticeModule.SEEN_KEY)).thenAnswer(i -> seen);
+        doAnswer(i -> { seen=i.getArgument(2); return null; }).when(config)
+            .setConfiguration(eq("improvedchat"),eq(ReleaseNoticeModule.SEEN_KEY),any(String.class));
+        doAnswer(i -> { pending.add(i.getArgument(0)); return null; }).when(thread).invokeLater(any(Runnable.class));
     }
 
-    @Test
-    public void currentReleaseAppearsOnce()
+    @Test public void printsFiveRecentChangesOnceAcrossLoginAndReenable()
     {
-        String id = ReleaseNoticeModule.CURRENT_NOTICE_ID;
-
-        assertEquals(1, ReleaseNoticeModule.nextReminderIndex(id, null));
-        assertEquals(1, ReleaseNoticeModule.nextReminderIndex(id, "0"));
-        assertEquals(0, ReleaseNoticeModule.nextReminderIndex(id, "1"));
-        assertEquals(0, ReleaseNoticeModule.nextReminderIndex(id, "2"));
-        assertEquals(0, ReleaseNoticeModule.nextReminderIndex(id, "3"));
+        notice.startUp(); flush();
+        ArgumentCaptor<QueuedMessage> messages=ArgumentCaptor.forClass(QueuedMessage.class);
+        verify(chat,times(6)).queue(messages.capture());
+        assertTrue(messages.getAllValues().get(1).getRuneLiteFormattedMessage().contains("stuttering"));
+        assertEquals(ReleaseNoticeModule.RELEASE,seen);
+        notice.onGameStateChanged(loggedIn()); flush();
+        notice.shutDown(); notice.startUp(); flush();
+        verify(chat,times(6)).queue(any(QueuedMessage.class));
     }
 
-    @Test
-    public void malformedStoredCountRecoversAtReminderOne()
+    @Test public void waitsForLoginAndDoesNotMarkUnshownNotesAsRead()
     {
-        String id = ReleaseNoticeModule.CURRENT_NOTICE_ID;
-
-        assertEquals(1, ReleaseNoticeModule.nextReminderIndex(id, "not-a-number"));
-        assertEquals(1, ReleaseNoticeModule.nextReminderIndex(id, "-5"));
+        when(client.getGameState()).thenReturn(GameState.LOGIN_SCREEN);
+        notice.startUp(); flush(); verifyNoInteractions(chat); assertNull(seen);
+        when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
+        notice.onGameStateChanged(loggedIn()); flush();
+        verify(chat,times(6)).queue(any(QueuedMessage.class));
     }
 
-    @Test
-    public void noticeExplainsRenameAndPreservedSettings()
+    @Test public void currentReceiptSuppressesNoticeButOlderReleaseDoesNot()
     {
-        String first = ReleaseNoticeModule.buildMessage(1);
-        String second = ReleaseNoticeModule.buildMessage(2);
-
-        assertTrue(first.startsWith("Improved Chat is now Improved Chat and Overlays."));
-        assertTrue(first.contains("saved settings and overlay positions are unchanged"));
-        assertEquals(first, second);
+        seen=ReleaseNoticeModule.RELEASE; notice.startUp(); flush(); verifyNoInteractions(chat);
+        seen="previous-release"; notice.onProfileChanged(new ProfileChanged()); flush();
+        verify(chat,times(6)).queue(any(QueuedMessage.class));
     }
+
+    @Test public void shutdownAndProfileChangeInvalidateOldCallbacks()
+    {
+        notice.startUp(); notice.shutDown(); flush(); verifyNoInteractions(chat); assertNull(seen);
+        notice.startUp(); notice.onProfileChanged(new ProfileChanged()); flush();
+        verify(chat,times(6)).queue(any(QueuedMessage.class));
+        seen=null; notice.onProfileChanged(new ProfileChanged()); flush();
+        verify(chat,times(12)).queue(any(QueuedMessage.class));
+    }
+
+    private GameStateChanged loggedIn() { GameStateChanged event=new GameStateChanged(); event.setGameState(GameState.LOGGED_IN); return event; }
+    private void flush() { List<Runnable> work=new ArrayList<>(pending); pending.clear(); work.forEach(Runnable::run); }
+    private void inject(String name,Object value) throws Exception
+    { Field field=ReleaseNoticeModule.class.getDeclaredField(name); field.setAccessible(true); field.set(notice,value); }
 }

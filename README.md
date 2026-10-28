@@ -6,6 +6,7 @@ Give each conversation its own space. Create chat overlays with independent chan
 
 ## Features
 
+- **Recent updates:** up to five bundled change notes appear in the chatbox once per update in each RuneLite profile.
 - **Custom chat overlays** with independent message types, placement, size, fonts, colors, borders, timestamps, fade behavior, attention effects, and input preview.
 - **Overlay RGB effects (Beta)** with a clockwise rainbow border, static RGB text, two-color or full-spectrum cycling, and a full-spectrum wave.
 - **Message replacer (Beta)** with multiple independently enabled rules that show your own text in an overlay while leaving the original chat message unchanged.
