@@ -21,6 +21,10 @@ Give each conversation its own space. Create chat overlays with independent chan
 - **Dialogue text styling** for NPC, player, option-menu, and item/action dialogue.
 - **Compatibility safeguards** for RuneLite Chat Color, Chat Filter, Emojis, Resource Packs, and Modern Chat.
 
+**Availability:** Install **Improved Chat and Overlays** from RuneLite's Plugin Hub. Experimental overlay effects and message replacement are marked **Beta** in their settings.
+
+**More plugins:** [Banking, Looting, Right-Clicks, Interface Layout and Chat](https://github.com/wukuna#runelite-plugins).
+
 ## Getting started
 
 1. Use the normal plugin settings for native chatbox size, collapse controls, cleanup, opacity and dialogue styling.
