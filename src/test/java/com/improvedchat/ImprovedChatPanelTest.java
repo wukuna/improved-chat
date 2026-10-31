@@ -42,6 +42,8 @@ public class ImprovedChatPanelTest {
             holder[0] = new ImprovedChatPanel(plugin);
             holder[0].setSize(280, 650);
             editButtons(holder[0]).get(0).doClick();
+            tabs(holder[0]).setSelectedIndex(1);
+            button(holder[0], "FRAME").doClick();
             layout(holder[0]);
         });
         SwingUtilities.invokeAndWait(() -> {
@@ -49,7 +51,6 @@ public class ImprovedChatPanelTest {
             JScrollPane scroll = findScroll(holder[0]);
             scroll.getVerticalScrollBar().setValue(50);
             assertEquals(50, scroll.getVerticalScrollBar().getValue());
-            tabs(holder[0]).setSelectedIndex(1);
             button(holder[0], "Background").doClick();
             layout(holder[0]);
         });
@@ -63,6 +64,57 @@ public class ImprovedChatPanelTest {
             assertFalse(button(holder[0], "Use RuneLite Chat Filter").isEnabled());
             assertFalse(button(holder[0], "TEST CUSTOM RULES").isEnabled());
         });
+    }
+
+    @Test public void compactEditorSavesChannelAndPaletteChoicesIndependently() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            FakePlugin plugin = new FakePlugin();
+            OverlayConfig first = plugin.configs.get(0);
+            OverlayConfig second = OverlayConfig.preset("Clan", "clan");
+            plugin.configs.add(second);
+            ImprovedChatPanel panel = new ImprovedChatPanel(plugin);
+            panel.setSize(225, 900); layout(panel);
+            JTabbedPane pages = tabs(panel);
+            assertEquals(1, pages.getTabRunCount());
+            assertTrue(pages.getBoundsAt(2).getMaxX() <= pages.getWidth());
+            assertTrue(button(panel, "Show channel names").isSelected());
+            button(panel, "Show channel names").doClick();
+            assertFalse(first.isShowChannelNames(true));
+            assertTrue(second.isShowChannelNames(true));
+            tabs(panel).setSelectedIndex(1);
+            combo(panel, "Text Font").setSelectedItem("Arial");
+            combo(panel, "Text Size").setSelectedItem(com.improvedchat.model.FontSize.SMALL);
+            combo(panel, "Color palette").setSelectedItem(ChatColorSource.OPAQUE);
+            button(panel, "Text Override").doClick();
+            assertFalse(combo(panel, "Color palette").isEnabled());
+            assertFalse(button(panel, "Retain message colors").isEnabled());
+            assertTrue(button(panel, "Retain message colors").isSelected());
+            button(panel, "Text Override").doClick();
+            assertTrue(combo(panel, "Color palette").isEnabled());
+            assertEquals(ChatColorSource.OPAQUE, combo(panel, "Color palette").getSelectedItem());
+            button(panel, "Retain message colors").doClick();
+            assertFalse(combo(panel, "Color palette").isEnabled());
+            button(panel, "Retain message colors").doClick();
+            editButtons(panel).get(1).doClick();
+            assertTrue(button(panel, "Show channel names").isSelected());
+            editButtons(panel).get(0).doClick();
+            assertEquals(1, tabs(panel).getSelectedIndex());
+            assertFalse(button(panel, "Show channel names").isSelected());
+            assertEquals("Arial", combo(panel, "Text Font").getSelectedItem());
+            assertEquals(com.improvedchat.model.FontSize.SMALL, combo(panel, "Text Size").getSelectedItem());
+            assertEquals(ChatColorSource.AUTOMATIC, second.getTextSettings().chatColorSource());
+        });
+    }
+
+    private static javax.swing.JComboBox<?> combo(Container parent, String name) {
+        for (Component child : parent.getComponents()) {
+            if (child instanceof javax.swing.JComboBox && name.equals(child.getName())) return (javax.swing.JComboBox<?>) child;
+            if (child instanceof Container) {
+                javax.swing.JComboBox<?> found = combo((Container) child, name);
+                if (found != null) return found;
+            }
+        }
+        return null;
     }
 
     @Test public void renderPanelPreviews() throws Exception {
@@ -120,8 +172,8 @@ public class ImprovedChatPanelTest {
             panel.setSize(225, 900); layout(panel);
             assertEquals(3, tabs(panel).getTabCount());
             assertEquals("Messages", tabs(panel).getTitleAt(0));
-            assertEquals("Appearance", tabs(panel).getTitleAt(1));
-            assertEquals("Notifications", tabs(panel).getTitleAt(2));
+            assertEquals("Style", tabs(panel).getTitleAt(1));
+            assertEquals("Alerts", tabs(panel).getTitleAt(2));
             javax.swing.JTextField name = namedField(panel, "Name");
             name.setText("Renamed without pressing Enter");
             assertEquals("Renamed without pressing Enter", plugin.configs.get(0).getName());

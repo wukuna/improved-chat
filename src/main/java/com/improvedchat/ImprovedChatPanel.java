@@ -121,16 +121,15 @@ public class ImprovedChatPanel extends PluginPanel {
         root.setBorder(BorderFactory.createEmptyBorder(9, 7, 7, 7));
 
 
-        JLabel title = label("<html>IMPROVED CHAT<br>AND OVERLAYS</html>", TEXT, 15, Font.BOLD);
-        title.setAlignmentX(Component.LEFT_ALIGNMENT);
-        root.add(title);
-        root.add(help("Create and edit overlays here. Chatbox and cleanup options are in plugin settings."));
-        JButton settings = button("OPEN PLUGIN SETTINGS");
-        settings.setAlignmentX(Component.LEFT_ALIGNMENT);
+        JPanel heading = panel(BG);
+        heading.setLayout(new BorderLayout(4, 0));
+        heading.add(label("Chat & Overlays", TEXT, 14, Font.BOLD), BorderLayout.CENTER);
+        JButton settings = button("Settings");
+        settings.setToolTipText("Native chatbox, cleanup and dialogue settings.");
         settings.addActionListener(e -> plugin.openSettings());
-        root.add(settings);
+        heading.add(settings, BorderLayout.EAST);
+        root.add(heading);
         if (plugin.getConfigRecoveryMessage() != null) root.add(help(plugin.getConfigRecoveryMessage()));
-        root.add(help("Custom text rules have safety limits. If a rule is too expensive, simplify it; saved text is kept."));
         return root;
     }
 
@@ -140,8 +139,16 @@ public class ImprovedChatPanel extends PluginPanel {
             editingOverlayId = plugin.getOverlayConfigs().isEmpty() ? null : plugin.getOverlayConfigs().get(0).getId();
         }
         WidthTrackingPanel body = verticalPage();
-        body.add(pageTitle("OVERLAYS"));
-        body.add(Box.createVerticalStrut(6));
+        JPanel toolbar = panel(BG);
+        toolbar.setLayout(new BorderLayout(4, 0));
+        toolbar.add(pageTitle("OVERLAYS"), BorderLayout.CENTER);
+        JButton add = button("+ New");
+        add.setToolTipText("Create an overlay from a preset or start empty.");
+        add.addActionListener(e -> showCreateOverlayMenu(add));
+        toolbar.add(add, BorderLayout.EAST);
+        toolbar.setMaximumSize(new Dimension(Integer.MAX_VALUE, 29));
+        body.add(toolbar);
+        body.add(Box.createVerticalStrut(5));
 
         if (plugin.getOverlayConfigs().isEmpty()) {
             body.add(help("No overlays yet. Create one from a preset, then choose where and when it appears."));
@@ -151,18 +158,11 @@ public class ImprovedChatPanel extends PluginPanel {
             body.add(Box.createVerticalStrut(6));
         }
 
-        JButton add = button("+ CREATE OVERLAY");
-        add.setBackground(ACCENT.darker());
-        add.setAlignmentX(Component.LEFT_ALIGNMENT);
-        add.setMaximumSize(new Dimension(Integer.MAX_VALUE, 29));
-        add.addActionListener(e -> showCreateOverlayMenu(add));
-        body.add(add);
         OverlayConfig selected = findOverlay(editingOverlayId);
         if (selected != null) {
             body.add(Box.createVerticalStrut(10));
             body.add(buildOverlayEditor(selected));
         }
-        body.add(help("Changes save automatically."));
         body.add(Box.createVerticalGlue());
         return scroll(body);
     }
@@ -172,7 +172,7 @@ public class ImprovedChatPanel extends PluginPanel {
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
         card.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(oc.getId().equals(editingOverlayId) ? ACCENT : BORDER),
-                BorderFactory.createEmptyBorder(4, 5, 4, 5)));
+                BorderFactory.createEmptyBorder(2, 3, 2, 3)));
         card.setAlignmentX(Component.LEFT_ALIGNMENT);
         JPanel top = panel(CARD);
         top.setLayout(new BorderLayout(4, 0));
@@ -191,7 +191,7 @@ public class ImprovedChatPanel extends PluginPanel {
         enabled.addActionListener(e -> { oc.setShow(enabled.isSelected()); saveOverlay(); rebuild(); });
         top.add(enabled, BorderLayout.EAST);
         card.add(top);
-        card.add(compactMeta(messageSummary(oc) + "  •  " + fadeLabel(oc)));
+        edit.setToolTipText(messageSummary(oc) + " · " + fadeLabel(oc) + ". Changes save automatically.");
         card.setMaximumSize(new Dimension(Integer.MAX_VALUE, card.getPreferredSize().height));
         return card;
     }
@@ -205,11 +205,15 @@ public class ImprovedChatPanel extends PluginPanel {
         looks.setLayout(new BoxLayout(looks, BoxLayout.Y_AXIS));
         JPanel alerts = panel(CARD);
         alerts.setLayout(new BoxLayout(alerts, BoxLayout.Y_AXIS));
-        JButton preview = button("PREVIEW (10 SECONDS)");
+        JButton preview = button("Preview");
+        preview.setToolTipText("Show sample messages for 10 seconds while logged in.");
         preview.addActionListener(e -> plugin.previewOverlay(oc));
-        body.add(pageTitle(oc.getName()));
-        body.add(preview);
-        body.add(help("Preview requires login. Samples bypass filters and visibility without entering chat history."));
+        JPanel editorHeader = panel(BG);
+        editorHeader.setLayout(new BorderLayout(4, 0));
+        editorHeader.add(pageTitle(oc.getName()), BorderLayout.CENTER);
+        editorHeader.add(preview, BorderLayout.EAST);
+        editorHeader.setMaximumSize(new Dimension(Integer.MAX_VALUE, 29));
+        body.add(editorHeader);
 
         messages.add(accordion(oc, "general", "MESSAGES & VISIBILITY", true,
                 textFieldRow("Name", oc.getName(), v -> { oc.setName(v); saveOverlay(); }),
@@ -217,9 +221,9 @@ public class ImprovedChatPanel extends PluginPanel {
                 comboRow("Show overlay", new String[] {"With chatbox hidden", "With chatbox open or hidden"},
                         oc.isAlwaysVisible() ? "With chatbox open or hidden" : "With chatbox hidden",
                         v -> { oc.setAlwaysVisible("With chatbox open or hidden".equals(v)); saveOverlay(); }),
-                help("The overlay appears when it has messages. Empty overlays stay hidden."),
                 messageTypesRow(oc),
                 messageSelectionHelp(oc),
+                checkRow("Show channel names", plugin.showChannelNames(oc), v -> { oc.setShowChannelNames(v); saveOverlay(); }),
                 spinnerRow("Max Messages", oc.getMaxMessages(), 1, 20, 1, v -> { oc.setMaxMessages(v); saveOverlay(); }),
                 spinnerRow("Fade (sec)", oc.getFadeOutDuration(), 0, 300, 1, v -> { oc.setFadeOutDuration(v); saveOverlay(); })
         ));
@@ -230,12 +234,16 @@ public class ImprovedChatPanel extends PluginPanel {
         appearance.add(comboRow("Text Font", FONT_FAMILIES, oc.getFontFamily(), v -> { oc.setFontFamily(v); saveOverlay(); }));
         appearance.add(comboRow("Text Alignment", TextAlignment.values(), oc.getTextAlignment(), v -> { oc.setTextAlignment(v); saveOverlay(); }));
         appearance.add(checkRow("Bold", oc.isBoldText(), v -> { oc.setBoldText(v); saveOverlay(); }));
-        appearance.add(spinnerRow("Width (px)", plugin.getOverlayWidth(oc), 150, Math.max(1024, plugin.getOverlayWidth(oc)), 8, v -> plugin.setOverlayWidth(oc, v)));
-        appearance.add(spinnerRow("Horizontal Padding", oc.getPaddingHorizontal(), 0, 50, 1, v -> { oc.setPaddingHorizontal(v); saveOverlay(); }));
-        appearance.add(spinnerRow("Vertical Padding", oc.getPaddingVertical(), 0, 50, 1, v -> { oc.setPaddingVertical(v); saveOverlay(); }));
-        appearance.add(checkRow("Background", oc.isBackgroundEnabled(), v -> { oc.setBackgroundEnabled(v); saveOverlay(); rebuild(); }));
+        appearance.add(checkRow("Timestamps", oc.isShowTimestamp(), v -> { oc.setShowTimestamp(v); saveOverlay(); }));
+        looks.add(accordionPanel(oc, "appearance", "TEXT", true, appearance));
+        JPanel frame = panel(CARD);
+        frame.setLayout(new BoxLayout(frame, BoxLayout.Y_AXIS));
+        frame.add(spinnerRow("Width (px)", plugin.getOverlayWidth(oc), 150, Math.max(1024, plugin.getOverlayWidth(oc)), 8, v -> plugin.setOverlayWidth(oc, v)));
+        frame.add(spinnerRow("Padding X", oc.getPaddingHorizontal(), 0, 50, 1, v -> { oc.setPaddingHorizontal(v); saveOverlay(); }));
+        frame.add(spinnerRow("Padding Y", oc.getPaddingVertical(), 0, 50, 1, v -> { oc.setPaddingVertical(v); saveOverlay(); }));
+        frame.add(checkRow("Background", oc.isBackgroundEnabled(), v -> { oc.setBackgroundEnabled(v); saveOverlay(); rebuild(); }));
         if (oc.isBackgroundEnabled()) {
-            appearance.add(colorRow("Background Color", oc.getBackgroundColour(), v -> {
+            frame.add(colorRow("Background Color", oc.getBackgroundColour(), v -> {
                 int a = oc.getBackgroundColour().getAlpha();
                 Color c = new Color(v.getRed(), v.getGreen(), v.getBlue(), a);
                 oc.setBackgroundColour(c);
@@ -243,42 +251,42 @@ public class ImprovedChatPanel extends PluginPanel {
             }));
         }
         if (oc.isBackgroundEnabled()) {
-            appearance.add(spinnerRow("Background opacity (%)", Math.max(1, Math.round(oc.getBackgroundColour().getAlpha() * 100f / 255)), 1, 100, 1, v -> {
+            frame.add(spinnerRow("Opacity (%)", Math.max(1, Math.round(oc.getBackgroundColour().getAlpha() * 100f / 255)), 1, 100, 1, v -> {
                 Color c = oc.getBackgroundColour();
                 oc.setBackgroundColour(new Color(c.getRed(), c.getGreen(), c.getBlue(), Math.round(v * 255f / 100)));
                 saveOverlay();
             }));
-            appearance.add(help("100% is solid. Turn Background off for full transparency."));
         }
-        appearance.add(checkRow("Border", oc.isBorderEnabled(), v -> { oc.setBorderEnabled(v); saveOverlay(); rebuild(); }));
+        frame.add(checkRow("Border", oc.isBorderEnabled(), v -> { oc.setBorderEnabled(v); saveOverlay(); rebuild(); }));
         if (oc.isBorderEnabled()) {
-            appearance.add(checkRow("RGB Clockwise Border (Beta)", oc.isRgbBorder(), v -> { oc.setRgbBorder(v); saveOverlay(); rebuild(); }));
-            appearance.add(colorRow("Border Color", oc.getBorderColour(), v -> { oc.setBorderColour(v); saveOverlay(); }));
-            appearance.add(comboRow("Border Thickness", BorderThickness.values(), oc.getBorderThickness(), v -> { oc.setBorderThickness(v); saveOverlay(); }));
+            frame.add(checkRow("RGB border (Beta)", oc.isRgbBorder(), v -> { oc.setRgbBorder(v); saveOverlay(); rebuild(); }));
+            frame.add(colorRow("Border Color", oc.getBorderColour(), v -> { oc.setBorderColour(v); saveOverlay(); }));
+            frame.add(comboRow("Border Thickness", BorderThickness.values(), oc.getBorderThickness(), v -> { oc.setBorderThickness(v); saveOverlay(); }));
         }
-        appearance.add(comboRow("Text effect", AnimatedTextStyle.values(), oc.getAnimatedTextStyle(), v -> { oc.setAnimatedTextStyle(v); saveOverlay(); rebuild(); }));
+        looks.add(accordionPanel(oc, "frame", "FRAME", false, frame));
+        JPanel effects = panel(CARD);
+        effects.setLayout(new BoxLayout(effects, BoxLayout.Y_AXIS));
+        effects.add(comboRow("Text effect", AnimatedTextStyle.values(), oc.getAnimatedTextStyle(), v -> { oc.setAnimatedTextStyle(v); saveOverlay(); rebuild(); }));
         if (oc.getAnimatedTextStyle() == AnimatedTextStyle.RGB_STATIC) {
-            appearance.add(comboRow("RGB spread", RainbowStyle.values(), oc.getTextSettings().rainbowStyle(), v -> { oc.getTextSettings().setSpread(v); saveOverlay(); }));
+            effects.add(comboRow("RGB spread", RainbowStyle.values(), oc.getTextSettings().rainbowStyle(), v -> { oc.getTextSettings().setSpread(v); saveOverlay(); }));
         }
         if (oc.getAnimatedTextStyle() == AnimatedTextStyle.RGB_CYCLE
                 || oc.getTextSettings().getHighlightStyle() == AnimatedTextStyle.RGB_CYCLE) {
-            appearance.add(comboRow("Cycle palette", new String[] {"Full spectrum", "Custom pair"},
+            effects.add(comboRow("Cycle palette", new String[] {"Full spectrum", "Custom pair"},
                     oc.isCustomRgbCycle() ? "Custom pair" : "Full spectrum",
                     v -> { oc.setCustomRgbCycle("Custom pair".equals(v)); saveOverlay(); rebuild(); }));
             if (oc.isCustomRgbCycle()) {
-                appearance.add(colorRow("Color 1", oc.getRgbColor1(), v -> { oc.setRgbColor1(v); saveOverlay(); }));
-                appearance.add(colorRow("Color 2", oc.getRgbColor2(), v -> { oc.setRgbColor2(v); saveOverlay(); }));
+                effects.add(colorRow("Color 1", oc.getRgbColor1(), v -> { oc.setRgbColor1(v); saveOverlay(); }));
+                effects.add(colorRow("Color 2", oc.getRgbColor2(), v -> { oc.setRgbColor2(v); saveOverlay(); }));
             }
         }
         if (oc.isRgbBorder() || oc.getAnimatedTextStyle() == AnimatedTextStyle.RGB_CYCLE
                 || oc.getAnimatedTextStyle() == AnimatedTextStyle.RGB_WAVE
                 || oc.getTextSettings().getHighlightStyle() == AnimatedTextStyle.RGB_CYCLE
                 || oc.getTextSettings().getHighlightStyle() == AnimatedTextStyle.RGB_WAVE) {
-            appearance.add(spinnerRow("RGB cycle (seconds)", oc.getRgbCycleSeconds(), 2, 30, 1, v -> { oc.setRgbCycleSeconds(v); saveOverlay(); }));
-            appearance.add(help("Beta: effects apply only to this overlay. Cycling fades between two colors or through the full spectrum. Wave uses all colors. Icons and notification flashes stay unchanged. Higher seconds = slower."));
+            effects.add(spinnerRow("Cycle (seconds)", oc.getRgbCycleSeconds(), 2, 30, 1, v -> { oc.setRgbCycleSeconds(v); saveOverlay(); }));
         }
-        appearance.add(checkRow("Timestamps", oc.isShowTimestamp(), v -> { oc.setShowTimestamp(v); saveOverlay(); }));
-        looks.add(accordionPanel(oc, "appearance", "TEXT & FRAME", true, appearance));
+        looks.add(accordionPanel(oc, "effects", "EFFECTS", false, effects));
 
         JPanel positionContent = panel(CARD);
         positionContent.setLayout(new BoxLayout(positionContent, BoxLayout.Y_AXIS));
@@ -291,7 +299,7 @@ public class ImprovedChatPanel extends PluginPanel {
             positionContent.add(spinnerRow("X Offset", oc.getOffsetX(), -500, 500, 1, v -> { oc.setOffsetX(v); saveOverlay(); }));
             positionContent.add(spinnerRow("Y Offset", oc.getOffsetY(), -500, 500, 1, v -> { oc.setOffsetY(v); saveOverlay(); }));
         }
-        if (oc.getPlacementMode() == PlacementMode.FREE) positionContent.add(help(plugin.movementHint()));
+        if (oc.getPlacementMode() == PlacementMode.FREE) positionContent.setToolTipText(plugin.movementHint());
         looks.add(accordionPanel(oc, "position", "POSITION", false, positionContent));
 
         messages.add(accordionPanel(oc, "filtering", "MESSAGE FILTERING", false, buildFiltering(oc)));
@@ -336,19 +344,21 @@ public class ImprovedChatPanel extends PluginPanel {
         if (oc.isOverlayColorOverrideEnabled()) {
             overlayColors.add(colorRow("Text Color", oc.getOverlayTextColor(), v -> { oc.setOverlayTextColor(v); saveOverlay(); }));
         }
-        overlayColors.add(controlRow("Scope", label("Overlay Only", ACCENT, 9, Font.BOLD)));
-        overlayColors.add(checkRow("Retain message colors", oc.isContextualColours(), v -> { oc.setContextualColours(v); saveOverlay(); }));
-        overlayColors.add(comboRow("RuneLite color source", ChatColorSource.values(), oc.getTextSettings().chatColorSource(), v -> { oc.getTextSettings().setSource(v); saveOverlay(); }));
+        Component retain = checkRow("Retain message colors", oc.isRetainMessageColors(), v -> { oc.setContextualColours(v); saveOverlay(); rebuild(); });
+        enableTree(retain, !oc.isOverlayColorOverrideEnabled());
+        overlayColors.add(retain);
+        Component source = comboRow("Color palette", ChatColorSource.values(), oc.getTextSettings().chatColorSource(), v -> { oc.getTextSettings().setSource(v); saveOverlay(); });
+        enableTree(source, oc.isContextualColours());
+        overlayColors.add(source);
         JPanel fallback = panel(CARD);
         fallback.setLayout(new BoxLayout(fallback, BoxLayout.Y_AXIS));
-        fallback.add(help("Preserved channel colors used when RuneLite has no configured color. These affect overlays only."));
         String[] channelNames = {"Game", "Public", "Private", "Friends chat", "Clan", "Guest clan", "GIM", "Trade", "Challenge", "Did you know", "Broadcast", "Autochat"};
         for (int i = 0; i < channelNames.length; i++) {
             final int index = i;
             fallback.add(colorRow(channelNames[i], oc.getTextSettings().getChannelColor(i), v -> { oc.getTextSettings().setChannelColor(index, v); saveOverlay(); }));
         }
-        overlayColors.add(accordionPanel(oc, "fallbackColors", "CHANNEL FALLBACK COLORS", false, fallback));
-        looks.add(accordionPanel(oc, "overlayColors", "TEXT COLORS", false, overlayColors));
+        overlayColors.add(accordionPanel(oc, "fallbackColors", "PALETTE COLORS", false, fallback));
+        looks.add(accordionPanel(oc, "overlayColors", "TEXT COLORS", true, overlayColors), 1);
 
         alerts.add(notificationControls(oc));
 
@@ -396,8 +406,8 @@ public class ImprovedChatPanel extends PluginPanel {
         });
         alignStackChildren(messages); alignStackChildren(looks); alignStackChildren(alerts);
         tabs.addTab("Messages", messages);
-        tabs.addTab("Appearance", looks);
-        tabs.addTab("Notifications", alerts);
+        tabs.addTab("Style", looks);
+        tabs.addTab("Alerts", alerts);
         tabs.setSelectedIndex(selectedTabs.getOrDefault(oc.getId(), 0));
         tabs.addChangeListener(e -> {
             selectedTabs.put(oc.getId(), tabs.getSelectedIndex());
@@ -405,15 +415,17 @@ public class ImprovedChatPanel extends PluginPanel {
             body.repaint();
         });
         body.add(tabs);
-        JButton duplicate = button("DUPLICATE OVERLAY");
+        JButton duplicate = button("Duplicate");
         duplicate.setAlignmentX(Component.LEFT_ALIGNMENT);
         duplicate.addActionListener(e -> {
             editingOverlayId = plugin.duplicateOverlay(oc).getId();
             rebuild();
         });
-        body.add(duplicate);
-        body.add(Box.createVerticalStrut(8));
-        JButton delete = button("DELETE OVERLAY");
+        JPanel actions = panel(BG);
+        actions.setLayout(new java.awt.GridLayout(1, 2, 6, 0));
+        actions.setMaximumSize(new Dimension(Integer.MAX_VALUE, 29));
+        actions.add(duplicate);
+        JButton delete = button("Delete");
         delete.setForeground(DANGER);
         delete.setAlignmentX(Component.LEFT_ALIGNMENT);
         delete.addActionListener(e -> {
@@ -423,7 +435,9 @@ public class ImprovedChatPanel extends PluginPanel {
             editingOverlayId = null;
             rebuild();
         });
-        body.add(delete);
+        actions.add(delete);
+        body.add(Box.createVerticalStrut(6));
+        body.add(actions);
         body.add(Box.createVerticalGlue());
         return body;
     }
@@ -445,7 +459,6 @@ public class ImprovedChatPanel extends PluginPanel {
             saveOverlay(); rebuild();
         }));
         if (!notification.isOverride()) {
-            controls.add(help("Uses RuneLite's Notification Settings, including sound and focus preferences."));
             return controls;
         }
         controls.add(checkRow("Desktop Notification", notification.isTray(), value -> updateNotification(oc, n -> n.withTray(value))));
@@ -455,7 +468,6 @@ public class ImprovedChatPanel extends PluginPanel {
         if (notification.getSound() == NotificationSound.CUSTOM) {
             controls.add(textFieldRow("Sound Filename", notification.getSoundName() == null ? "" : notification.getSoundName(), value ->
                     updateNotification(oc, n -> n.withSoundName(value))));
-            controls.add(help("Use a WAV filename from RuneLite's notifications folder. Blank uses RuneLite's default custom sound."));
         }
         controls.add(spinnerRow("Volume (%)", notification.getVolume(), 0, 100, 5, value -> updateNotification(oc, n -> n.withVolume(value))));
         controls.add(checkRow("Notify While Focused", notification.isSendWhenFocused(), value -> updateNotification(oc, n -> n.withSendWhenFocused(value))));
@@ -471,13 +483,10 @@ public class ImprovedChatPanel extends PluginPanel {
         com.improvedchat.overlay.OverlayTextSettings rules = oc.getTextSettings();
         JPanel content = panel(CARD);
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
-        content.add(help("Optional matching rules for this overlay only. Unmatched messages use its Appearance settings. Existing rule definitions and palette colors are preserved."));
         content.add(checkRow("Highlights override defaults", rules.isHighlightsOverrideDefaults(), v -> { rules.setHighlightsOverrideDefaults(v); saveOverlay(); }));
-        content.add(help("Off preserves the former precedence: text overrides and animated text win over matching rules."));
         content.add(checkRow("Solid color rules", rules.enableMessageColorRules(), v -> { rules.setSolidEnabled(v); saveOverlay(); rebuild(); }));
         if (rules.enableMessageColorRules()) {
             content.add(textAreaRow("Color rules", rules.messageColorRules(), v -> { rules.setSolidRules(v); saveOverlay(); }));
-            content.add(help("One rule per line: phrase::1 through phrase::9. Add ::flash for notification/flash triggers; regex: is supported."));
             content.add(checkRow("Include player chat", rules.includePlayerChatInColorRules(), v -> { rules.setIncludePlayer(v); saveOverlay(); }));
             JPanel palette = panel(CARD);
             palette.setLayout(new BoxLayout(palette, BoxLayout.Y_AXIS));
@@ -490,12 +499,10 @@ public class ImprovedChatPanel extends PluginPanel {
         content.add(checkRow("RGB highlight rules", rules.enableOverlayRainbowRules(), v -> { rules.setRainbowEnabled(v); saveOverlay(); rebuild(); }));
         if (rules.enableOverlayRainbowRules()) {
             content.add(textAreaRow("RGB patterns", rules.overlayRainbowRules(), v -> { rules.setRainbowRules(v); saveOverlay(); }));
-            content.add(help("One pattern per line; prefix regex: for a regular expression. Invalid expressions are ignored."));
             content.add(comboRow("Highlight effect", new String[] {"Use overlay default", "RGB Static", "RGB Cycling (Beta)", "RGB Wave (Beta)"},
                     rules.getHighlightStyle() == AnimatedTextStyle.NORMAL ? "Use overlay default" : rules.getHighlightStyle().toString(),
                     v -> { rules.setHighlightStyle("Use overlay default".equals(v) ? AnimatedTextStyle.NORMAL : "RGB Static".equals(v) ? AnimatedTextStyle.RGB_STATIC : "RGB Cycling (Beta)".equals(v) ? AnimatedTextStyle.RGB_CYCLE : AnimatedTextStyle.RGB_WAVE); saveOverlay(); rebuild(); }));
             content.add(comboRow("RGB spread", RainbowStyle.values(), rules.rainbowStyle(), v -> { rules.setSpread(v); saveOverlay(); }));
-            content.add(help("RGB palette and speed are in Appearance. Static RGB retains the original word/character style."));
         }
         return accordionPanel(oc, "highlights", "MESSAGE HIGHLIGHTS", false, content);
     }
@@ -504,7 +511,6 @@ public class ImprovedChatPanel extends PluginPanel {
         JPanel content = panel(CARD);
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
         content.add(checkRow("Enable message replacer (Beta)", oc.isMessageReplacerEnabled(), v -> { oc.setMessageReplacerEnabled(v); saveOverlay(); rebuild(); }));
-        content.add(help("Beta: replace complete messages in this overlay only. Matching ignores case and chat colors. Chatbox text, filters, highlights and notification triggers still use the original message. Changes save automatically."));
         if (oc.isMessageReplacerEnabled()) {
             for (com.improvedchat.overlay.OverlayTextReplacement rule : oc.getTextReplacements()) {
                 if (rule == null) continue;
@@ -526,10 +532,9 @@ public class ImprovedChatPanel extends PluginPanel {
                 oc.setTextReplacements(rules); saveOverlay(); rebuild();
             });
             content.add(add);
-            content.add(help("Fill both fields to activate a rule. The first matching enabled rule wins; replacements never trigger other replacements. Example: Your thrall returns to the grave. → You need to summon a thrall!"));
             JTextField sample = new JTextField(); styleField(sample);
             content.add(controlRow("Test message text", sample));
-            JTextArea result = (JTextArea)help("Test a message here without logging in or adding it to chat.");
+            JTextArea result = (JTextArea)help("");
             JButton test = button("TEST REPLACEMENTS");
             test.addActionListener(e -> result.setText("Overlay text: " + MessageColorRuleEngine.plainText(
                     com.improvedchat.overlay.OverlayTextReplacements.displayText(oc, sample.getText()))));
@@ -583,9 +588,8 @@ public class ImprovedChatPanel extends PluginPanel {
     }
 
     private Component messageSelectionHelp(OverlayConfig oc) {
-        return help(oc.getMessageTypes().isEmpty()
-                ? "No message types selected. Choose at least one to see live messages."
-                : "Select the channels and message types this overlay should display.");
+        return oc.getMessageTypes().isEmpty() ? help("Choose message types to see live messages.")
+                : Box.createVerticalStrut(0);
     }
 
     private Component inputPreviewOption(OverlayConfig oc) {
@@ -638,15 +642,12 @@ public class ImprovedChatPanel extends PluginPanel {
             custom.add(textFieldRow("Words or phrases", oc.getFilteredWords(), v -> {
                 oc.setFilteredWords(v); saveOverlay(); validate.run();
             }));
-            custom.add(help("Separate words or phrases with commas. Matching ignores case."));
             custom.add(textAreaRow("Regular expressions", oc.getFilteredRegex(), v -> {
                 oc.setFilteredRegex(v); saveOverlay(); validate.run();
             }));
-            custom.add(help("One expression per line, e.g. ^You have .* coins$. Invalid lines are ignored."));
             custom.add(textAreaRow("Player names", oc.getFilteredNames(), v -> {
                 oc.setFilteredNames(v); saveOverlay(); validate.run();
             }));
-            custom.add(help("One rule per line. Names match part of a name; for an exact match use regex:^Alice$."));
             custom.add(feedback);
             JTextField sampleName = new JTextField();
             JTextField sampleBody = new JTextField();
@@ -654,7 +655,7 @@ public class ImprovedChatPanel extends PluginPanel {
             custom.add(controlRow("Test player name", sampleName));
             custom.add(controlRow("Test message", sampleBody));
             JButton test = button("TEST CUSTOM RULES");
-            JTextArea result = (JTextArea) help("Tests content rules only; message types and visibility still apply.");
+            JTextArea result = (JTextArea) help("");
             test.addActionListener(e -> {
                 boolean hidden = new OverlayMessageFilter().shouldExclude(oc,
                         OverlayMessage.senderMessage(sampleName.getText(), null, sampleBody.getText(), 0, ChatMessageType.PUBLICCHAT, false));
@@ -745,6 +746,7 @@ public class ImprovedChatPanel extends PluginPanel {
     private Component textAreaRow(String name, String value, java.util.function.Consumer<String> setter) {
         JTextArea area = new JTextArea(value == null ? "" : value, 3, 12);
         area.setName(name);
+        area.setToolTipText(tooltipFor(name));
         area.setLineWrap(false);
         area.setBackground(CONTROL);
         area.setForeground(TEXT);
@@ -785,7 +787,8 @@ public class ImprovedChatPanel extends PluginPanel {
         row.setBorder(BorderFactory.createEmptyBorder(2, 0, 2, 0));
         row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
         row.setAlignmentX(Component.LEFT_ALIGNMENT);
-        row.add(box, BorderLayout.WEST);
+        box.setToolTipText(tooltipFor(name));
+        row.add(box, BorderLayout.CENTER);
         return row;
     }
 
@@ -824,7 +827,8 @@ public class ImprovedChatPanel extends PluginPanel {
         JPanel row = panel(CARD);
         row.setLayout(new BorderLayout(0, 3));
         row.setBorder(BorderFactory.createEmptyBorder(4, 0, 4, 0));
-        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 57));
+        boolean compact = control instanceof JSpinner || control instanceof JButton;
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, compact ? 32 : 51));
         row.setAlignmentX(Component.LEFT_ALIGNMENT);
         JLabel title = label(name, TEXT, 12, Font.PLAIN);
         title.setLabelFor(control);
@@ -832,8 +836,10 @@ public class ImprovedChatPanel extends PluginPanel {
         if (control instanceof javax.swing.JComponent) {
             ((javax.swing.JComponent) control).getAccessibleContext().setAccessibleName(name);
         }
-        row.add(title, BorderLayout.NORTH);
-        row.add(control, BorderLayout.CENTER);
+        if (control instanceof javax.swing.JComponent) ((javax.swing.JComponent) control).setToolTipText(tooltipFor(name));
+        title.setToolTipText(tooltipFor(name));
+        row.add(title, compact ? BorderLayout.CENTER : BorderLayout.NORTH);
+        row.add(control, compact ? BorderLayout.EAST : BorderLayout.CENTER);
         return row;
     }
 
@@ -955,11 +961,31 @@ public class ImprovedChatPanel extends PluginPanel {
         return l;
     }
 
-    private JLabel compactMeta(String text) {
-        JLabel l = label(text, MUTED, 10, Font.PLAIN);
-        l.setAlignmentX(Component.LEFT_ALIGNMENT);
-        l.setToolTipText(text);
-        return l;
+    private static String tooltipFor(String name) {
+        switch (name) {
+            case "Show channel names": return "Show the [channel] prefix for clan and friends chat in this overlay.";
+            case "Show overlay": return "Empty overlays stay hidden. Preview shows sample messages.";
+            case "Fade (sec)": return "Seconds before messages fade; 0 keeps messages visible.";
+            case "Message Types": return "Choose the channels and message types to display.";
+            case "Text Override": return "Use one text color instead of the channel palette.";
+            case "Retain message colors": return "Use channel colors and inline message highlights. Single-color override takes priority.";
+            case "Color palette": return "Automatic follows RuneLite's current chatbox mode. Explicit palettes stay fixed. Requires Retain message colors.";
+            case "Text Size": return "Scale the selected font and message icons.";
+            case "Opacity (%)": return "100% is solid. Turn Background off for full transparency.";
+            case "Cycle (seconds)": return "Higher values make the color cycle slower.";
+            case "Enable Notifications": return "Use RuneLite notification preferences unless Customize Notification is enabled.";
+            case "Sound Filename": return "WAV filename in RuneLite's notifications folder. Blank uses the default.";
+            case "Highlights override defaults": return "Matching highlight rules take priority over text overrides and effects.";
+            case "Color rules": return "One phrase::1 through phrase::9 per line; optional ::flash. Supports regex:.";
+            case "RGB patterns": return "One phrase per line, or regex:pattern. Invalid expressions are ignored.";
+            case "Enable message replacer (Beta)": return "Replace displayed overlay text only. Original chat, filters and alerts stay unchanged.";
+            case "Original message": return "First matching enabled rule wins; ignores case and chat colors.";
+            case "Show instead": return "Fill both fields to activate this replacement.";
+            case "Words or phrases": return "Separate phrases with commas. Matching ignores case.";
+            case "Regular expressions": return "One expression per line, for example ^You have .* coins$.";
+            case "Player names": return "One name fragment per line. Use regex:^Alice$ for an exact match.";
+            default: return null;
+        }
     }
 
     private WidthTrackingPanel verticalPage() {

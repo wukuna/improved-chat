@@ -32,6 +32,7 @@ public final class OverlayConfig {
     private volatile java.util.List<OverlayTextReplacement> textReplacements = java.util.Collections.emptyList();
 
     private boolean showClanRankIcons = true;
+    private Boolean showChannelNames; // Missing in saved overlays inherits the existing global preference.
     private boolean showOfflineStatus;
     private boolean showOfflineIcon = true;
     private boolean colorOfflineNames = true;
@@ -210,6 +211,9 @@ public final class OverlayConfig {
     public boolean isShowClanRankIcons() { return showClanRankIcons; }
     public void setShowClanRankIcons(boolean value) { showClanRankIcons = value; }
 
+    public boolean isShowChannelNames(boolean globalDefault) { return showChannelNames == null ? globalDefault : showChannelNames; }
+    public void setShowChannelNames(boolean value) { showChannelNames = value; }
+
     public boolean isShowOfflineStatus() { return showOfflineStatus; }
     public void setShowOfflineStatus(boolean value) { showOfflineStatus = value; }
 
@@ -275,6 +279,7 @@ public final class OverlayConfig {
     public void setHideDuplicateCount(boolean value) { hideDuplicateCount = value; }
 
     public boolean isContextualColours() { return !overlayColorOverrideEnabled && contextualColours; }
+    public boolean isRetainMessageColors() { return contextualColours; }
     public void setContextualColours(boolean value) { contextualColours = value; }
 
     public boolean isShowTimestamp() { return showTimestamp; }

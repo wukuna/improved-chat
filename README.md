@@ -29,7 +29,7 @@ Give each conversation its own space. Create chat overlays with independent chan
 
 1. Use the normal plugin settings for native chatbox size, collapse controls, cleanup, opacity and dialogue styling.
 2. Open the side panel to create an overlay. Choose its message types and when it should appear.
-3. Use **Messages**, **Appearance** and **Notifications** to configure that overlay, then try **Preview (10 seconds)** while logged in.
+3. Use **Messages**, **Style** and **Alerts** to configure that overlay, then try **Preview** while logged in.
 
 Previously **Improved Chat**. Existing settings, overlay positions and profiles are retained.
 
@@ -41,9 +41,11 @@ Create and manage multiple overlays from the **Improved Chat and Overlays** side
 
 Start with a preset, then turn on **Enabled**, choose **Message Types**, and set **Show overlay** in the **Messages** tab. **Show overlay** selects whether the overlay appears only with the chatbox hidden or with it open too. New custom overlays have no message types selected until you choose them. An overlay appears only when it has messages or an input preview; choosing “With chatbox open or hidden” does not draw an empty frame.
 
-Use **Preview (10 seconds)** while logged in to check appearance without waiting for chat. Preview bypasses content filters and normal visibility conditions; its sample messages never enter chat history. Use **Open Plugin Settings** for native chat features and global defaults.
+Use **Preview** while logged in to check appearance for 10 seconds without waiting for chat. Preview bypasses content filters and normal visibility conditions; its sample messages never enter chat history. Use **Settings** for native chat features and global defaults.
 
-The compact overlay list stays above the editor. Select an overlay, then use **Messages**, **Appearance**, or **Notifications**. Each overlay has a direct enable switch. Changes save automatically as you edit. The editor supports duplicating an overlay, confirms deletion, preserves your scroll position when dependent controls change, and provides a background opacity percentage. Deleting every overlay stays empty after restart. Creating Game Alerts uses the same game-message selection as the first-run preset; existing saved selections are preserved.
+The compact overlay list stays above the editor. Select an overlay, then use **Messages**, **Style**, or **Alerts**. Each overlay has a direct enable switch. Changes save automatically as you edit. Expand a section for its controls; hover a setting for brief help. Style puts text and colors first, followed by frame, effects, position and layout. The editor supports duplicating an overlay, confirms deletion, and preserves your scroll position when dependent controls change. Deleting every overlay stays empty after restart. Creating Game Alerts uses the same game-message selection as the first-run preset; existing saved selections are preserved.
+
+Turn off **Messages → Show channel names** to remove the bracketed clan/friends-chat channel prefix from that overlay. Sender names, rank icons and messages remain available. Existing overlays inherit the global channel-name preference until you change this checkbox. **Style → Text Size → Small** works with every offered font, including bold styles.
 
 **Clear [overlay] history** clears only that overlay's view. Native chat-tab history clearing still applies to all overlays showing those message types. **Collapse Duplicates** groups consecutive matching messages within each overlay's filtered view and keeps channels, senders, and incoming/outgoing messages separate. Captured history remains intact so clearing or filtering one overlay cannot remove another overlay's messages. History is held for the current plugin session.
 
@@ -68,9 +70,9 @@ RuneLite's normal overlay movement system is used for free-position overlays.
 
 #### RGB animation (Beta)
 
-In each overlay's **Appearance** tab, enable **Border** and **RGB Clockwise Border (Beta)** for a rainbow that travels around the perimeter. **Text effect** offers solid/channel colors, **RGB Static** by word or character, **RGB Cycling (Beta)**, and **RGB Wave (Beta)**. Cycling can fade between **Color 1** and **Color 2**, or use the full spectrum. Wave uses all colors. **RGB cycle (seconds)** sets the duration; higher values are slower. Border and text effects are independent and off by default.
+In each overlay's **Style → Frame**, enable **Border** and **RGB border (Beta)** for a rainbow that travels around the perimeter. Under **Effects**, **Text effect** offers solid/channel colors, **RGB Static** by word or character, **RGB Cycling (Beta)**, and **RGB Wave (Beta)**. Cycling can fade between **Color 1** and **Color 2**, or use the full spectrum. Wave uses all colors. **Cycle (seconds)** sets the duration; higher values are slower. Border and text effects are independent and off by default.
 
-Animation affects only the custom overlay, including its names, timestamps and input preview. Migrated overlays preserve their former precedence. **Messages → Message highlights → Highlights override defaults** lets a matching rule override the message body while unmatched messages retain the default effect. Icons retain their original colors. Wrapping, shadows, underline/strikethrough styling, message fading and attention flashes remain available. Border Color retains its transparency setting when RGB is enabled. Use **Preview (10 seconds)** while logged in to try the effects. These Beta effects still need live gameplay feedback.
+Animation affects only the custom overlay, including its names, timestamps and input preview. Migrated overlays preserve their former precedence. **Messages → Message highlights → Highlights override defaults** lets a matching rule override the message body while unmatched messages retain the default effect. Icons retain their original colors. Wrapping, shadows, underline/strikethrough styling, message fading and attention flashes remain available. Border Color retains its transparency setting when RGB is enabled. Use **Preview** while logged in to try the effects. These Beta effects still need live gameplay feedback.
 
 > Earlier overlay list and editor, before the current list-and-tabs layout. The settings instructions above describe the current release.
 <img width="276" height="1305" alt="Screenshot 2026-10-03 185108" src="https://github.com/user-attachments/assets/39583041-3ec1-4c62-849f-cceadeef0761" />
@@ -133,6 +135,8 @@ Native offline status adds an icon; native name colors remain under RuneLite Cha
 ### Message colors, rules, and alerts
 
 Improved Chat and Overlays can use RuneLite Chat Color as its baseline color source or configured fallback colors for game, public, private, friends, clan, guest clan, Group Ironman, trade, challenge, broadcast, autochat, and other supported message types.
+
+Open **Style → Text colors → Color palette**. **RuneLite (automatic)** follows the current chatbox mode; **RuneLite transparent** and **RuneLite opaque** stay on the selected palette. The palette supplies message colors, highlights, sender names and channel labels. **Overlay palette** uses the **Palette colors** values. Keep **Retain message colors** enabled and **Text Override** off to use a palette; inactive palette controls are disabled without losing their saved choices. Explicit offline-name colors, highlight rules and RGB effects retain their configured precedence. RuneLite's own settings are read, never changed.
 
 #### Message Color Rules
 
@@ -307,7 +311,7 @@ Styling can be enabled independently for:
 
 ### Per-overlay notifications
 
-Each overlay has a **Notifications** tab in its editor. Notifications start disabled. Enable them for all new matching messages or only messages matching a `::flash` color rule. Overlays switched off with **Enabled**, filtered messages, outgoing messages and RuneLite console notifications do not trigger alerts. Notifications follow the **Enabled** switch; an enabled overlay can still notify while its **Show overlay** visibility condition temporarily hides it. Repainting, loading history and delayed message formatting do not replay notifications. Each enabled matching overlay sends its own alert.
+Each overlay has an **Alerts** tab in its editor. Notifications start disabled. Enable them for all new matching messages or only messages matching a `::flash` color rule. Overlays switched off with **Enabled**, filtered messages, outgoing messages and RuneLite console notifications do not trigger alerts. Notifications follow the **Enabled** switch; an enabled overlay can still notify while its **Show overlay** visibility condition temporarily hides it. Repainting, loading history and delayed message formatting do not replay notifications. Each enabled matching overlay sends its own alert.
 
 Use RuneLite defaults, or enable **Customize Notification** for independent desktop notifications, Native/Custom/Off sound, volume, focus behavior, window flashing and color, timeout, and chatbox notification. Custom sounds use a WAV filename in RuneLite's notifications folder; blank uses its default custom sound. Playback and operating-system notifications are handled by RuneLite's shared Notifier, as with Idle Notifier. These controls are independent of the existing overlay Attention flashing.
 

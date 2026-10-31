@@ -19,14 +19,14 @@ import net.runelite.client.events.ProfileChanged;
 @Singleton
 public final class ReleaseNoticeModule
 {
-    static final String RELEASE = "2026-10-28-performance";
+    static final String RELEASE = "2026-10-31-overlay-editor";
     static final String SEEN_KEY = "releaseNoticeId";
     private static final String[] RECENT = {
-        "Fixed repeated chat-resizing rebuilds that could cause game and camera stuttering.",
-        "Reduced repeated work while drawing chat overlays and rainbow text.",
-        "Custom text rules stop overly expensive expressions while keeping messages visible.",
-        "Saved overlays have safer size limits and recovery for unreadable settings.",
-        "Offline clan names can stay grey with an optional separate offline icon."
+        "The overlay editor is more compact, with brief help in tooltips.",
+        "Channel names can be hidden separately in each overlay.",
+        "Overlays follow the selected RuneLite chat colors, including names and channel labels.",
+        "Small text now works with every offered font.",
+        "Fixed repeated chat-resizing rebuilds and reduced overlay drawing work."
     };
 
     @Inject private Client client;

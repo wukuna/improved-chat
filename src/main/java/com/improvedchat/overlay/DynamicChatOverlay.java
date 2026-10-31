@@ -157,6 +157,8 @@ public class DynamicChatOverlay extends Overlay {
         boolean drawShadow = globalConfig.textShadow();
         boolean wrapText = globalConfig.wrapText();
         boolean retainContextualColours = overlayConfig.isContextualColours();
+        com.improvedchat.ChatColorSource colorSource = OverlayChatColors.resolveSource(
+                overlayConfig.getTextSettings().chatColorSource(), client);
         boolean hideDuplicateCount = overlayConfig.isHideDuplicateCount();
         PlacementMode placementMode = overlayConfig.getPlacementMode();
         boolean followPlayer = placementMode != PlacementMode.FREE;
@@ -227,7 +229,7 @@ public class DynamicChatOverlay extends Overlay {
                         globalConfig.showChannelName(),
                         chatColorConfig,
                         senderDecorations,
-                        senderColorOverride, overlayConfig);
+                        senderColorOverride, overlayConfig, colorSource);
 
                 for (RenderLine line : msgLines) {
                     if (line.alpha > 0) {

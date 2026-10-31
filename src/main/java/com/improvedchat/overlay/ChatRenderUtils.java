@@ -235,6 +235,20 @@ public final class ChatRenderUtils {
             FontSize fontSize, IndexedSprite[] modIcons, boolean showTimestamp, String timestampFormat,
             boolean showChannelName, ChatColorConfig chatColorConfig,
             List<TextSegment> senderDecorations, Color senderColorOverride, OverlayConfig overlay) {
+        return buildMessageLines(msg, metrics, widgetWidth, currentTime, fadeOutMs, wrapText,
+                textColor, retainContextualColours, hideDuplicateCount, fontSize, modIcons,
+                showTimestamp, timestampFormat, showChannelName, chatColorConfig, senderDecorations,
+                senderColorOverride, overlay, overlay == null ? OverlayColorRuleEngine.chatColorSource()
+                        : overlay.getTextSettings().chatColorSource());
+    }
+
+    public static List<RenderLine> buildMessageLines(OverlayMessage msg, FontMetrics metrics,
+            int widgetWidth, long currentTime, long fadeOutMs, boolean wrapText, Color textColor,
+            boolean retainContextualColours, boolean hideDuplicateCount,
+            FontSize fontSize, IndexedSprite[] modIcons, boolean showTimestamp, String timestampFormat,
+            boolean showChannelName, ChatColorConfig chatColorConfig,
+            List<TextSegment> senderDecorations, Color senderColorOverride, OverlayConfig overlay,
+            ChatColorSource colorSource) {
         com.improvedchat.ImprovedChatConfig rules = overlay == null ? null : overlay.getTextSettings();
         boolean rulesActive = retainContextualColours || (overlay != null && overlay.getTextSettings().isHighlightsOverrideDefaults());
 
@@ -248,7 +262,7 @@ public final class ChatRenderUtils {
 
         Color bodyBaseColor = textColor;
         if (retainContextualColours) {
-            Color configured = getConfiguredChatColor(type, false, chatColorConfig, overlay == null ? OverlayColorRuleEngine.chatColorSource() : rules.chatColorSource());
+            Color configured = getConfiguredChatColor(type, false, chatColorConfig, colorSource);
             if (configured != null) {
                 bodyBaseColor = configured;
             }
@@ -271,16 +285,17 @@ public final class ChatRenderUtils {
         if (hasSenderPrefix && !isLoginNotification && msg.getSender() != null) {
             Color nameColor = senderColorOverride != null
                     ? senderColorOverride
-                    : (retainContextualColours ? Color.WHITE : textColor);
+                    : (retainContextualColours ? OverlayChatColors.sender(type, chatColorConfig, colorSource) : textColor);
             if (isPm) {
                 String prefix = msg.isOutgoing() ? "To " : "From ";
                 headerSegments.add(new TextSegment(prefix, -1, metrics.stringWidth(prefix), bodyBaseColor));
                 headerWidth += metrics.stringWidth(prefix);
             }
 
-            if (showChannelName && msg.getChannelName() != null && !msg.getChannelName().isEmpty()) {
+            boolean showChannel = overlay == null ? showChannelName : overlay.isShowChannelNames(showChannelName);
+            if (showChannel && msg.getChannelName() != null && !msg.getChannelName().isEmpty()) {
                 Color bracketColor = retainContextualColours ? Color.WHITE : textColor;
-                Color channelTextColor = retainContextualColours ? new Color(144, 144, 255) : textColor;
+                Color channelTextColor = retainContextualColours ? OverlayChatColors.channel(type, chatColorConfig, colorSource) : textColor;
 
                 String open = "[";
                 headerSegments.add(new TextSegment(open, -1, metrics.stringWidth(open), bracketColor));
@@ -341,7 +356,7 @@ public final class ChatRenderUtils {
         }
         List<TextSegment> messageSegments = parseTextWithColoursAndIcons(messageText, metrics, modIcons,
                 retainContextualColours, bodyBaseColor, fontSize, chatColorConfig, type,
-                overlay == null ? OverlayColorRuleEngine.chatColorSource() : rules.chatColorSource());
+                colorSource);
 
         if (forceColor != null) messageSegments = applySolidColor(messageSegments, forceColor);
         boolean staticRainbow = matchedStyle == com.improvedchat.model.AnimatedTextStyle.RGB_STATIC;

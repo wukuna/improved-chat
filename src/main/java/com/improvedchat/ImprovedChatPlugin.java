@@ -579,6 +579,10 @@ public class ImprovedChatPlugin extends Plugin {
         }
     }
 
+    public boolean showChannelNames(OverlayConfig overlay) {
+        return overlay.isShowChannelNames(config == null || config.showChannelName());
+    }
+
     public String movementHint() {
         return "Hold " + configManager.getConfig(net.runelite.client.config.RuneLiteConfig.class).dragHotkey()
                 + " and drag the overlay to move it.";
