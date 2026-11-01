@@ -19,14 +19,14 @@ import net.runelite.client.events.ProfileChanged;
 @Singleton
 public final class ReleaseNoticeModule
 {
-    static final String RELEASE = "2026-10-31-overlay-editor";
+    static final String RELEASE = "2026-11-01-rgb-controls";
     static final String SEEN_KEY = "releaseNoticeId";
     private static final String[] RECENT = {
-        "The overlay editor is more compact, with brief help in tooltips.",
+        "RGB controls are together under Style, with one-click RGB for all messages and clearer tooltips.",
         "Channel names can be hidden separately in each overlay.",
         "Overlays follow the selected RuneLite chat colors, including names and channel labels.",
         "Small text now works with every offered font.",
-        "Fixed repeated chat-resizing rebuilds and reduced overlay drawing work."
+        "Optional rounded corners support solid, RGB and flashing borders."
     };
 
     @Inject private Client client;

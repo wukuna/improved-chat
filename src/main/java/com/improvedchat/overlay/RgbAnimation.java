@@ -36,7 +36,30 @@ public final class RgbAnimation {
     }
 
     static void drawBorder(Graphics2D g, int inset, int width, int height, int alpha, long now, int seconds) {
+        drawBorder(g,inset,width,height,alpha,now,seconds,false);
+    }
+
+    static void drawBorder(Graphics2D g, int inset, int width, int height, int alpha, long now, int seconds, boolean rounded) {
         if (width <= 0 || height <= 0) return;
+        if (rounded) {
+            java.awt.geom.PathIterator path = new java.awt.geom.RoundRectangle2D.Double(inset,inset,width,height,16,16).getPathIterator(null,.3);
+            java.util.List<Point2D.Double> points = new java.util.ArrayList<>();
+            double[] coords = new double[6];
+            while (!path.isDone()) {
+                int kind=path.currentSegment(coords);
+                if(kind==java.awt.geom.PathIterator.SEG_MOVETO || kind==java.awt.geom.PathIterator.SEG_LINETO)points.add(new Point2D.Double(coords[0],coords[1]));
+                else if(kind==java.awt.geom.PathIterator.SEG_CLOSE && !points.isEmpty())points.add(points.get(0));
+                path.next();
+            }
+            double length=0;for(int i=1;i<points.size();i++)length+=points.get(i-1).distance(points.get(i));
+            double distance=0,phase=phase(now,seconds);
+            for(int i=1;i<points.size();i++) {
+                Point2D.Double a=points.get(i-1),b=points.get(i);double segment=a.distance(b);if(segment==0)continue;
+                g.setPaint(gradient(a.x,a.y,(b.x-a.x)/segment,(b.y-a.y)/segment,length,distance,phase,alpha));
+                g.draw(new java.awt.geom.Line2D.Double(a,b));distance+=segment;
+            }
+            return;
+        }
         double perimeter = 2.0 * (width + height);
         double phase = phase(now, seconds);
         int right = inset + width, bottom = inset + height;

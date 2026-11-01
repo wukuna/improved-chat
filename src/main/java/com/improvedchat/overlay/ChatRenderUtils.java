@@ -347,6 +347,13 @@ public final class ChatRenderUtils {
         if (matchedStyle == com.improvedchat.model.AnimatedTextStyle.NORMAL) matchedStyle = null;
         Color forceColor = rulesActive ? (overlay == null ? MessageColorRuleEngine.colorFor(messageText, type)
                 : MessageColorRuleEngine.colorFor(messageText, type, rules)) : null;
+        // An all-message effect wins consistently, including static RGB, when
+        // the user disables highlight overrides. Keep the saved rules intact.
+        if (overlay != null && !overlay.getTextSettings().isHighlightsOverrideDefaults()
+                && overlay.getAnimatedTextStyle() != com.improvedchat.model.AnimatedTextStyle.NORMAL) {
+            matchedStyle = null;
+            forceColor = null;
+        }
         // Highlight/flash/filter rules still use the real message. Replace only the painted body.
         String display = OverlayTextReplacements.displayText(overlay, msg.getMessage());
         if (!java.util.Objects.equals(display, msg.getMessage())) {

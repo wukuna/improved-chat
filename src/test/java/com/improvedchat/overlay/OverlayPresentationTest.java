@@ -19,6 +19,21 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 public class OverlayPresentationTest {
+    @Test public void allMessageStaticRgbOverridesSavedSolidRuleOnlyWhenRequested() {
+        OverlayConfig overlay = new OverlayConfig();
+        overlay.setAnimatedTextStyle(com.improvedchat.model.AnimatedTextStyle.RGB_STATIC);
+        overlay.getTextSettings().setSolidEnabled(true);
+        overlay.getTextSettings().setIncludePlayer(true);
+        overlay.getTextSettings().setSolidRules("Hello::1");
+        overlay.getTextSettings().setPalette(0, Color.MAGENTA);
+        overlay.getTextSettings().setHighlightsOverrideDefaults(true);
+        assertEquals(Color.MAGENTA, colorOf(lines(overlay, null, false), "Hello"));
+        overlay.getTextSettings().setHighlightsOverrideDefaults(false);
+        List<RenderLine> rainbow = lines(overlay, null, false);
+        assertNotEquals(Color.MAGENTA, colorOf(rainbow, "Hello"));
+        assertFalse(rainbow.stream().flatMap(l -> l.segments.stream()).anyMatch(s -> "Hello".equals(s.text) && Color.MAGENTA.equals(s.color)));
+        assertEquals("Hello::1", overlay.getTextSettings().messageColorRules());
+    }
     @Test public void smallFontsAreSmallerForEveryOfferedFamily() {
         Graphics2D g = new BufferedImage(300, 100, BufferedImage.TYPE_INT_ARGB).createGraphics();
         try {

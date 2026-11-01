@@ -263,7 +263,8 @@ public class DynamicChatOverlay extends Overlay {
             paintHeight = getBounds().height;
         }
         Shape originalClip = graphics.getClip();
-        graphics.setClip(0, 0, widgetWidth, paintHeight);
+        graphics.clipRect(0, 0, widgetWidth, paintHeight);
+        if (overlayConfig.isRoundedCorners()) graphics.clip(new java.awt.geom.RoundRectangle2D.Double(0, 0, widgetWidth, paintHeight, 16, 16));
 
         Color background = overlayConfig.getRenderBackgroundColour();
         if (background.getAlpha() > 0) {

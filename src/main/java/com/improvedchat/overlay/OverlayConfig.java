@@ -69,6 +69,7 @@ public final class OverlayConfig {
     private Color borderColour = Color.WHITE;
     private BorderThickness borderThickness = BorderThickness.NORMAL;
     private boolean rgbBorder;
+    private boolean roundedCorners;
     private AnimatedTextStyle animatedTextStyle = AnimatedTextStyle.NORMAL;
     private int rgbCycleSeconds = 8;
     private boolean customRgbCycle; // Missing in old JSON means the existing full spectrum cycle.
@@ -349,6 +350,8 @@ public final class OverlayConfig {
     public Color getRgbColor2() { return rgbColor2 == null ? new Color(106,203,255) : rgbColor2; }
     public void setRgbColor1(Color value) { rgbColor1 = value; }
     public void setRgbColor2(Color value) { rgbColor2 = value; }
+    public boolean isRoundedCorners() { return roundedCorners; }
+    public void setRoundedCorners(boolean value) { roundedCorners = value; }
     public boolean isRgbBorder() { return rgbBorder; }
     public void setRgbBorder(boolean value) { rgbBorder = value; }
     public AnimatedTextStyle getAnimatedTextStyle() {

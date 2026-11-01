@@ -106,6 +106,23 @@ public class ImprovedChatPanelTest {
         });
     }
 
+    @Test public void allMessageRgbShortcutKeepsRulesAndControlsTogether() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            FakePlugin plugin=new FakePlugin();OverlayConfig cfg=plugin.configs.get(0);
+            cfg.getTextSettings().setRainbowEnabled(true);cfg.getTextSettings().setRainbowRules("rare drop");
+            ImprovedChatPanel panel=new ImprovedChatPanel(plugin);panel.setSize(225,900);tabs(panel).setSelectedIndex(1);
+            assertNotNull(button(panel,"RGB all messages").getToolTipText());
+            button(panel,"RGB all messages").doClick();
+            assertEquals(com.improvedchat.model.AnimatedTextStyle.RGB_CYCLE,cfg.getAnimatedTextStyle());
+            assertFalse(cfg.getTextSettings().isHighlightsOverrideDefaults());assertEquals("rare drop",cfg.getTextSettings().overlayRainbowRules());
+            button(panel,"RGB border (Beta)").doClick();assertTrue(cfg.isBorderEnabled());assertTrue(cfg.isRgbBorder());
+            button(panel,"FRAME").doClick();button(panel,"Rounded corners").doClick();assertTrue(cfg.isRoundedCorners());
+            assertEquals(1,tabs(panel).getSelectedIndex());assertNotNull(combo(panel,"All-message effect").getToolTipText());
+            button(panel,"TEXT").doClick();button(panel,"TEXT COLORS").doClick();button(panel,"FRAME").doClick();layout(panel);
+            try {capture(panel,"rgb-controls-narrow");} catch(Exception e) {throw new AssertionError(e);}
+        });
+    }
+
     private static javax.swing.JComboBox<?> combo(Container parent, String name) {
         for (Component child : parent.getComponents()) {
             if (child instanceof javax.swing.JComboBox && name.equals(child.getName())) return (javax.swing.JComboBox<?>) child;
@@ -194,7 +211,7 @@ public class ImprovedChatPanelTest {
             ImprovedChatPanel panel = new ImprovedChatPanel(plugin);
             panel.setSize(225, 650); layout(panel);
             int before = tabs(panel).getPreferredSize().height;
-            button(panel, "MESSAGE HIGHLIGHTS").doClick();
+            button(panel, "SOLID COLOR HIGHLIGHTS").doClick();
             layout(panel);
             assertTrue(tabs(panel).getPreferredSize().height > before);
             assertEquals(0, tabs(panel).getSelectedIndex());

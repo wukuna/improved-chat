@@ -13,6 +13,17 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class RgbAnimationTest {
+    @Test public void roundedBordersAnimateWithoutSquareCornersAndPersist() {
+        for(BorderThickness thickness:BorderThickness.values())for(boolean rgb:new boolean[]{false,true}) {
+            OverlayConfig cfg=new OverlayConfig();cfg.setBorderEnabled(true);cfg.setRoundedCorners(true);cfg.setRgbBorder(rgb);cfg.setBorderThickness(thickness);
+            BufferedImage a=border(cfg,180,80,0),b=border(cfg,180,80,2000);
+            assertEquals(0,a.getRGB(0,0));assertEquals(0,a.getRGB(179,79));assertEquals(0,a.getRGB(90,40));
+            int inset=thickness.getPixels()/2;assertTrue((a.getRGB(90,inset)>>>24)>0);
+            if(rgb)assertNotEquals(a.getRGB(90,inset),b.getRGB(90,inset));
+            cfg=new Gson().fromJson(new Gson().toJson(cfg),OverlayConfig.class);assertTrue(cfg.isRoundedCorners());
+        }
+        assertFalse(new Gson().fromJson("{}",OverlayConfig.class).isRoundedCorners());
+    }
     @Test public void fullOverlayCombinationsKeepLayoutWhenAnimationChanges() {
         net.runelite.api.Client client = (net.runelite.api.Client) java.lang.reflect.Proxy.newProxyInstance(
                 net.runelite.api.Client.class.getClassLoader(), new Class[]{net.runelite.api.Client.class},

@@ -8,7 +8,8 @@ Give each conversation its own space. Create chat overlays with independent chan
 
 - **Recent updates:** up to five bundled change notes appear in the chatbox once per update in each RuneLite profile.
 - **Custom chat overlays** with independent message types, placement, size, fonts, colors, borders, timestamps, fade behavior, attention effects, and input preview.
-- **Overlay RGB effects (Beta)** with a clockwise rainbow border, static RGB text, two-color or full-spectrum cycling, and a full-spectrum wave.
+- **Overlay RGB effects (Beta)** together under **Style > RGB & Effects**: one-click **RGB for all messages**, matching-message effects, border animation and shared timing. Static RGB, two-color or full-spectrum cycling, and a wave are available. Rules are preserved when using the all-message shortcut; enable **Allow rule overrides** to let matches override it.
+- **Rounded corners** under **Style > Frame** round both the background and border, including animated RGB and flashing borders. Hover controls for brief explanations.
 - **Message replacer (Beta)** with multiple independently enabled rules that show your own text in an overlay while leaving the original chat message unchanged.
 - **Per-overlay chat filtering** with Off, Hide Matches, Show Only Matches, word, regex, and sender/name rules.
 - **Clan presentation in overlays** with rank icons plus independently configurable offline status, icon, name color, and offline color.
@@ -72,7 +73,7 @@ RuneLite's normal overlay movement system is used for free-position overlays.
 
 In each overlay's **Style → Frame**, enable **Border** and **RGB border (Beta)** for a rainbow that travels around the perimeter. Under **Effects**, **Text effect** offers solid/channel colors, **RGB Static** by word or character, **RGB Cycling (Beta)**, and **RGB Wave (Beta)**. Cycling can fade between **Color 1** and **Color 2**, or use the full spectrum. Wave uses all colors. **Cycle (seconds)** sets the duration; higher values are slower. Border and text effects are independent and off by default.
 
-Animation affects only the custom overlay, including its names, timestamps and input preview. Migrated overlays preserve their former precedence. **Messages → Message highlights → Highlights override defaults** lets a matching rule override the message body while unmatched messages retain the default effect. Icons retain their original colors. Wrapping, shadows, underline/strikethrough styling, message fading and attention flashes remain available. Border Color retains its transparency setting when RGB is enabled. Use **Preview** while logged in to try the effects. These Beta effects still need live gameplay feedback.
+Animation affects only the custom overlay, including its names, timestamps and input preview. Migrated overlays preserve their former precedence. **Messages → Message highlights → Allow rule overrides** lets a matching rule override the message body while unmatched messages retain the default effect. Icons retain their original colors. Wrapping, shadows, underline/strikethrough styling, message fading and attention flashes remain available. Border Color retains its transparency setting when RGB is enabled. Use **Preview** while logged in to try the effects. These Beta effects still need live gameplay feedback.
 
 > Earlier overlay list and editor, before the current list-and-tabs layout. The settings instructions above describe the current release.
 <img width="276" height="1305" alt="Screenshot 2026-10-03 185108" src="https://github.com/user-attachments/assets/39583041-3ec1-4c62-849f-cceadeef0761" />

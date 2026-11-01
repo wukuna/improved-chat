@@ -259,15 +259,21 @@ public class ImprovedChatPanel extends PluginPanel {
         }
         frame.add(checkRow("Border", oc.isBorderEnabled(), v -> { oc.setBorderEnabled(v); saveOverlay(); rebuild(); }));
         if (oc.isBorderEnabled()) {
-            frame.add(checkRow("RGB border (Beta)", oc.isRgbBorder(), v -> { oc.setRgbBorder(v); saveOverlay(); rebuild(); }));
             frame.add(colorRow("Border Color", oc.getBorderColour(), v -> { oc.setBorderColour(v); saveOverlay(); }));
             frame.add(comboRow("Border Thickness", BorderThickness.values(), oc.getBorderThickness(), v -> { oc.setBorderThickness(v); saveOverlay(); }));
         }
+        frame.add(checkRow("Rounded corners", oc.isRoundedCorners(), v -> { oc.setRoundedCorners(v); saveOverlay(); }));
         looks.add(accordionPanel(oc, "frame", "FRAME", false, frame));
         JPanel effects = panel(CARD);
         effects.setLayout(new BoxLayout(effects, BoxLayout.Y_AXIS));
-        effects.add(comboRow("Text effect", AnimatedTextStyle.values(), oc.getAnimatedTextStyle(), v -> { oc.setAnimatedTextStyle(v); saveOverlay(); rebuild(); }));
-        if (oc.getAnimatedTextStyle() == AnimatedTextStyle.RGB_STATIC) {
+        JButton allRgb = button("RGB all messages");
+        allRgb.addActionListener(e -> { oc.setAnimatedTextStyle(AnimatedTextStyle.RGB_CYCLE); oc.getTextSettings().setHighlightsOverrideDefaults(false); saveOverlay(); rebuild(); });
+        effects.add(allRgb);
+        effects.add(comboRow("All-message effect", AnimatedTextStyle.values(), oc.getAnimatedTextStyle(), v -> { oc.setAnimatedTextStyle(v); saveOverlay(); rebuild(); }));
+        effects.add(checkRow("Allow rule overrides", oc.getTextSettings().isHighlightsOverrideDefaults(), v -> { oc.getTextSettings().setHighlightsOverrideDefaults(v); saveOverlay(); }));
+        effects.add(checkRow("RGB border (Beta)", oc.isRgbBorder(), v -> { oc.setRgbBorder(v); if(v)oc.setBorderEnabled(true); saveOverlay(); rebuild(); }));
+        addRgbHighlights(effects, oc);
+        if (oc.getAnimatedTextStyle() == AnimatedTextStyle.RGB_STATIC || oc.getTextSettings().enableOverlayRainbowRules()) {
             effects.add(comboRow("RGB spread", RainbowStyle.values(), oc.getTextSettings().rainbowStyle(), v -> { oc.getTextSettings().setSpread(v); saveOverlay(); }));
         }
         if (oc.getAnimatedTextStyle() == AnimatedTextStyle.RGB_CYCLE
@@ -286,7 +292,7 @@ public class ImprovedChatPanel extends PluginPanel {
                 || oc.getTextSettings().getHighlightStyle() == AnimatedTextStyle.RGB_WAVE) {
             effects.add(spinnerRow("Cycle (seconds)", oc.getRgbCycleSeconds(), 2, 30, 1, v -> { oc.setRgbCycleSeconds(v); saveOverlay(); }));
         }
-        looks.add(accordionPanel(oc, "effects", "EFFECTS", false, effects));
+        looks.add(accordionPanel(oc, "effects", "RGB & EFFECTS", true, effects), 1);
 
         JPanel positionContent = panel(CARD);
         positionContent.setLayout(new BoxLayout(positionContent, BoxLayout.Y_AXIS));
@@ -483,7 +489,6 @@ public class ImprovedChatPanel extends PluginPanel {
         com.improvedchat.overlay.OverlayTextSettings rules = oc.getTextSettings();
         JPanel content = panel(CARD);
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
-        content.add(checkRow("Highlights override defaults", rules.isHighlightsOverrideDefaults(), v -> { rules.setHighlightsOverrideDefaults(v); saveOverlay(); }));
         content.add(checkRow("Solid color rules", rules.enableMessageColorRules(), v -> { rules.setSolidEnabled(v); saveOverlay(); rebuild(); }));
         if (rules.enableMessageColorRules()) {
             content.add(textAreaRow("Color rules", rules.messageColorRules(), v -> { rules.setSolidRules(v); saveOverlay(); }));
@@ -496,15 +501,18 @@ public class ImprovedChatPanel extends PluginPanel {
             }
             content.add(accordionPanel(oc, "highlightPalette", "RULE PALETTE", false, palette));
         }
+        return accordionPanel(oc, "highlights", "SOLID COLOR HIGHLIGHTS", false, content);
+    }
+
+    private void addRgbHighlights(JPanel content, OverlayConfig oc) {
+        com.improvedchat.overlay.OverlayTextSettings rules = oc.getTextSettings();
         content.add(checkRow("RGB highlight rules", rules.enableOverlayRainbowRules(), v -> { rules.setRainbowEnabled(v); saveOverlay(); rebuild(); }));
         if (rules.enableOverlayRainbowRules()) {
             content.add(textAreaRow("RGB patterns", rules.overlayRainbowRules(), v -> { rules.setRainbowRules(v); saveOverlay(); }));
             content.add(comboRow("Highlight effect", new String[] {"Use overlay default", "RGB Static", "RGB Cycling (Beta)", "RGB Wave (Beta)"},
                     rules.getHighlightStyle() == AnimatedTextStyle.NORMAL ? "Use overlay default" : rules.getHighlightStyle().toString(),
                     v -> { rules.setHighlightStyle("Use overlay default".equals(v) ? AnimatedTextStyle.NORMAL : "RGB Static".equals(v) ? AnimatedTextStyle.RGB_STATIC : "RGB Cycling (Beta)".equals(v) ? AnimatedTextStyle.RGB_CYCLE : AnimatedTextStyle.RGB_WAVE); saveOverlay(); rebuild(); }));
-            content.add(comboRow("RGB spread", RainbowStyle.values(), rules.rainbowStyle(), v -> { rules.setSpread(v); saveOverlay(); }));
         }
-        return accordionPanel(oc, "highlights", "MESSAGE HIGHLIGHTS", false, content);
     }
 
     private Component buildReplacements(OverlayConfig oc) {
@@ -688,6 +696,7 @@ public class ImprovedChatPanel extends PluginPanel {
         root.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
 
         JButton header = button((open ? "▼  " : "▶  ") + title);
+        header.setToolTipText(tooltipFor(title));
         header.setHorizontalAlignment(JButton.LEFT);
         header.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 10));
         header.setForeground(ACCENT);
@@ -837,6 +846,8 @@ public class ImprovedChatPanel extends PluginPanel {
             ((javax.swing.JComponent) control).getAccessibleContext().setAccessibleName(name);
         }
         if (control instanceof javax.swing.JComponent) ((javax.swing.JComponent) control).setToolTipText(tooltipFor(name));
+        if (control instanceof JSpinner && ((JSpinner) control).getEditor() instanceof JSpinner.DefaultEditor)
+            ((JSpinner.DefaultEditor) ((JSpinner) control).getEditor()).getTextField().setToolTipText(tooltipFor(name));
         title.setToolTipText(tooltipFor(name));
         row.add(title, compact ? BorderLayout.CENTER : BorderLayout.NORTH);
         row.add(control, compact ? BorderLayout.EAST : BorderLayout.CENTER);
@@ -882,6 +893,7 @@ public class ImprovedChatPanel extends PluginPanel {
             String prefix = allSelected ? "✓ " : (anySelected ? "• " : "");
             JMenu sub = new JMenu(prefix + cat.toString());
             JCheckBoxMenuItem wholeCategory = new JCheckBoxMenuItem("Entire " + cat.toString(), allSelected);
+            wholeCategory.setToolTipText("Select or clear every message type in this category.");
             wholeCategory.addActionListener(e -> {
                 Set<ChatMessageType> current = oc.getMessageTypes();
                 EnumSet<ChatMessageType> copy = current.isEmpty()
@@ -897,6 +909,7 @@ public class ImprovedChatPanel extends PluginPanel {
 
             for (ChatMessageType type : cat.getTypes()) {
                 JCheckBoxMenuItem item = new JCheckBoxMenuItem(pretty(type.name()), oc.getMessageTypes().contains(type));
+                item.setToolTipText("Include " + pretty(type.name()) + " messages in this overlay.");
                 item.addActionListener(e -> {
                     Set<ChatMessageType> current = oc.getMessageTypes();
                     EnumSet<ChatMessageType> copy = current.isEmpty()
@@ -947,6 +960,7 @@ public class ImprovedChatPanel extends PluginPanel {
         b.setOpaque(true);
         b.setFocusPainted(true);
         b.setMargin(new Insets(2, 5, 2, 5));
+        b.setToolTipText(tooltipFor(text));
         b.setBorder(BorderFactory.createLineBorder(BORDER));
         b.setPreferredSize(new Dimension(54, 23));
         b.setMaximumSize(new Dimension(54, 23));
@@ -963,6 +977,91 @@ public class ImprovedChatPanel extends PluginPanel {
 
     private static String tooltipFor(String name) {
         switch (name) {
+            case "Name": return "Name this overlay in the editor and overlay menu.";
+            case "Enabled": return "Show this overlay when it has matching messages.";
+            case "Max Messages": return "Maximum message rows retained by this overlay.";
+            case "Text Font": return "Font used for every message in this overlay.";
+            case "Text Alignment": return "Align message lines inside the overlay width.";
+            case "Bold": return "Use the bold version of the selected font.";
+            case "Timestamps": return "Prefix each message with its arrival time.";
+            case "Width (px)": return "Width of this overlay in game pixels; long lines wrap.";
+            case "Padding X": return "Space between the text and the left/right edges.";
+            case "Padding Y": return "Space above and below the text.";
+            case "Background": return "Draw the overlay background. In Alerts, flash it for matching messages.";
+            case "Background Color": return "Background tint. Opacity controls its transparency.";
+            case "Border": return "Draw the frame. In Alerts, flash it for matching messages.";
+            case "Border Color": return "Solid frame color; its opacity also applies to RGB borders.";
+            case "Border Thickness": return "Frame line width in pixels.";
+            case "Rounded corners": return "Round the background and frame, including RGB and flashing borders.";
+            case "RGB all messages": return "Apply cycling RGB to every displayed message and prefix in this overlay. Saved highlight rules remain; their overrides are disabled.";
+            case "All-message effect": return "Effect for all messages and prefixes. Solid / channel colors disables the default RGB effect.";
+            case "RGB border (Beta)": return "Animate a rainbow around the frame. Enabling this also enables Border; works with rounded corners.";
+            case "RGB spread": return "How static rainbow colors are distributed across the message.";
+            case "Cycle palette": return "Full-spectrum cycling or a fade between your two selected colors. Applies to cycling text.";
+            case "Color 1": return "First endpoint of the custom cycling text palette.";
+            case "Color 2": return "Second endpoint of the custom cycling text palette.";
+            case "RGB highlight rules": return "Apply RGB only to matching message bodies. For every message, use All-message effect above.";
+            case "Highlight effect": return "RGB effect used by matching phrases; overlay default follows All-message effect.";
+            case "Solid color rules": return "Apply palette colors to matching message bodies.";
+            case "Include player chat": return "Also apply solid-color rules to player messages.";
+            case "Mode": return "Where this overlay is anchored. Free placement uses RuneLite overlay dragging.";
+            case "X Offset": return "Horizontal distance from the player anchor.";
+            case "Y Offset": return "Vertical distance from the player anchor.";
+            case "Show Clan Rank Icons": return "Display known clan ranks beside message senders.";
+            case "Show Offline Status": return "Mark clan members who are currently offline.";
+            case "Show Offline Icon": return "Add an offline marker beside the sender.";
+            case "Color Offline Names": return "Use a separate name color for offline clan members.";
+            case "Offline Color": return "Name color for offline clan members.";
+            case "Text Color": return "Single color used when Text Override is enabled.";
+            case "Flash": return "Pulse selected parts of the overlay for new matching messages.";
+            case "Trigger": return "Which messages start the overlay flash.";
+            case "Flash While Focused": return "Allow flashing even while RuneLite has focus.";
+            case "Stop": return "When an active flash should end.";
+            case "Duration (sec)": return "How long flashing can continue after a trigger.";
+            case "Speed": return "Speed of the flash pulse.";
+            case "Message": return "Pulse the message text when a flash is triggered.";
+            case "Dynamic Height": return "Shrink the overlay as messages fade instead of reserving empty rows.";
+            case "Hide Duplicate Count": return "Hide the repeated-message count suffix.";
+            case "Input Preview": return "Display the text you are currently typing in this overlay.";
+            case "Use this replacement": return "Enable this display-only replacement rule.";
+            case "Test message text": return "Sample text to test your replacement rules without sending chat.";
+            case "Customize Notification": return "Override RuneLite notification preferences for this overlay only.";
+            case "Notify While Focused": return "Send notifications even when RuneLite has focus.";
+            case "Volume (%)": return "Notification sound volume; 0 is silent.";
+            case "Request Focus": return "RuneLite notification focus preference.";
+            case "Window Flash": return "RuneLite notification flashing preference.";
+            case "Flash Color": return "Color used for the notification flash.";
+            case "Timeout (ms)": return "Notification lifetime in milliseconds; 0 uses RuneLite behavior.";
+            case "Chatbox Notification": return "Also add the notification to the native chatbox.";
+            case "Use RuneLite Chat Filter": return "Use the enabled RuneLite Chat Filter for this overlay.";
+            case "Filter mode": case "Custom filter mode": return "Show or hide messages matching the custom rules.";
+            case "Settings": return "Open this plugin's RuneLite settings.";
+            case "+ New": return "Create another overlay with its own messages, appearance and alerts.";
+            case "Preview": return "Show sample messages in this overlay without sending chat.";
+            case "Duplicate": return "Copy this overlay and its saved settings.";
+            case "Delete": return "Remove this overlay and its saved settings.";
+            case "Notify For": return "Choose which incoming messages trigger a notification.";
+            case "Desktop Notification": return "Show the notification using RuneLite's desktop notification support.";
+            case "Sound": return "Select the RuneLite notification sound for this overlay.";
+            case "Test player name": return "Sample sender for testing the custom filter; nothing is sent.";
+            case "Test message": return "Sample message body for testing the custom filter; nothing is sent.";
+            case "TEST CUSTOM RULES": return "Check whether the sample sender and message pass this overlay's custom filter.";
+            case "REMOVE REPLACEMENT": return "Delete this display-only replacement rule.";
+            case "+ ADD REPLACEMENT": return "Add another original-message and replacement pair.";
+            case "TEST REPLACEMENTS": return "Show how the sample message would look with these replacement rules.";
+            case "RULE PALETTE": return "Expand the nine colors referenced by solid-color rules.";
+            case "SOLID COLOR HIGHLIGHTS": return "Expand phrase-based solid colors. RGB controls are together under Style.";
+            case "RGB & EFFECTS": return "All-message RGB, matching RGB highlights, border animation and timing in one place.";
+            case "TEXT": return "Font, size, alignment and timestamps.";
+            case "TEXT COLORS": return "Channel palettes and solid text overrides.";
+            case "FRAME": return "Width, spacing, background and border shape.";
+            case "POSITION": return "Choose an anchor and placement offsets.";
+            case "PALETTE COLORS": return "Fallback colors for each message channel.";
+            case "MESSAGES & VISIBILITY": return "Select which messages appear and when the overlay is visible.";
+            case "MESSAGE FILTERING": return "Filter this overlay by message content or player name.";
+            case "CLAN DISPLAY": return "Clan rank and offline sender presentation.";
+            case "LAYOUT & INPUT": return "Height, repeated-message counts and typing preview.";
+            case "OVERLAY FLASH": return "Choose which new messages flash and which parts of the overlay pulse.";
             case "Show channel names": return "Show the [channel] prefix for clan and friends chat in this overlay.";
             case "Show overlay": return "Empty overlays stay hidden. Preview shows sample messages.";
             case "Fade (sec)": return "Seconds before messages fade; 0 keeps messages visible.";
@@ -975,7 +1074,7 @@ public class ImprovedChatPanel extends PluginPanel {
             case "Cycle (seconds)": return "Higher values make the color cycle slower.";
             case "Enable Notifications": return "Use RuneLite notification preferences unless Customize Notification is enabled.";
             case "Sound Filename": return "WAV filename in RuneLite's notifications folder. Blank uses the default.";
-            case "Highlights override defaults": return "Matching highlight rules take priority over text overrides and effects.";
+            case "Allow rule overrides": return "Matching highlight rules take priority over text overrides and effects.";
             case "Color rules": return "One phrase::1 through phrase::9 per line; optional ::flash. Supports regex:.";
             case "RGB patterns": return "One phrase per line, or regex:pattern. Invalid expressions are ignored.";
             case "Enable message replacer (Beta)": return "Replace displayed overlay text only. Original chat, filters and alerts stay unchanged.";
@@ -984,7 +1083,10 @@ public class ImprovedChatPanel extends PluginPanel {
             case "Words or phrases": return "Separate phrases with commas. Matching ignores case.";
             case "Regular expressions": return "One expression per line, for example ^You have .* coins$.";
             case "Player names": return "One name fragment per line. Use regex:^Alice$ for an exact match.";
-            default: return null;
+            default:
+                if (name.startsWith("Rule color ")) return "Palette color referenced by this number in solid-color rules.";
+                if (java.util.Arrays.asList("Game","Public","Private","Friends chat","Clan","Guest clan","GIM","Trade","Challenge","Did you know","Broadcast","Autochat").contains(name)) return "Fallback color for this channel when not using a RuneLite palette or text effect.";
+                return "Configure " + name.toLowerCase(java.util.Locale.ROOT) + " for this overlay. Changes save automatically.";
         }
     }
 
@@ -1024,6 +1126,7 @@ public class ImprovedChatPanel extends PluginPanel {
 
     private JButton button(String text) {
         JButton b = new JButton(text);
+        b.setToolTipText(tooltipFor(text));
         b.setFocusPainted(true);
         b.setMargin(new Insets(3, 6, 3, 6));
         b.setBackground(CARD_ALT);

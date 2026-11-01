@@ -87,9 +87,10 @@ public final class AttentionEngine {
             int borderWidth = Math.max(0, width - 1 - inset * 2);
             int borderHeight = Math.max(0, height - 1 - inset * 2);
             if (cfg.isRgbBorder() && borderWidth > 0 && borderHeight > 0) {
-                RgbAnimation.drawBorder(g, inset, borderWidth, borderHeight, alpha, now, cfg.getRgbCycleSeconds());
+                RgbAnimation.drawBorder(g, inset, borderWidth, borderHeight, alpha, now, cfg.getRgbCycleSeconds(), cfg.isRoundedCorners());
             } else {
-                g.drawRect(inset, inset, borderWidth, borderHeight);
+                if (cfg.isRoundedCorners()) g.drawRoundRect(inset, inset, borderWidth, borderHeight, 16, 16);
+                else g.drawRect(inset, inset, borderWidth, borderHeight);
             }
         } finally {
             g.setStroke(oldStroke);
