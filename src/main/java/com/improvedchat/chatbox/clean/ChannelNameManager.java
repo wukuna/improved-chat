@@ -45,7 +45,7 @@ import net.runelite.api.GameState;
 import net.runelite.api.clan.ClanChannel;
 import net.runelite.api.clan.ClanID;
 import net.runelite.api.events.ClanChannelChanged;
-import net.runelite.api.events.FriendsChatChanged;
+import net.runelite.api.events.GameTick;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
@@ -149,18 +149,16 @@ public class ChannelNameManager
 	}
 
 	@Subscribe
-	public void onFriendsChatChanged(FriendsChatChanged event)
+	public void onGameTick(GameTick event)
 	{
-		if (event.isJoined())
-		{
-			updateFriendsChatName();
-		}
+		// Read the initialized channel on the client tick, including joins and resyncs.
+		updateFriendsChatName();
 	}
 
 	public void updateFriendsChatName()
 	{
 		FriendsChatManager friendsChatManager = client.getFriendsChatManager();
-		// This is null at the first FriendsChatChanged after login
+		// The manager can be unavailable during login or after leaving the channel.
 		if (friendsChatManager != null)
 		{
 			addName(friendsChatNames, friendsChatManager.getName());

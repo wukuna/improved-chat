@@ -239,7 +239,7 @@ public class DynamicChatOverlay extends Overlay {
             }
         }
 
-        List<TextSegment> inputSegments = buildInputPreviewSegments(metrics, fontSize, modIcons);
+        InputPreview inputSegments = buildInputPreviewSegments(metrics, fontSize, modIcons);
         if (renderableLines.isEmpty() && inputSegments == null) {
             return null;
         }
@@ -274,7 +274,7 @@ public class DynamicChatOverlay extends Overlay {
 
         int y = paintHeight - paddingY - metrics.getDescent();
         if (inputSegments != null) {
-            drawSegments(graphics, inputSegments, 255, y, widgetWidth,
+            drawInputPreview(graphics, inputSegments, y, widgetWidth,
                     paddingX, fontSize, metrics, modIcons, drawShadow, currentTime);
             y -= lineHeight;
         }
@@ -407,6 +407,42 @@ public class DynamicChatOverlay extends Overlay {
         int lineWidth = calculateLineWidth(segments, metrics);
         int contentWidth = Math.max(0, widgetWidth - paddingX * 2);
         int x = calculateAlignedX(overlayConfig.getTextAlignment(), paddingX, contentWidth, lineWidth);
+        drawSegmentsAt(graphics, segments, alpha, x, y, paddingX, fontSize, metrics, modIcons, drawShadow, now);
+    }
+
+    private void drawInputPreview(Graphics2D graphics, InputPreview input, int y,
+            int widgetWidth, int paddingX, FontSize fontSize,
+            FontMetrics metrics, IndexedSprite[] modIcons, boolean drawShadow, long now) {
+        int nameWidth = calculateLineWidth(input.name, metrics);
+        int textWidth = calculateLineWidth(input.text, metrics);
+        int contentWidth = Math.max(0, widgetWidth - paddingX * 2);
+        // Leave room for the text's one-pixel offset and shadow at the right edge.
+        int x = calculateAlignedX(overlayConfig.getTextAlignment(), paddingX, contentWidth,
+                nameWidth + textWidth + 2);
+        // Even an oversized name must leave a little room for the newest input.
+        int gap = nameWidth > 0 && nameWidth + textWidth + 2 > contentWidth ? metrics.charWidth(' ') : 0;
+        int fixedWidth = Math.min(nameWidth + gap, Math.max(0, contentWidth - Math.min(32, textWidth + 2)));
+        int textLeft = x + fixedWidth;
+        int textSpace = Math.max(0, widgetWidth - paddingX - textLeft);
+        int scroll = Math.max(0, textWidth + 2 - textSpace);
+        Graphics2D preview = (Graphics2D) graphics.create();
+        try {
+            Shape clip = preview.getClip();
+            preview.clipRect(x, y - metrics.getAscent(), fixedWidth, metrics.getHeight() + 2);
+            drawSegmentsAt(preview, input.name, 255, x, y, paddingX, fontSize, metrics, modIcons, drawShadow, now);
+            preview.setClip(clip);
+            // Clip at the username boundary even with a transparent background.
+            preview.clipRect(textLeft, y - metrics.getAscent(), textSpace, metrics.getHeight() + 2);
+            drawSegmentsAt(preview, input.text, 255, textLeft - scroll, y, paddingX,
+                    fontSize, metrics, modIcons, drawShadow, now);
+        } finally {
+            preview.dispose();
+        }
+    }
+
+    private void drawSegmentsAt(Graphics2D graphics, List<TextSegment> segments, int alpha,
+            int x, int y, int paddingX, FontSize fontSize,
+            FontMetrics metrics, IndexedSprite[] modIcons, boolean drawShadow, long now) {
 
         for (TextSegment segment : segments) {
             if (segment.iconId >= 0) {
@@ -443,7 +479,7 @@ public class DynamicChatOverlay extends Overlay {
         }
     }
 
-    private List<TextSegment> buildInputPreviewSegments(FontMetrics metrics, FontSize fontSize,
+    private InputPreview buildInputPreviewSegments(FontMetrics metrics, FontSize fontSize,
             IndexedSprite[] modIcons) {
         if (!overlayConfig.isShowInputPreview()) {
             return null;
@@ -464,21 +500,34 @@ public class DynamicChatOverlay extends Overlay {
         Color messageColor = OverlayStyleEngine.resolveTextColor(overlayConfig, inherited);
         Color nameColor = overlayConfig.isOverlayColorOverrideEnabled() ? messageColor : Color.WHITE;
 
-        List<TextSegment> segments = new ArrayList<>();
+        List<TextSegment> name = new ArrayList<>();
+        List<TextSegment> body;
         int colonIdx = text.indexOf(':');
         if (colonIdx >= 0) {
-            segments.addAll(ChatRenderUtils.parseTextWithColoursAndIcons(
+            name.addAll(ChatRenderUtils.parseTextWithColoursAndIcons(
                     text.substring(0, colonIdx + 1), metrics, modIcons, false,
                     nameColor, fontSize, chatColorConfig));
-            segments.addAll(ChatRenderUtils.parseTextWithColoursAndIcons(
+            body = ChatRenderUtils.parseTextWithColoursAndIcons(
                     text.substring(colonIdx + 1), metrics, modIcons, false,
-                    messageColor, fontSize, chatColorConfig));
+                    messageColor, fontSize, chatColorConfig);
         } else {
-            segments.addAll(ChatRenderUtils.parseTextWithColoursAndIcons(
-                    text, metrics, modIcons, false, messageColor, fontSize, chatColorConfig));
+            body = ChatRenderUtils.parseTextWithColoursAndIcons(
+                    text, metrics, modIcons, false, messageColor, fontSize, chatColorConfig);
         }
-        return overlayConfig.getAnimatedTextStyle() == com.improvedchat.model.AnimatedTextStyle.RGB_STATIC
-                ? ChatRenderUtils.rainbowSegments(segments, overlayConfig.getTextSettings().rainbowStyle(), metrics, new int[]{0}) : segments;
+        if (overlayConfig.getAnimatedTextStyle() == com.improvedchat.model.AnimatedTextStyle.RGB_STATIC) {
+            int[] offset = {0};
+            name = ChatRenderUtils.rainbowSegments(name, overlayConfig.getTextSettings().rainbowStyle(), metrics, offset);
+            body = ChatRenderUtils.rainbowSegments(body, overlayConfig.getTextSettings().rainbowStyle(), metrics, offset);
+        }
+        return new InputPreview(name, body);
+    }
+
+    private static final class InputPreview {
+        final List<TextSegment> name, text;
+        InputPreview(List<TextSegment> name, List<TextSegment> text) {
+            this.name = name;
+            this.text = text;
+        }
     }
 
     private String resolveInputText(String typed) {

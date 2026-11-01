@@ -43,7 +43,7 @@ public class ReleaseNoticeModuleTest
         notice.startUp(); flush();
         ArgumentCaptor<QueuedMessage> messages=ArgumentCaptor.forClass(QueuedMessage.class);
         verify(chat,times(6)).queue(messages.capture());
-        assertTrue(messages.getAllValues().get(1).getRuneLiteFormattedMessage().contains("RGB controls"));
+        assertTrue(messages.getAllValues().get(1).getRuneLiteFormattedMessage().contains("input previews scroll"));
         assertEquals(ReleaseNoticeModule.RELEASE,seen);
         notice.onGameStateChanged(loggedIn()); flush();
         notice.shutDown(); notice.startUp(); flush();

@@ -228,6 +228,9 @@ public class ImprovedChatPlugin extends Plugin {
     @Inject
     private ReleaseNoticeModule releaseNoticeModule;
 
+    @Inject
+    private com.improvedchat.overlay.NativeChatBorderOverlay nativeChatBorderOverlay;
+
     // Shared message pool
     private final CopyOnWriteArrayList<OverlayMessage> messages = new CopyOnWriteArrayList<>();
 
@@ -311,6 +314,7 @@ public class ImprovedChatPlugin extends Plugin {
         OverlayColorRuleEngine.configure(config);
         rebuildChatFilter();
         clanChatPresentationService.startUp();
+        overlayManager.add(nativeChatBorderOverlay);
 
         for (OverlayConfig oc : overlayConfigs) {
             addOverlay(oc);
@@ -344,6 +348,7 @@ public class ImprovedChatPlugin extends Plugin {
 
     @Override
     protected void shutDown() {
+        overlayManager.remove(nativeChatBorderOverlay);
         nativeChatActive = false;
         nativeChatGeneration++;
         releaseNoticeModule.shutDown();

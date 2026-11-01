@@ -412,6 +412,27 @@ public interface ImprovedChatConfig extends Config {
     @ConfigItem(keyName = "opacityDialogueMenus", name = "Dialogue & Menus", description = "Apply chatbox opacity to dialogue boxes and option menus shown in the chat area", section = chatboxSection, position = 27)
     default boolean opacityDialogueMenus() { return true; }
 
+    @ConfigItem(keyName = "chatboxBorder", name = "Chatbox border", description = "Draw a cosmetic border around the regular chat area while it is visible. Independent of custom overlays and resize guides.", section = chatboxSection, position = 28)
+    default boolean chatboxBorder() { return false; }
+
+    @Alpha
+    @ConfigItem(keyName = "chatboxBorderColor", name = "Border color", description = "Regular chatbox border color and opacity. Opacity also applies to RGB.", section = chatboxSection, position = 29)
+    default Color chatboxBorderColor() { return Color.WHITE; }
+
+    @ConfigItem(keyName = "chatboxBorderThickness", name = "Border thickness", description = "Thickness of the regular chatbox border", section = chatboxSection, position = 30)
+    default com.improvedchat.model.BorderThickness chatboxBorderThickness() { return com.improvedchat.model.BorderThickness.NORMAL; }
+
+    @ConfigItem(keyName = "chatboxBorderRgb", name = "RGB border", description = "Animate a rainbow around the regular chatbox border", section = chatboxSection, position = 31)
+    default boolean chatboxBorderRgb() { return false; }
+
+    @Range(min = 2, max = 30)
+    @Units(Units.SECONDS)
+    @ConfigItem(keyName = "chatboxBorderRgbSeconds", name = "Border RGB cycle", description = "Seconds for one complete rainbow cycle", section = chatboxSection, position = 32)
+    default int chatboxBorderRgbSeconds() { return 8; }
+
+    @ConfigItem(keyName = "chatboxBorderRounded", name = "Rounded border", description = "Round the decorative border corners; the native chat background and click areas stay unchanged", section = chatboxSection, position = 33)
+    default boolean chatboxBorderRounded() { return false; }
+
     @ConfigItem(keyName = "enableRemoveChatOptions", name = "Remove Chat Options", description = "Remove chat-message context-menu options; hold Control to temporarily show them", section = cleanupSection, position = 22)
     default boolean enableRemoveChatOptions() { return false; }
 

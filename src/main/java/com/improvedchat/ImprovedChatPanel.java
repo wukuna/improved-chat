@@ -1022,7 +1022,7 @@ public class ImprovedChatPanel extends PluginPanel {
             case "Message": return "Pulse the message text when a flash is triggered.";
             case "Dynamic Height": return "Shrink the overlay as messages fade instead of reserving empty rows.";
             case "Hide Duplicate Count": return "Hide the repeated-message count suffix.";
-            case "Input Preview": return "Display the text you are currently typing in this overlay.";
+            case "Input Preview": return "Display the text you are typing. Long lines scroll behind your name to keep the newest text visible.";
             case "Use this replacement": return "Enable this display-only replacement rule.";
             case "Test message text": return "Sample text to test your replacement rules without sending chat.";
             case "Customize Notification": return "Override RuneLite notification preferences for this overlay only.";

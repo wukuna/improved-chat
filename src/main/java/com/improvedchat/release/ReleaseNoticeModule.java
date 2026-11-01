@@ -19,14 +19,14 @@ import net.runelite.client.events.ProfileChanged;
 @Singleton
 public final class ReleaseNoticeModule
 {
-    static final String RELEASE = "2026-11-01-rgb-controls";
+    static final String RELEASE = "2026-11-01-chat-borders-input";
     static final String SEEN_KEY = "releaseNoticeId";
     private static final String[] RECENT = {
+        "Long input previews scroll behind your name so the newest text and typing marker stay visible.",
+        "The regular chatbox has its own optional border: color, opacity, thickness, RGB and rounded corners.",
         "RGB controls are together under Style, with one-click RGB for all messages and clearer tooltips.",
-        "Channel names can be hidden separately in each overlay.",
-        "Overlays follow the selected RuneLite chat colors, including names and channel labels.",
-        "Small text now works with every offered font.",
-        "Optional rounded corners support solid, RGB and flashing borders."
+        "Overlays follow RuneLite chat colors; channel names can be hidden separately in each overlay.",
+        "Small text works with every font; rounded corners support solid, RGB and flashing borders."
     };
 
     @Inject private Client client;

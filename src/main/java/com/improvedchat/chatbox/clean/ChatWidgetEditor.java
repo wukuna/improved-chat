@@ -234,7 +234,7 @@ public class ChatWidgetEditor
 			return;
 		}
 
-		// FriendsChatManager is null at the first FriendsChatChanged after login so we have to add this check later
+		// The friends chat manager may become available after the initial login callback.
 		channelNameManager.updateFriendsChatName();
 
 		Widget chatbox = client.getWidget(InterfaceID.Chatbox.SCROLLAREA);
