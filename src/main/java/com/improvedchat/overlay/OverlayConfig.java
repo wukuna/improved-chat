@@ -39,6 +39,8 @@ public final class OverlayConfig {
     private Color offlineColor = Color.DARK_GRAY;
 
     private int maxMessages = 10;
+    private boolean scrollHistory;
+    private int historyLimit = 1000;
     private int fadeOutDuration;
     private int widgetWidth = 512;
 
@@ -145,6 +147,7 @@ public final class OverlayConfig {
         setNotification(notification);
         setName(name);
         setMaxMessages(maxMessages);
+        setHistoryLimit(historyLimit);
         setFadeOutDuration(fadeOutDuration);
         setWidgetWidth(widgetWidth);
         setPaddingHorizontal(paddingHorizontal);
@@ -226,6 +229,11 @@ public final class OverlayConfig {
 
     public Color getOfflineColor() { return offlineColor == null ? Color.DARK_GRAY : offlineColor; }
     public void setOfflineColor(Color value) { offlineColor = value == null ? Color.DARK_GRAY : value; }
+
+    public boolean isScrollHistory() { return scrollHistory; }
+    public void setScrollHistory(boolean value) { scrollHistory = value; }
+    public int getHistoryLimit() { return clamp(historyLimit, 200, 5000); }
+    public void setHistoryLimit(int value) { historyLimit = clamp(value, 200, 5000); }
 
     public int getMaxMessages() { return maxMessages; }
     public void setMaxMessages(int value) { maxMessages = clamp(value, 1, 20); }

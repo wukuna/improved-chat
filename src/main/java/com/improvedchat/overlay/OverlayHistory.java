@@ -19,7 +19,7 @@ public final class OverlayHistory {
             if (collapse && !result.isEmpty()) {
                 OverlayMessage previous = result.get(result.size() - 1);
                 if (sameMessage(previous, message)) {
-                    result.set(result.size() - 1, message.withCount(previous.getCount() + message.getCount()));
+                    result.set(result.size() - 1, message.groupedWith(previous));
                     continue;
                 }
             }

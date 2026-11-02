@@ -88,14 +88,14 @@ import java.util.regex.Pattern;
         description = "Create filtered chat overlays with custom styles, RGB effects and alerts. Resize or collapse the chatbox, tidy messages and improve dialogue readability.",
         tags = {"chat", "message", "overlay", "color", "customize", "private", "clan"},
         conflicts = {"Chat Widgets", "Force Recolor"})
-public class ImprovedChatPlugin extends Plugin {
+public class ImprovedChatPlugin extends Plugin implements net.runelite.client.input.MouseWheelListener {
 
     public static final boolean DEBUG = false;
 
     // Separate Plugin Hub identity; do not share configuration with Chat Widgets.
     private static final String CONFIG_GROUP = "improvedchat";
     private static final String OVERLAY_CONFIGS_KEY = "overlayConfigs";
-    private static final int MAX_POOL_SIZE = 200;
+    private static final int MAX_POOL_SIZE = 5000;
 
     private static final Pattern BOSS_KC_PATTERN = Pattern.compile("Your .+ count is:");
     private static final MessageMergeRule[] MESSAGE_MERGE_RULES = {
@@ -231,6 +231,8 @@ public class ImprovedChatPlugin extends Plugin {
     @Inject
     private com.improvedchat.overlay.NativeChatBorderOverlay nativeChatBorderOverlay;
 
+    @Inject private net.runelite.client.input.MouseManager mouseManager;
+
     // Shared message pool
     private final CopyOnWriteArrayList<OverlayMessage> messages = new CopyOnWriteArrayList<>();
 
@@ -320,6 +322,7 @@ public class ImprovedChatPlugin extends Plugin {
             addOverlay(oc);
         }
 
+        mouseManager.registerMouseWheelListener(this);
         updatePmWidgetVisibility();
 
         reconcileNativeChatOwnership(modernChatCompatibility.startupSnapshot());
@@ -348,6 +351,7 @@ public class ImprovedChatPlugin extends Plugin {
 
     @Override
     protected void shutDown() {
+        mouseManager.unregisterMouseWheelListener(this);
         overlayManager.remove(nativeChatBorderOverlay);
         nativeChatActive = false;
         nativeChatGeneration++;
@@ -716,6 +720,9 @@ public class ImprovedChatPlugin extends Plugin {
             DynamicChatOverlay overlay = (DynamicChatOverlay) event.getOverlay();
             if ("Clear".equals(event.getEntry().getOption())) {
                 clearedThrough.put(overlay.getOverlayConfig().getId(), OverlayMessage.latestSequence());
+                overlay.showLatest();
+            } else if ("Latest".equals(event.getEntry().getOption())) {
+                overlay.showLatest();
             }
         }
     }
@@ -1104,14 +1111,35 @@ public class ImprovedChatPlugin extends Plugin {
 
     // --- Message access for overlays ---
 
+    @Override
+    public java.awt.event.MouseWheelEvent mouseWheelMoved(java.awt.event.MouseWheelEvent event) {
+        if (event.isConsumed() || event.isAltDown() || event.isControlDown() || event.isShiftDown()
+                || client.getGameState() != GameState.LOGGED_IN || client.isMenuOpen() || client.isWidgetSelected()) return event;
+        DynamicChatOverlay target = null;
+        for (DynamicChatOverlay overlay : overlays) {
+            if (overlay.canScrollAt(event.getPoint())
+                    && (target == null || overlay.getScrollPaintOrder() > target.getScrollPaintOrder())) target = overlay;
+        }
+        if (target != null && target.scrollAt(event.getPoint(), event.getWheelRotation())) event.consume();
+        return event;
+    }
+
+    public List<OverlayMessage> getHistoryForOverlay(OverlayConfig overlayConfig) {
+        return selectMessages(overlayConfig, true);
+    }
+
     public List<OverlayMessage> getMessagesForOverlay(OverlayConfig overlayConfig) {
+        return selectMessages(overlayConfig, false);
+    }
+
+    private List<OverlayMessage> selectMessages(OverlayConfig overlayConfig, boolean history) {
         Set<ChatMessageType> types = overlayConfig.getMessageTypes();
         if (messages.isEmpty() || types.isEmpty()) {
             return new ArrayList<>(0);
         }
 
         long currentTime = System.currentTimeMillis();
-        int fadeOutDuration = overlayConfig.getFadeOutDuration();
+        int fadeOutDuration = history ? 0 : overlayConfig.getFadeOutDuration();
         long fadeOutThreshold = fadeOutDuration > 0 ? (fadeOutDuration * 2000L) + 2000 : 0;
         boolean gameFilterEnabled = isGameFilterEnabled();
         boolean bossKcFilterEnabled = isBossKcFilterEnabled();
@@ -1123,7 +1151,7 @@ public class ImprovedChatPlugin extends Plugin {
                 : overlayMessageFilters.computeIfAbsent(
                         overlayConfig.getId(), key -> new OverlayMessageFilter());
 
-        int maxMessages = overlayConfig.getMaxMessages();
+        int maxMessages = history ? overlayConfig.getHistoryLimit() : overlayConfig.getMaxMessages();
         List<OverlayMessage> filtered = new ArrayList<>(maxMessages);
         // CopyOnWriteArrayList's iterator already provides a stable snapshot.
         for (OverlayMessage msg : messages) {

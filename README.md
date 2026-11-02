@@ -52,6 +52,14 @@ Turn off **Messages → Show channel names** to remove the bracketed clan/friend
 
 **Clear [overlay] history** clears only that overlay's view. Native chat-tab history clearing still applies to all overlays showing those message types. **Collapse Duplicates** groups consecutive matching messages within each overlay's filtered view and keeps channels, senders, and incoming/outgoing messages separate. Captured history remains intact so clearing or filtering one overlay cannot remove another overlay's messages. History is held for the current plugin session.
 
+### Scrollable session history
+
+In an overlay's **Messages → Session History** section, enable **Scroll history**. Use the mouse wheel over the visible overlay to read older lines, including long messages that wrap. New messages do not move your place while browsing. Scroll to the bottom or right-click the overlay and choose **Latest** to follow new messages again. The footer shows whether you are at the latest messages or reading history.
+
+**History messages** defaults to 1,000 and can be set from 200 to 5,000 per overlay, drawn from a shared pool of the last 5,000 captured messages. Your selected channels and filters still apply. **Visible lines** controls the number of lines shown at once; the frame keeps a steady height and messages remain readable without fading. The input preview stays at the bottom while history scrolls above it. Scroll history starts disabled, so existing fading overlays retain their behavior.
+
+History survives world hops and login/logout while the plugin remains enabled. It starts with messages captured by this plugin and ends when the plugin stops or RuneLite closes; nothing is written to chat log files. Clearing an overlay still affects only that overlay, and clearing a native chat tab clears the corresponding captured messages. Mouse-wheel input outside visible history overlays and modified scrolling (Alt/Ctrl/Shift) keep their normal behavior.
+
 Each overlay can independently control:
 
 - enabled state, name, maximum messages, and fade duration;

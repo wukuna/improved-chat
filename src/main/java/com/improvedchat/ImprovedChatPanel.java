@@ -215,6 +215,8 @@ public class ImprovedChatPanel extends PluginPanel {
         editorHeader.setMaximumSize(new Dimension(Integer.MAX_VALUE, 29));
         body.add(editorHeader);
 
+        Component fadeControl = spinnerRow("Fade (sec)", oc.getFadeOutDuration(), 0, 300, 1, v -> { oc.setFadeOutDuration(v); saveOverlay(); });
+        enableTree(fadeControl, !oc.isScrollHistory());
         messages.add(accordion(oc, "general", "MESSAGES & VISIBILITY", true,
                 textFieldRow("Name", oc.getName(), v -> { oc.setName(v); saveOverlay(); }),
                 checkRow("Enabled", oc.isShow(), v -> { oc.setShow(v); saveOverlay(); rebuild(); }),
@@ -224,9 +226,18 @@ public class ImprovedChatPanel extends PluginPanel {
                 messageTypesRow(oc),
                 messageSelectionHelp(oc),
                 checkRow("Show channel names", plugin.showChannelNames(oc), v -> { oc.setShowChannelNames(v); saveOverlay(); }),
-                spinnerRow("Max Messages", oc.getMaxMessages(), 1, 20, 1, v -> { oc.setMaxMessages(v); saveOverlay(); }),
-                spinnerRow("Fade (sec)", oc.getFadeOutDuration(), 0, 300, 1, v -> { oc.setFadeOutDuration(v); saveOverlay(); })
+                spinnerRow(oc.isScrollHistory() ? "Visible lines" : "Max Messages", oc.getMaxMessages(), 1, 20, 1, v -> { oc.setMaxMessages(v); saveOverlay(); }),
+                fadeControl
         ));
+
+        JPanel history = panel(CARD);
+        history.setLayout(new BoxLayout(history, BoxLayout.Y_AXIS));
+        history.add(checkRow("Scroll history", oc.isScrollHistory(), v -> { oc.setScrollHistory(v); saveOverlay(); rebuild(); }));
+        if (oc.isScrollHistory()) {
+            history.add(spinnerRow("History messages", oc.getHistoryLimit(), 200, 5000, 100, v -> { oc.setHistoryLimit(v); saveOverlay(); }));
+            history.add(help("Mouse wheel over the overlay reads older messages. Right-click > Latest returns to new messages. History stays visible without fading and ends when the plugin stops."));
+        }
+        messages.add(accordionPanel(oc, "history", "SESSION HISTORY", true, history));
 
         JPanel appearance = panel(CARD);
         appearance.setLayout(new BoxLayout(appearance, BoxLayout.Y_AXIS));
@@ -979,7 +990,10 @@ public class ImprovedChatPanel extends PluginPanel {
         switch (name) {
             case "Name": return "Name this overlay in the editor and overlay menu.";
             case "Enabled": return "Show this overlay when it has matching messages.";
-            case "Max Messages": return "Maximum message rows retained by this overlay.";
+            case "Visible lines": return "Number of message lines visible at once. Scroll to read the rest of the history.";
+            case "Max Messages": return "Maximum recent messages shown when scroll history is disabled.";
+            case "Scroll history": return "Read session history with the mouse wheel. Messages stay visible without fading. Right-click Latest to return to new messages.";
+            case "History messages": return "Maximum matching messages available from the shared session history (up to 5,000 captured messages). Nothing is saved to disk.";
             case "Text Font": return "Font used for every message in this overlay.";
             case "Text Alignment": return "Align message lines inside the overlay width.";
             case "Bold": return "Use the bold version of the selected font.";

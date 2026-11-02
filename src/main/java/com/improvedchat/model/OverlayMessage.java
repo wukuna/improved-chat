@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public final class OverlayMessage {
     private static final AtomicLong SEQUENCE = new AtomicLong();
     private final long sequence;
+    private long firstSequence;
     private final String message;
     private final long timestamp;
     private final ChatMessageType type;
@@ -38,6 +39,7 @@ public final class OverlayMessage {
     private OverlayMessage(String message, long timestamp, ChatMessageType type, boolean bossKc,
             String sender, String channelName, boolean outgoing, int maxFadeSeconds, long sequence) {
         this.sequence = sequence;
+        this.firstSequence = sequence;
         this.message = message;
         this.timestamp = timestamp;
         this.type = type;
@@ -49,17 +51,25 @@ public final class OverlayMessage {
     }
 
     public long getSequence() { return sequence; }
+    public long getFirstSequence() { return firstSequence; }
     public static long latestSequence() { return SEQUENCE.get(); }
 
     public OverlayMessage withBody(String body) {
         OverlayMessage copy = new OverlayMessage(body, timestamp, type, bossKc, sender, channelName, outgoing, maxFadeSeconds, sequence);
         copy.count = count;
+        copy.firstSequence = firstSequence;
         return copy;
     }
 
     public OverlayMessage withCount(int value) {
         OverlayMessage copy = withBody(message);
         copy.count = value;
+        return copy;
+    }
+
+    public OverlayMessage groupedWith(OverlayMessage previous) {
+        OverlayMessage copy = withCount(previous.getCount() + count);
+        copy.firstSequence = previous.firstSequence;
         return copy;
     }
 

@@ -53,6 +53,11 @@ public class DynamicChatOverlay extends Overlay {
     private final ClanChatPresentationService clanPresentationService;
     private OverlayConfig overlayConfig;
     private PlacementMode appliedPlacementMode;
+    private final OverlayScrollback scrollback = new OverlayScrollback();
+    private static final java.util.concurrent.atomic.AtomicLong PAINT_ORDER = new java.util.concurrent.atomic.AtomicLong();
+    private volatile long scrollPaintOrder;
+    private volatile java.awt.Rectangle scrollBounds = new java.awt.Rectangle();
+    private volatile long lastPaint;
     private volatile long previewUntil;
     private List<OverlayMessage> previewMessages = new ArrayList<>();
 
@@ -106,12 +111,15 @@ public class DynamicChatOverlay extends Overlay {
 
     public void setOverlayConfig(OverlayConfig overlayConfig) {
         this.overlayConfig = overlayConfig;
+        scrollBounds = new java.awt.Rectangle();
         applyPlacementPolicy(false);
         rebuildMenuEntries();
     }
 
     private void rebuildMenuEntries() {
         getMenuEntries().clear();
+        if (overlayConfig.isScrollHistory()) getMenuEntries().add(new OverlayMenuEntry(
+                MenuAction.RUNELITE_OVERLAY, "Latest", overlayConfig.getName()));
         getMenuEntries().add(new OverlayMenuEntry(MenuAction.RUNELITE_OVERLAY, "Clear",
                 overlayConfig.getName() + " history"));
     }
@@ -140,6 +148,7 @@ public class DynamicChatOverlay extends Overlay {
     public Dimension render(Graphics2D graphics) {
         applyPlacementPolicy(false);
         if (!shouldRender()) {
+            scrollBounds = new java.awt.Rectangle();
             return null;
         }
 
@@ -156,10 +165,8 @@ public class DynamicChatOverlay extends Overlay {
         long currentTime = System.currentTimeMillis();
         boolean drawShadow = globalConfig.textShadow();
         boolean wrapText = globalConfig.wrapText();
-        boolean retainContextualColours = overlayConfig.isContextualColours();
         com.improvedchat.ChatColorSource colorSource = OverlayChatColors.resolveSource(
                 overlayConfig.getTextSettings().chatColorSource(), client);
-        boolean hideDuplicateCount = overlayConfig.isHideDuplicateCount();
         PlacementMode placementMode = overlayConfig.getPlacementMode();
         boolean followPlayer = placementMode != PlacementMode.FREE;
         boolean useDynamicHeight = followPlayer || overlayConfig.isDynamicHeight();
@@ -169,83 +176,37 @@ public class DynamicChatOverlay extends Overlay {
         long fadeOutThreshold = fadeOutMs + 5000L;
         int maxMessages = overlayConfig.getMaxMessages();
 
-        List<OverlayMessage> messages = currentTime < previewUntil ? previewMessages : plugin.getMessagesForOverlay(overlayConfig);
+        boolean historyMode = overlayConfig.isScrollHistory() && currentTime >= previewUntil;
+        if (!historyMode) scrollBounds = new java.awt.Rectangle();
+        List<OverlayMessage> messages = currentTime < previewUntil ? previewMessages
+                : historyMode ? plugin.getHistoryForOverlay(overlayConfig) : plugin.getMessagesForOverlay(overlayConfig);
         int startIndex = Math.max(0, messages.size() - maxMessages);
         List<RenderLine> renderableLines = new ArrayList<>();
 
-        for (int i = startIndex; i < messages.size(); i++) {
-            OverlayMessage msg = messages.get(i);
-            int msgMaxFade = msg.getMaxFadeSeconds();
-            long msgFadeThreshold = msgMaxFade > 0
-                    ? msgMaxFade * 1000L + 5000L
-                    : fadeOutThreshold;
-
-            if ((fadeOutDuration == 0 && msgMaxFade == 0)
-                    || currentTime - msg.getTimestamp() < msgFadeThreshold) {
-                Color inherited = getCategoryColour(msg.getType());
-                Color msgColor = OverlayStyleEngine.resolveTextColor(overlayConfig, inherited);
-                List<TextSegment> senderDecorations = new ArrayList<>();
-                Color senderColorOverride = null;
-                ClanChatPresentationService.Presentation clanPresentation =
-                        clanPresentationService.resolve(msg.getSender(), msg.getType());
-
-                if (clanPresentation.isClanMessage()) {
-                    if (overlayConfig.isShowClanRankIcons()
-                            && clanPresentation.getRankIconId() >= 0
-                            && !containsIconTag(msg.getSender(), clanPresentation.getRankIconId())) {
-                        int iconId = clanPresentation.getRankIconId();
-                        senderDecorations.add(new TextSegment("", iconId,
-                                ChatRenderUtils.calculateIconWidth(modIcons, iconId, fontSize), Color.WHITE));
-                    }
-
-                    if (overlayConfig.isShowOfflineStatus() && clanPresentation.isOffline()) {
-                        if (overlayConfig.isShowOfflineIcon()
-                                && clanPresentation.getOfflineIconId() >= 0
-                                && !containsIconTag(msg.getSender(), clanPresentation.getOfflineIconId())) {
-                            int iconId = clanPresentation.getOfflineIconId();
-                            senderDecorations.add(new TextSegment("", iconId,
-                                    ChatRenderUtils.calculateIconWidth(modIcons, iconId, fontSize), Color.WHITE));
-                        }
-                        if (overlayConfig.isColorOfflineNames()) {
-                            senderColorOverride = overlayConfig.getOfflineColor();
-                        }
-                    }
-                }
-
-                List<RenderLine> msgLines = ChatRenderUtils.buildMessageLines(
-                        msg,
-                        metrics,
-                        contentWidth,
-                        currentTime,
-                        fadeOutMs,
-                        wrapText,
-                        msgColor,
-                        retainContextualColours,
-                        hideDuplicateCount,
-                        fontSize,
-                        modIcons,
-                        overlayConfig.isShowTimestamp(),
-                        globalConfig.timestampFormat(),
-                        globalConfig.showChannelName(),
-                        chatColorConfig,
-                        senderDecorations,
-                        senderColorOverride, overlayConfig, colorSource);
-
-                for (RenderLine line : msgLines) {
-                    if (line.alpha > 0) {
-                        renderableLines.add(line);
-                    }
+        if (historyMode) {
+            renderableLines = scrollback.select(messages, maxMessages, msg -> messageLines(msg, metrics,
+                    fontSize, modIcons, contentWidth, currentTime, 0, wrapText, colorSource));
+        } else {
+            scrollback.latest();
+            for (int i = startIndex; i < messages.size(); i++) {
+                OverlayMessage msg = messages.get(i);
+                int msgMaxFade = msg.getMaxFadeSeconds();
+                long threshold = msgMaxFade > 0 ? msgMaxFade * 1000L + 5000L : fadeOutThreshold;
+                if ((fadeOutDuration == 0 && msgMaxFade == 0) || currentTime - msg.getTimestamp() < threshold) {
+                    for (RenderLine line : messageLines(msg, metrics, fontSize, modIcons, contentWidth,
+                            currentTime, fadeOutMs, wrapText, colorSource)) if (line.alpha > 0) renderableLines.add(line);
                 }
             }
         }
 
         InputPreview inputSegments = buildInputPreviewSegments(metrics, fontSize, modIcons);
         if (renderableLines.isEmpty() && inputSegments == null) {
+            scrollBounds = new java.awt.Rectangle();
             return null;
         }
 
-        int inputExtra = inputSegments == null ? 0 : lineHeight;
-        int contentHeight = useDynamicHeight
+        int inputExtra = (inputSegments == null ? 0 : lineHeight) + (historyMode ? lineHeight : 0);
+        int contentHeight = useDynamicHeight && !historyMode
                 ? renderableLines.size() * lineHeight + inputExtra
                 : maxMessages * lineHeight + inputExtra;
         int widgetHeight = Math.max(lineHeight + paddingY * 2, contentHeight + paddingY * 2);
@@ -256,7 +217,7 @@ public class DynamicChatOverlay extends Overlay {
 
         int paintHeight = widgetHeight;
         OverlayPosition anchor = getPreferredPosition() == null ? getPosition() : getPreferredPosition();
-        if (!followPlayer && useDynamicHeight && getPreferredLocation() == null
+        if (!followPlayer && useDynamicHeight && !historyMode && getPreferredLocation() == null
                 && (anchor == OverlayPosition.BOTTOM_LEFT || anchor == OverlayPosition.BOTTOM_RIGHT
                     || anchor == OverlayPosition.ABOVE_CHATBOX_RIGHT) && getBounds().height > 0) {
             // RuneLite places bottom-anchored overlays using the previous frame's bounds.
@@ -272,7 +233,23 @@ public class DynamicChatOverlay extends Overlay {
             graphics.fillRect(0, 0, widgetWidth, paintHeight);
         }
 
+        if (historyMode) {
+            java.awt.Rectangle hit = new java.awt.Rectangle(0, 0, widgetWidth, paintHeight);
+            if (graphics.getClipBounds() != null) hit = hit.intersection(graphics.getClipBounds());
+            scrollBounds = graphics.getTransform().createTransformedShape(hit).getBounds();
+            lastPaint = System.currentTimeMillis();
+            scrollPaintOrder = PAINT_ORDER.incrementAndGet();
+        }
         int y = paintHeight - paddingY - metrics.getDescent();
+        if (historyMode) {
+            String status = scrollback.isBrowsing() ? "History (" + scrollback.getNewerMessages() + " newer) - right-click Latest"
+                    : "Latest - scroll for history";
+            Shape statusClip = graphics.getClip();
+            graphics.clipRect(paddingX, y - metrics.getAscent(), Math.max(1, widgetWidth - 2 * paddingX), lineHeight);
+            ChatRenderUtils.drawText(graphics, status, new Color(180, 190, 200), 255, paddingX, y, drawShadow, metrics);
+            graphics.setClip(statusClip);
+            y -= lineHeight;
+        }
         if (inputSegments != null) {
             drawInputPreview(graphics, inputSegments, y, widgetWidth,
                     paddingX, fontSize, metrics, modIcons, drawShadow, currentTime);
@@ -294,6 +271,78 @@ public class DynamicChatOverlay extends Overlay {
 
         return followPlayer ? null : new Dimension(widgetWidth, widgetHeight);
     }
+
+
+    private List<RenderLine> messageLines(OverlayMessage msg, FontMetrics metrics, FontSize fontSize,
+            IndexedSprite[] modIcons, int contentWidth, long currentTime, long fadeOutMs,
+            boolean wrapText, com.improvedchat.ChatColorSource colorSource) {
+        Color inherited = getCategoryColour(msg.getType());
+        Color msgColor = OverlayStyleEngine.resolveTextColor(overlayConfig, inherited);
+        List<TextSegment> senderDecorations = new ArrayList<>();
+        Color senderColorOverride = null;
+        ClanChatPresentationService.Presentation clanPresentation =
+                clanPresentationService.resolve(msg.getSender(), msg.getType());
+
+        if (clanPresentation.isClanMessage()) {
+            if (overlayConfig.isShowClanRankIcons()
+                    && clanPresentation.getRankIconId() >= 0
+                    && !containsIconTag(msg.getSender(), clanPresentation.getRankIconId())) {
+                int iconId = clanPresentation.getRankIconId();
+                senderDecorations.add(new TextSegment("", iconId,
+                        ChatRenderUtils.calculateIconWidth(modIcons, iconId, fontSize), Color.WHITE));
+            }
+
+            if (overlayConfig.isShowOfflineStatus() && clanPresentation.isOffline()) {
+                if (overlayConfig.isShowOfflineIcon()
+                        && clanPresentation.getOfflineIconId() >= 0
+                        && !containsIconTag(msg.getSender(), clanPresentation.getOfflineIconId())) {
+                    int iconId = clanPresentation.getOfflineIconId();
+                    senderDecorations.add(new TextSegment("", iconId,
+                            ChatRenderUtils.calculateIconWidth(modIcons, iconId, fontSize), Color.WHITE));
+                }
+                if (overlayConfig.isColorOfflineNames()) {
+                    senderColorOverride = overlayConfig.getOfflineColor();
+                }
+            }
+        }
+
+        return ChatRenderUtils.buildMessageLines(
+                msg,
+                metrics,
+                contentWidth,
+                currentTime,
+                fadeOutMs,
+                wrapText,
+                msgColor,
+                overlayConfig.isContextualColours(),
+                overlayConfig.isHideDuplicateCount(),
+                fontSize,
+                modIcons,
+                overlayConfig.isShowTimestamp(),
+                globalConfig.timestampFormat(),
+                globalConfig.showChannelName(),
+                chatColorConfig,
+                senderDecorations,
+                senderColorOverride, overlayConfig, colorSource);
+    }
+
+    public void showLatest() {
+        scrollback.latest();
+        scrollBounds = new java.awt.Rectangle();
+    }
+
+    public boolean scrollAt(java.awt.Point point, int wheelRotation) {
+        if (wheelRotation == 0 || !canScrollAt(point)) return false;
+        scrollback.scroll(-Math.max(-100, Math.min(100, wheelRotation)) * 3);
+        return true;
+    }
+
+    public boolean canScrollAt(java.awt.Point point) {
+        return overlayConfig.isScrollHistory() && shouldRender()
+                && System.currentTimeMillis() - lastPaint <= 500 && scrollBounds.contains(point);
+    }
+
+    public long getScrollPaintOrder() { return scrollPaintOrder; }
 
     private void translateToPlayer(Graphics2D graphics, PlacementMode placementMode,
             int widgetWidth, int widgetHeight) {
