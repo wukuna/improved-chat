@@ -153,6 +153,9 @@ public class ImprovedChatPanelTest {
             tabs(panel).setSelectedIndex(1);
             combo(panel, "Text Font").setSelectedItem("Arial");
             combo(panel, "Text Size").setSelectedItem(com.improvedchat.model.FontSize.SMALL);
+            combo(panel, "Timestamp style").setSelectedItem(com.improvedchat.model.TimestampStyle.TIME_AGO);
+            assertEquals(com.improvedchat.model.TimestampStyle.TIME_AGO, first.getTimestampStyle());
+            assertEquals(com.improvedchat.model.TimestampStyle.CLOCK_TIME, second.getTimestampStyle());
             combo(panel, "Color palette").setSelectedItem(ChatColorSource.OPAQUE);
             button(panel, "Text Override").doClick();
             assertFalse(combo(panel, "Color palette").isEnabled());
@@ -171,6 +174,7 @@ public class ImprovedChatPanelTest {
             assertFalse(button(panel, "Show channel names").isSelected());
             assertEquals("Arial", combo(panel, "Text Font").getSelectedItem());
             assertEquals(com.improvedchat.model.FontSize.SMALL, combo(panel, "Text Size").getSelectedItem());
+            assertEquals(com.improvedchat.model.TimestampStyle.TIME_AGO, combo(panel, "Timestamp style").getSelectedItem());
             assertEquals(ChatColorSource.AUTOMATIC, second.getTextSettings().chatColorSource());
         });
     }

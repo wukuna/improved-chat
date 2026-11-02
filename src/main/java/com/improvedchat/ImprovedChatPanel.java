@@ -9,6 +9,7 @@ import com.improvedchat.model.AnimatedTextStyle;
 import com.improvedchat.model.MessageCategory;
 import com.improvedchat.model.PlacementMode;
 import com.improvedchat.model.TextAlignment;
+import com.improvedchat.model.TimestampStyle;
 import com.improvedchat.overlay.OverlayConfig;
 import com.improvedchat.overlay.OverlayFilterMode;
 import java.awt.BorderLayout;
@@ -340,6 +341,7 @@ public class ImprovedChatPanel extends PluginPanel {
         appearance.add(comboRow("Text Alignment", TextAlignment.values(), oc.getTextAlignment(), v -> { oc.setTextAlignment(v); saveOverlay(); }));
         appearance.add(checkRow("Bold", oc.isBoldText(), v -> { oc.setBoldText(v); saveOverlay(); }));
         appearance.add(checkRow("Timestamps", oc.isShowTimestamp(), v -> { oc.setShowTimestamp(v); saveOverlay(); }));
+        appearance.add(comboRow("Timestamp style", TimestampStyle.values(), oc.getTimestampStyle(), v -> { oc.setTimestampStyle(v); saveOverlay(); }));
         looks.add(accordionPanel(oc, "appearance", "TEXT", true, appearance));
         JPanel frame = panel(CARD);
         frame.setLayout(new BoxLayout(frame, BoxLayout.Y_AXIS));
@@ -1090,7 +1092,8 @@ public class ImprovedChatPanel extends PluginPanel {
             case "Text Font": return "Font used for every message in this overlay.";
             case "Text Alignment": return "Align message lines inside the overlay width.";
             case "Bold": return "Use the bold version of the selected font.";
-            case "Timestamps": return "Prefix each message with its arrival time.";
+            case "Timestamps": return "Prefix messages with a clock time or their age. Choose the style below.";
+            case "Timestamp style": return "Clock time uses the configured time format. Time ago updates as messages age: now, 30s, 20m, 2h, 1d.";
             case "Width (px)": return "Width of this overlay in game pixels; long lines wrap.";
             case "Padding X": return "Space inside the left/right border. Borders and rounded corners keep at least 3 pixels clear.";
             case "Padding Y": return "Space inside the top/bottom border. Borders and rounded corners keep at least 3 pixels clear.";

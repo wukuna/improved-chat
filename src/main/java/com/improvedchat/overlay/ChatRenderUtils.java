@@ -205,6 +205,15 @@ public final class ChatRenderUtils {
         }
     }
 
+    public static String formatTimeAgo(long timestamp, long currentTime) {
+        long seconds = currentTime <= timestamp ? 0 : (currentTime - timestamp) / 1000;
+        if (seconds <= 0) return "now";
+        if (seconds < 60) return seconds + "s";
+        if (seconds < 3600) return seconds / 60 + "m";
+        if (seconds < 86400) return seconds / 3600 + "h";
+        return seconds / 86400 + "d";
+    }
+
     /**
      * Builds render lines for any message type. Handles sender prefixes for PMs,
      * public chat, friends chat, and clan chat automatically based on the message type.
@@ -275,9 +284,12 @@ public final class ChatRenderUtils {
         List<TextSegment> headerSegments = new ArrayList<>();
         int headerWidth = 0;
 
-        if (showTimestamp && timestampFormat != null && !timestampFormat.isEmpty()) {
-            String ts = formatTimestamp(msg.getTimestamp(), timestampFormat + " ");
+        if (showTimestamp) {
+            boolean relative = overlay != null && overlay.getTimestampStyle() == com.improvedchat.model.TimestampStyle.TIME_AGO;
+            String ts = relative ? formatTimeAgo(msg.getTimestamp(), currentTime)
+                    : timestampFormat == null || timestampFormat.isEmpty() ? null : formatTimestamp(msg.getTimestamp(), timestampFormat);
             if (ts != null) {
+                ts += " ";
                 int width = metrics.stringWidth(ts);
                 Color tsColor = retainContextualColours ? Color.WHITE : textColor;
                 headerSegments.add(new TextSegment(ts, -1, width, tsColor));

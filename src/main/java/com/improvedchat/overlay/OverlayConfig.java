@@ -9,6 +9,7 @@ import com.improvedchat.model.FontSize;
 import com.improvedchat.model.MessageCategory;
 import com.improvedchat.model.PlacementMode;
 import com.improvedchat.model.TextAlignment;
+import com.improvedchat.model.TimestampStyle;
 import java.awt.Color;
 import java.util.EnumSet;
 import java.util.Set;
@@ -58,6 +59,7 @@ public final class OverlayConfig {
     private boolean hideDuplicateCount;
     private boolean contextualColours = true;
     private boolean showTimestamp;
+    private TimestampStyle timestampStyle = TimestampStyle.CLOCK_TIME;
     private boolean showInputPreview;
     private boolean previewOnlyWhenTyping;
     private boolean show = true;
@@ -293,6 +295,8 @@ public final class OverlayConfig {
 
     public boolean isShowTimestamp() { return showTimestamp; }
     public void setShowTimestamp(boolean value) { showTimestamp = value; }
+    public TimestampStyle getTimestampStyle() { return timestampStyle == null ? TimestampStyle.CLOCK_TIME : timestampStyle; }
+    public void setTimestampStyle(TimestampStyle value) { timestampStyle = value == null ? TimestampStyle.CLOCK_TIME : value; }
 
     public boolean isShowInputPreview() { return showInputPreview; }
     public void setShowInputPreview(boolean value) { showInputPreview = value; }
