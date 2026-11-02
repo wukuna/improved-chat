@@ -67,7 +67,7 @@ Each overlay can independently control:
 - free placement or placement above/below your character;
 - X/Y offsets for player-attached overlays;
 - text size, font, alignment, bold styling, and width;
-- horizontal/vertical padding;
+- horizontal/vertical padding inside the border, with at least 3 pixels of clearance for borders and rounded corners; full-height text rows keep letters, icons and shadows clear of the frame;
 - background color and transparency;
 - border color and thickness;
 - timestamps;

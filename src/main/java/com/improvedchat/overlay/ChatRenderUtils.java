@@ -105,13 +105,16 @@ public final class ChatRenderUtils {
         int iconWidth = Math.max(1, Math.round(img.getWidth() * scale));
         int iconHeight = Math.max(1, Math.round(img.getHeight() * scale));
 
-        int iconY = y - iconHeight + metrics.getDescent() - 4;
-        if (fontSize == FontSize.SMALL) {
-            iconY += 2;
-        }
+        int iconY = y - iconAscent(img, fontSize, metrics);
 
         graphics.drawImage(img, x + 1, iconY, iconWidth, iconHeight, null);
         return iconWidth + 2;
+    }
+
+    static int iconAscent(BufferedImage img, FontSize fontSize, FontMetrics metrics) {
+        float scale = fontSize == null ? 1.0f : fontSize.getScale();
+        return Math.max(1, Math.round(img.getHeight() * scale)) - metrics.getDescent()
+                + (fontSize == FontSize.SMALL ? 2 : 4);
     }
 
     public static int drawText(Graphics2D graphics, String text, Color color, int alpha, int x, int y,
@@ -426,7 +429,7 @@ public final class ChatRenderUtils {
         int iconWidth = 13;
         float scale = fontSize == null ? 1.0f : fontSize.getScale();
         if (modIcons != null && iconId >= 0 && iconId < modIcons.length && modIcons[iconId] != null) {
-            iconWidth = Math.max(1, Math.round(modIcons[iconId].getWidth() * scale)) + 1;
+            iconWidth = Math.max(1, Math.round(modIcons[iconId].getWidth() * scale)) + 2;
         } else {
             iconWidth = Math.max(1, Math.round(iconWidth * scale));
         }

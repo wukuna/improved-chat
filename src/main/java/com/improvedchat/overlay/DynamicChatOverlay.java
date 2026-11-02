@@ -158,10 +158,15 @@ public class DynamicChatOverlay extends Overlay {
 
         int widgetWidth = getEffectiveWidth();
 
-        int paddingX = overlayConfig.getPaddingHorizontal();
-        int paddingY = overlayConfig.getPaddingVertical();
-        int contentWidth = Math.max(32, widgetWidth - paddingX * 2);
-        int lineHeight = Math.max(1, metrics.getHeight() - (fontSize == FontSize.SMALL ? 2 : 3) + 1);
+        // Reserve border space even between attention flashes, so the text does not jump.
+        int borderInset = overlayConfig.isBorderEnabled()
+                || (overlayConfig.isFlashEnabled() && overlayConfig.isFlashBorder())
+                ? overlayConfig.getBorderThickness().getPixels() : 0;
+        int minimumGap = borderInset > 0 || overlayConfig.isRoundedCorners() ? 3 : 0;
+        int paddingX = borderInset + Math.max(minimumGap, overlayConfig.getPaddingHorizontal());
+        int paddingY = borderInset + Math.max(minimumGap, overlayConfig.getPaddingVertical());
+        // Text is painted one pixel right of its origin, with a further pixel for shadows.
+        int contentWidth = Math.max(1, widgetWidth - paddingX * 2 - 2);
         long currentTime = System.currentTimeMillis();
         boolean drawShadow = globalConfig.textShadow();
         boolean wrapText = globalConfig.wrapText();
@@ -205,6 +210,17 @@ public class DynamicChatOverlay extends Overlay {
             return null;
         }
 
+        // The RuneScape font can paint accents one pixel above its reported ascent.
+        int lineAscent = metrics.getAscent() + 1;
+        for (RenderLine line : renderableLines) {
+            lineAscent = Math.max(lineAscent, iconAscent(line.segments, modIcons, fontSize, metrics));
+        }
+        if (inputSegments != null) {
+            lineAscent = Math.max(lineAscent, iconAscent(inputSegments.name, modIcons, fontSize, metrics));
+            lineAscent = Math.max(lineAscent, iconAscent(inputSegments.text, modIcons, fontSize, metrics));
+        }
+        int lineDescent = Math.max(2, metrics.getDescent() + 1); // Shadows and underlines need the extra pixel.
+        int lineHeight = lineAscent + lineDescent + metrics.getLeading();
         int inputExtra = (inputSegments == null ? 0 : lineHeight) + (historyMode ? lineHeight : 0);
         int contentHeight = useDynamicHeight && !historyMode
                 ? renderableLines.size() * lineHeight + inputExtra
@@ -240,23 +256,27 @@ public class DynamicChatOverlay extends Overlay {
             lastPaint = System.currentTimeMillis();
             scrollPaintOrder = PAINT_ORDER.incrementAndGet();
         }
-        int y = paintHeight - paddingY - metrics.getDescent();
+        graphics.clipRect(paddingX, paddingY, Math.max(0, widgetWidth - paddingX * 2),
+                Math.max(0, paintHeight - paddingY * 2));
+        int y = paintHeight - paddingY - lineDescent;
         if (historyMode) {
             String status = scrollback.isBrowsing() ? "History (" + scrollback.getNewerMessages() + " newer) - right-click Latest"
                     : "Latest - scroll for history";
             Shape statusClip = graphics.getClip();
-            graphics.clipRect(paddingX, y - metrics.getAscent(), Math.max(1, widgetWidth - 2 * paddingX), lineHeight);
+            graphics.clipRect(paddingX, y - lineAscent, Math.max(1, widgetWidth - 2 * paddingX), lineHeight);
             ChatRenderUtils.drawText(graphics, status, new Color(180, 190, 200), 255, paddingX, y, drawShadow, metrics);
             graphics.setClip(statusClip);
             y -= lineHeight;
         }
         if (inputSegments != null) {
             drawInputPreview(graphics, inputSegments, y, widgetWidth,
-                    paddingX, fontSize, metrics, modIcons, drawShadow, currentTime);
+                    paddingX, lineAscent, lineHeight, fontSize, metrics, modIcons, drawShadow, currentTime);
             y -= lineHeight;
         }
 
         for (int i = renderableLines.size() - 1; i >= 0; i--) {
+            // Wrapped messages and the previous frame's bounds can leave less than a full row.
+            if (y - lineAscent < paddingY) break;
             RenderLine line = renderableLines.get(i);
             if (line.alpha <= 0) {
                 continue;
@@ -450,17 +470,28 @@ public class DynamicChatOverlay extends Overlay {
         return paddingX;
     }
 
+    private static int iconAscent(List<TextSegment> segments, IndexedSprite[] modIcons,
+            FontSize fontSize, FontMetrics metrics) {
+        int ascent = 0;
+        for (TextSegment segment : segments) {
+            if (segment.iconId < 0) continue;
+            BufferedImage icon = ChatRenderUtils.getModIconImage(segment.iconId, modIcons);
+            if (icon != null) ascent = Math.max(ascent, ChatRenderUtils.iconAscent(icon, fontSize, metrics));
+        }
+        return ascent;
+    }
+
     private void drawSegments(Graphics2D graphics, List<TextSegment> segments, int alpha, int y,
             int widgetWidth, int paddingX, FontSize fontSize,
             FontMetrics metrics, IndexedSprite[] modIcons, boolean drawShadow, long now) {
         int lineWidth = calculateLineWidth(segments, metrics);
-        int contentWidth = Math.max(0, widgetWidth - paddingX * 2);
+        int contentWidth = Math.max(0, widgetWidth - paddingX * 2 - 2);
         int x = calculateAlignedX(overlayConfig.getTextAlignment(), paddingX, contentWidth, lineWidth);
         drawSegmentsAt(graphics, segments, alpha, x, y, paddingX, fontSize, metrics, modIcons, drawShadow, now);
     }
 
     private void drawInputPreview(Graphics2D graphics, InputPreview input, int y,
-            int widgetWidth, int paddingX, FontSize fontSize,
+            int widgetWidth, int paddingX, int lineAscent, int lineHeight, FontSize fontSize,
             FontMetrics metrics, IndexedSprite[] modIcons, boolean drawShadow, long now) {
         int nameWidth = calculateLineWidth(input.name, metrics);
         int textWidth = calculateLineWidth(input.text, metrics);
@@ -477,11 +508,11 @@ public class DynamicChatOverlay extends Overlay {
         Graphics2D preview = (Graphics2D) graphics.create();
         try {
             Shape clip = preview.getClip();
-            preview.clipRect(x, y - metrics.getAscent(), fixedWidth, metrics.getHeight() + 2);
+            preview.clipRect(x, y - lineAscent, fixedWidth, lineHeight);
             drawSegmentsAt(preview, input.name, 255, x, y, paddingX, fontSize, metrics, modIcons, drawShadow, now);
             preview.setClip(clip);
             // Clip at the username boundary even with a transparent background.
-            preview.clipRect(textLeft, y - metrics.getAscent(), textSpace, metrics.getHeight() + 2);
+            preview.clipRect(textLeft, y - lineAscent, textSpace, lineHeight);
             drawSegmentsAt(preview, input.text, 255, textLeft - scroll, y, paddingX,
                     fontSize, metrics, modIcons, drawShadow, now);
         } finally {

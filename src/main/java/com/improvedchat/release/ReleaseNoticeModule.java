@@ -22,11 +22,11 @@ public final class ReleaseNoticeModule
     static final String RELEASE = "2026-11-01-chat-borders-input";
     static final String SEEN_KEY = "releaseNoticeId";
     private static final String[] RECENT = {
+        "Overlay borders leave space on all four sides, with full-height lines to keep text and icons clear of the frame.",
         "Simple Overlays, Create and Tools tabs; click an overlay name for a resizable editor window with Messages, Style and Alerts tabs.",
         "Overlays can scroll through session history: enable Scroll history, use the wheel, and right-click Latest to return.",
         "Long input previews scroll behind your name so the newest text and typing marker stay visible.",
         "The regular chatbox has its own optional border: color, opacity, thickness, RGB and rounded corners.",
-        "RGB controls are together under Style, with one-click RGB for all messages and clearer tooltips.",
     };
 
     @Inject private Client client;

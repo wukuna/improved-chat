@@ -41,6 +41,7 @@ public class OverlayScrollIntegrationTest {
             when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
             config.setAlwaysVisible(true);config.setScrollHistory(true);config.setWidgetWidth(300);config.setMaxMessages(4);
             config.setShowInputPreview(true);config.setFadeOutDuration(1);
+            config.getTextSettings().setChannelColor(1,java.awt.Color.CYAN);
             Player player=mock(Player.class);when(player.getName()).thenReturn("Alice");when(client.getLocalPlayer()).thenReturn(player);
             when(client.getVarcStrValue(VarClientID.CHATINPUT)).thenReturn("Typing stays here");
             overlay=new DynamicChatOverlay(plugin,new ImprovedChatConfig(){},client,null,new ClanChatPresentationService(),config);
@@ -60,14 +61,22 @@ public class OverlayScrollIntegrationTest {
     private static void sameRows(BufferedImage a,BufferedImage b,int startY,int endY) {
         for(int y=startY;y<endY;y++)for(int x=30;x<330;x++)assertEquals(x+","+y,a.getRGB(x,y),b.getRGB(x,y));
     }
+    private static Rectangle inputRows(BufferedImage image) {
+        Rectangle rows=null;
+        for(int y=0;y<image.getHeight();y++)for(int x=30;x<330;x++)if(image.getRGB(x,y)==java.awt.Color.CYAN.getRGB()) {
+            Rectangle pixel=new Rectangle(x,y,1,1);rows=rows==null?pixel:rows.union(pixel);
+        }
+        assertNotNull("Input must be visible",rows);return rows;
+    }
     @Test public void renderingWheelAndLatestKeepInputAndHistoryIndependent() throws Exception {
         Fixture f=new Fixture();BufferedImage latest=f.render(f.overlay);
         assertTrue(f.wheel(60,40,-1,0).isConsumed());
         BufferedImage history=f.render(f.overlay);
         assertFalse(java.util.Arrays.equals(latest.getRGB(30,20,300,50,null,0,300),history.getRGB(30,20,300,50,null,0,300)));
-        sameRows(latest,history,79,91); // input row remains in place
+        Rectangle input=inputRows(latest);
+        sameRows(latest,history,input.y,input.y+input.height); // input row remains in place
         list(f.plugin,"messages").add(OverlayMessage.gameMessage("New arrival",1,ChatMessageType.GAMEMESSAGE,false));
-        sameRows(history,f.render(f.overlay),20,91); // only footer changes
+        sameRows(history,f.render(f.overlay),20,input.y+input.height); // only footer changes
         f.plugin.onOverlayMenuClicked(new OverlayMenuClicked(new OverlayMenuEntry(MenuAction.RUNELITE_OVERLAY,"Latest","History"),f.overlay));
         BufferedImage resumed=f.render(f.overlay);
         assertFalse(java.util.Arrays.equals(history.getRGB(30,20,300,50,null,0,300),resumed.getRGB(30,20,300,50,null,0,300)));

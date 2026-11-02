@@ -1092,8 +1092,8 @@ public class ImprovedChatPanel extends PluginPanel {
             case "Bold": return "Use the bold version of the selected font.";
             case "Timestamps": return "Prefix each message with its arrival time.";
             case "Width (px)": return "Width of this overlay in game pixels; long lines wrap.";
-            case "Padding X": return "Space between the text and the left/right edges.";
-            case "Padding Y": return "Space above and below the text.";
+            case "Padding X": return "Space inside the left/right border. Borders and rounded corners keep at least 3 pixels clear.";
+            case "Padding Y": return "Space inside the top/bottom border. Borders and rounded corners keep at least 3 pixels clear.";
             case "Background": return "Draw the overlay background. In Alerts, flash it for matching messages.";
             case "Background Color": return "Background tint. Opacity controls its transparency.";
             case "Border": return "Draw the frame. In Alerts, flash it for matching messages.";
