@@ -19,12 +19,20 @@ import static org.junit.Assert.*;
 
 /** Headless interaction/layout checks against the real Swing panel. */
 public class ImprovedChatPanelTest {
+    @org.junit.BeforeClass public static void useClientTheme() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            try { javax.swing.UIManager.setLookAndFeel(new net.runelite.client.ui.laf.RuneLiteLAF()); }
+            catch (Exception e) { throw new AssertionError(e); }
+        });
+    }
     private static final class FakePlugin extends ImprovedChatPlugin {
         final List<OverlayConfig> configs = new ArrayList<>();
         boolean globalOverride;
         int saves;
+        String recoveryMessage;
         FakePlugin() { configs.add(OverlayConfig.preset("Game Alerts", "game")); }
         @Override public List<OverlayConfig> getOverlayConfigs() { return configs; }
+        @Override public String getConfigRecoveryMessage() { return recoveryMessage; }
         @Override public void onOverlayConfigChanged() { saves++; }
         @Override public int getOverlayWidth(OverlayConfig config) { return config.getWidgetWidth(); }
         @Override public net.runelite.client.config.Notification customizeNotification(net.runelite.client.config.Notification original) {
@@ -35,11 +43,72 @@ public class ImprovedChatPanelTest {
         @Override public String movementHint() { return "Hold Alt and drag the overlay to move it."; }
     }
 
+    private static final class TestWindow extends OverlayEditorWindow {
+        javax.swing.JComponent contents;
+        Runnable onClose;
+        String title;
+        boolean opened;
+        @Override void open(Component owner, javax.swing.JComponent contents, String title, Runnable onClose) {
+            this.contents=contents;this.title=title;this.onClose=onClose;opened=true;
+        }
+        @Override void title(String title) { this.title=title; }
+        @Override void close() { opened=false; }
+    }
+    private static final class TestPanel extends ImprovedChatPanel {
+        final TestWindow window;
+        TestPanel(FakePlugin plugin) { this(plugin,new TestWindow()); }
+        TestPanel(FakePlugin plugin,TestWindow window) { super(plugin,window);this.window=window; }
+    }
+    private static ImprovedChatPanel editingPanel(FakePlugin plugin) {
+        TestPanel panel=new TestPanel(plugin);
+        editButtons(panel).get(0).doClick();
+        return panel;
+    }
+    private static Container editor(Container parent) {
+        if(parent instanceof TestPanel && ((TestPanel)parent).window.opened)
+            return ((TestPanel)parent).window.contents;
+        return parent;
+    }
+    @Test public void sidebarStartsSimpleAndWindowClosesWithRemovedOverlayOrPlugin() throws Exception {
+        SwingUtilities.invokeAndWait(()->{
+            FakePlugin plugin=new FakePlugin();TestPanel panel=new TestPanel(plugin);
+            panel.setSize(225,650);layout(panel);
+            assertFalse(panel.window.opened);
+            JTabbedPane navigation=findTabs(panel);
+            assertEquals("Overlays",navigation.getTitleAt(0));
+            assertEquals("Create",navigation.getTitleAt(1));
+            assertEquals("Tools",navigation.getTitleAt(2));
+            assertEquals(1,navigation.getTabRunCount());
+            assertNull(namedField(panel,"Name"));
+            plugin.recoveryMessage="Saved overlays could not be read. The backup was kept.";panel.rebuild();
+            assertEquals(plugin.recoveryMessage,button(panel,"Settings notice").getToolTipText());
+            assertNull(findTextArea(panel));
+            editButtons(panel).get(0).doClick();
+            assertTrue(panel.window.opened);
+            assertNull(panel.window.contents.getParent());
+            namedField(panel,"Name").setText("My game alerts");
+            assertEquals("Edit overlay — My game alerts",panel.window.title);
+            panel.window.onClose.run();assertFalse(panel.window.opened);
+            editButtons(panel).get(0).doClick();assertTrue(panel.window.opened);
+            plugin.configs.clear();panel.rebuild();assertFalse(panel.window.opened);
+            plugin.configs.add(OverlayConfig.preset("New", "game"));panel.rebuild();
+            editButtons(panel).get(0).doClick();panel.close();assertFalse(panel.window.opened);
+            panel.rebuild();editButtons(panel).get(0).doClick();assertFalse(panel.window.opened);
+        });
+    }
+
+    private static javax.swing.JTextArea findTextArea(Container parent) {
+        for(Component child:parent.getComponents()) {
+            if(child instanceof javax.swing.JTextArea && child.isVisible())return (javax.swing.JTextArea)child;
+            if(child instanceof Container && child.isVisible()) {javax.swing.JTextArea found=findTextArea((Container)child);if(found!=null)return found;}
+        }return null;
+    }
+
     @Test public void editorPreservesScrollAndDisablesOverriddenFilters() throws Exception {
         FakePlugin plugin = new FakePlugin();
         ImprovedChatPanel[] holder = new ImprovedChatPanel[1];
         SwingUtilities.invokeAndWait(() -> {
-            holder[0] = new ImprovedChatPanel(plugin);
+            holder[0] = editingPanel(plugin);
             holder[0].setSize(280, 650);
             editButtons(holder[0]).get(0).doClick();
             tabs(holder[0]).setSelectedIndex(1);
@@ -72,7 +141,7 @@ public class ImprovedChatPanelTest {
             OverlayConfig first = plugin.configs.get(0);
             OverlayConfig second = OverlayConfig.preset("Clan", "clan");
             plugin.configs.add(second);
-            ImprovedChatPanel panel = new ImprovedChatPanel(plugin);
+            ImprovedChatPanel panel = editingPanel(plugin);
             panel.setSize(225, 900); layout(panel);
             JTabbedPane pages = tabs(panel);
             assertEquals(1, pages.getTabRunCount());
@@ -110,7 +179,7 @@ public class ImprovedChatPanelTest {
         SwingUtilities.invokeAndWait(() -> {
             FakePlugin plugin=new FakePlugin();OverlayConfig cfg=plugin.configs.get(0);
             cfg.getTextSettings().setRainbowEnabled(true);cfg.getTextSettings().setRainbowRules("rare drop");
-            ImprovedChatPanel panel=new ImprovedChatPanel(plugin);panel.setSize(225,900);tabs(panel).setSelectedIndex(1);
+            ImprovedChatPanel panel=editingPanel(plugin);panel.setSize(225,900);tabs(panel).setSelectedIndex(1);
             assertNotNull(button(panel,"RGB all messages").getToolTipText());
             button(panel,"RGB all messages").doClick();
             assertEquals(com.improvedchat.model.AnimatedTextStyle.RGB_CYCLE,cfg.getAnimatedTextStyle());
@@ -124,6 +193,7 @@ public class ImprovedChatPanelTest {
     }
 
     private static javax.swing.JComboBox<?> combo(Container parent, String name) {
+        parent = editor(parent);
         for (Component child : parent.getComponents()) {
             if (child instanceof javax.swing.JComboBox && name.equals(child.getName())) return (javax.swing.JComboBox<?>) child;
             if (child instanceof Container) {
@@ -138,7 +208,7 @@ public class ImprovedChatPanelTest {
         SwingUtilities.invokeAndWait(() -> {
             try {
                 FakePlugin plugin = new FakePlugin();
-                ImprovedChatPanel panel = new ImprovedChatPanel(plugin);
+                ImprovedChatPanel panel = editingPanel(plugin);
                 panel.setSize(280, 650);
                 layout(panel);
                 capture(panel, "overlay-list");
@@ -166,7 +236,7 @@ public class ImprovedChatPanelTest {
         SwingUtilities.invokeAndWait(() -> {
             try {
                 FakePlugin plugin=new FakePlugin(); OverlayConfig second=new OverlayConfig(); plugin.configs.add(second);
-                ImprovedChatPanel panel=new ImprovedChatPanel(plugin); panel.setSize(280,900);
+                ImprovedChatPanel panel=editingPanel(plugin); panel.setSize(280,900);
                 editButtons(panel).get(0).doClick(); tabs(panel).setSelectedIndex(2);
                 button(panel,"Enable Notifications").doClick();
                 assertTrue(plugin.configs.get(0).getNotification().isEnabled()); assertFalse(second.getNotification().isEnabled());
@@ -185,7 +255,7 @@ public class ImprovedChatPanelTest {
     @Test public void tabsRetainSelectionDuringConditionalRebuildAndAutoSaveText() throws Exception {
         SwingUtilities.invokeAndWait(() -> {
             FakePlugin plugin = new FakePlugin();
-            ImprovedChatPanel panel = new ImprovedChatPanel(plugin);
+            ImprovedChatPanel panel = editingPanel(plugin);
             panel.setSize(225, 900); layout(panel);
             assertEquals(3, tabs(panel).getTabCount());
             assertEquals("Messages", tabs(panel).getTitleAt(0));
@@ -208,7 +278,7 @@ public class ImprovedChatPanelTest {
     @Test public void expandingMessagesAdjustsActivePageHeight() throws Exception {
         SwingUtilities.invokeAndWait(() -> {
             FakePlugin plugin = new FakePlugin();
-            ImprovedChatPanel panel = new ImprovedChatPanel(plugin);
+            ImprovedChatPanel panel = editingPanel(plugin);
             panel.setSize(225, 650); layout(panel);
             int before = tabs(panel).getPreferredSize().height;
             button(panel, "SOLID COLOR HIGHLIGHTS").doClick();
@@ -224,7 +294,7 @@ public class ImprovedChatPanelTest {
                 FakePlugin plugin = new FakePlugin();
                 plugin.configs.add(OverlayConfig.preset("Private Messages", "private"));
                 plugin.configs.add(OverlayConfig.preset("Clan Highlights", "clan"));
-                ImprovedChatPanel panel = new ImprovedChatPanel(plugin);
+                ImprovedChatPanel panel = editingPanel(plugin);
                 panel.setSize(280, 900); layout(panel);
                 assertEquals(3, editButtons(panel).size());
                 tabs(panel).setSelectedIndex(1);
@@ -248,7 +318,7 @@ public class ImprovedChatPanelTest {
     @Test public void betaReplacementEditorSavesMultipleRulesWithoutLosingAnotherRule() throws Exception {
         SwingUtilities.invokeAndWait(() -> {
             FakePlugin plugin = new FakePlugin();
-            ImprovedChatPanel panel = new ImprovedChatPanel(plugin); panel.setSize(225,900);
+            ImprovedChatPanel panel = editingPanel(plugin); panel.setSize(225,900);
             button(panel,"MESSAGE REPLACER (BETA)").doClick();
             button(panel,"Enable message replacer (Beta)").doClick();
             button(panel,"ADD REPLACEMENT").doClick();
@@ -276,6 +346,7 @@ public class ImprovedChatPanelTest {
     }
 
     private static List<javax.swing.JTextField> namedFields(Container parent, String name) {
+        parent = editor(parent);
         List<javax.swing.JTextField> result = new ArrayList<>();
         for(Component child:parent.getComponents()) {
             if(child instanceof javax.swing.JTextField && name.equals(child.getName())) result.add((javax.swing.JTextField)child);
@@ -285,6 +356,7 @@ public class ImprovedChatPanelTest {
     }
 
     private static javax.swing.JTextField namedField(Container parent, String name) {
+        parent = editor(parent);
         for (Component child : parent.getComponents()) {
             if (child instanceof javax.swing.JTextField && name.equals(child.getName())) return (javax.swing.JTextField)child;
             if (child instanceof Container) {
@@ -304,6 +376,7 @@ public class ImprovedChatPanelTest {
     }
 
     private static void capture(Component panel, String name) throws Exception {
+        if(panel instanceof TestPanel && !name.contains("list") && !name.contains("narrow")) panel=editor((Container)panel);
         File directory = new File("build/reports/ui");
         directory.mkdirs();
         BufferedImage image = new BufferedImage(panel.getWidth(), panel.getHeight(), BufferedImage.TYPE_INT_RGB);
@@ -314,11 +387,15 @@ public class ImprovedChatPanelTest {
     }
 
     private static void layout(Container container) {
+        if (container instanceof TestPanel && ((TestPanel)container).window.opened) {
+            Container editor = editor(container);editor.setSize(540,650);layout(editor);
+        }
         container.doLayout();
         for (Component child : container.getComponents()) if (child instanceof Container) layout((Container) child);
     }
 
     private static JTabbedPane tabs(Container parent) {
+        parent = editor(parent);
         for (Component child : parent.getComponents()) {
             if (child instanceof JTabbedPane) return (JTabbedPane) child;
             if (child instanceof Container) {
@@ -340,6 +417,7 @@ public class ImprovedChatPanelTest {
     }
 
     private static JScrollPane findScroll(Container parent) {
+        parent = editor(parent);
         for (Component child : parent.getComponents()) {
             if (child instanceof JScrollPane) return (JScrollPane) child;
         }
@@ -347,6 +425,7 @@ public class ImprovedChatPanelTest {
     }
 
     private static AbstractButton button(Container parent, String text) {
+        parent = editor(parent);
         AbstractButton result = findButton(parent, text);
         if (result == null) throw new AssertionError("Missing button " + text);
         return result;

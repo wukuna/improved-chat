@@ -31,8 +31,8 @@ Give each conversation its own space. Create chat overlays with independent chan
 ## Getting started
 
 1. Use the normal plugin settings for native chatbox size, collapse controls, cleanup, opacity and dialogue styling.
-2. Open the side panel to create an overlay. Choose its message types and when it should appear.
-3. Use **Messages**, **Style** and **Alerts** to configure that overlay, then try **Preview** while logged in.
+2. Open **Create** in the side panel to start with a preset or a custom overlay.
+3. Click an overlay name under **Overlays** to open its resizable editor window. Use **Messages**, **Style** and **Alerts**, then try **Preview** while logged in.
 
 Previously **Improved Chat**. Existing settings, overlay positions and profiles are retained.
 
@@ -46,7 +46,7 @@ Start with a preset, then turn on **Enabled**, choose **Message Types**, and set
 
 Use **Preview** while logged in to check appearance for 10 seconds without waiting for chat. Preview bypasses content filters and normal visibility conditions; its sample messages never enter chat history. Use **Settings** for native chat features and global defaults.
 
-The compact overlay list stays above the editor. Select an overlay, then use **Messages**, **Style**, or **Alerts**. Each overlay has a direct enable switch. Changes save automatically as you edit. Expand a section for its controls; hover a setting for brief help. Style puts text and colors first, followed by frame, effects, position and layout. The editor supports duplicating an overlay, confirms deletion, and preserves your scroll position when dependent controls change. Deleting every overlay stays empty after restart. Creating Game Alerts uses the same game-message selection as the first-run preset; existing saved selections are preserved.
+The sidebar has three simple tabs: **Overlays**, **Create** and **Tools**. Click an overlay name to open its separate editor window, then use **Messages**, **Style**, or **Alerts** inside it. Opening another overlay reuses the window; each overlay remembers its selected tab. **Tools → Chatbox settings** opens the regular chatbox options. The header has no introductory paragraph; a compact **Settings notice…** button appears only when settings need attention. Each overlay has a direct enable switch. Changes save automatically as you edit. Expand a section for its controls; hover a setting for brief help. Style puts text and colors first, followed by frame, effects, position and layout. The editor supports duplicating an overlay, confirms deletion, and preserves your scroll position when dependent controls change. Deleting every overlay stays empty after restart. Creating Game Alerts uses the same game-message selection as the first-run preset; existing saved selections are preserved.
 
 Turn off **Messages → Show channel names** to remove the bracketed clan/friends-chat channel prefix from that overlay. Sender names, rank icons and messages remain available. Existing overlays inherit the global channel-name preference until you change this checkbox. **Style → Text Size → Small** works with every offered font, including bold styles.
 
@@ -330,7 +330,7 @@ Native private-chat hiding keeps the system-update timer visible. Overlay login/
 
 ## Saved settings
 
-Custom text rules have safety limits to keep chat responsive. Expressions may contain up to 1,024 characters, with up to 128 rules per list and 32,768 characters per rule source. Matching stops when a rule exceeds its work budget; the rule is skipped until it is recompiled after an edit. If an overlay filter cannot be evaluated safely, its messages remain visible. The side panel explains when a limit was reached, and saved rule text is retained. These limits apply to Improved Chat's evaluation, not other plugins' matching engines.
+Custom text rules have safety limits to keep chat responsive. Expressions may contain up to 1,024 characters, with up to 128 rules per list and 32,768 characters per rule source. Matching stops when a rule exceeds its work budget; the rule is skipped until it is recompiled after an edit. If an overlay filter cannot be evaluated safely, its messages remain visible. The side panel’s **Settings notice…** explains when a limit was reached, and saved rule text is retained. These limits apply to Improved Chat's evaluation, not other plugins' matching engines.
 
 Saved overlay lists are limited to 64 overlays and two million JSON characters, with a nesting limit checked before parsing. Unreadable bounded configurations retain a recovery backup. Oversized configurations remain in their original setting and automatic saving pauses; export the RuneLite profile before using the existing Reset overlays action to deliberately replace them.
 

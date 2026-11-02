@@ -381,8 +381,13 @@ public class ImprovedChatPlugin extends Plugin implements net.runelite.client.in
             setPmWidgetsHidden(false);
         }
 
+        if (panel != null) {
+            panel.close();
+            panel = null;
+        }
         if (navButton != null) {
             clientToolbar.removeNavigation(navButton);
+            navButton = null;
         }
     }
 

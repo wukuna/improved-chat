@@ -84,11 +84,21 @@ public class ImprovedChatPanel extends PluginPanel {
     private String editingOverlayId;
     private String renderedOverlayId;
     private JScrollPane pageScroll;
+    private JScrollPane editorScroll;
+    private final JPanel editorPage = new JPanel(new BorderLayout());
+    private final OverlayEditorWindow editorWindow;
+    private int sidebarTab;
+    private volatile boolean closed;
     private int rebuildVersion;
 
     public ImprovedChatPanel(ImprovedChatPlugin plugin) {
+        this(plugin, new OverlayEditorWindow());
+    }
+
+    ImprovedChatPanel(ImprovedChatPlugin plugin, OverlayEditorWindow editorWindow) {
         super(false);
         this.plugin = plugin;
+        this.editorWindow = editorWindow;
         setLayout(new BorderLayout());
         setBackground(BG);
         rebuild();
@@ -99,20 +109,101 @@ public class ImprovedChatPanel extends PluginPanel {
             SwingUtilities.invokeLater(this::rebuild);
             return;
         }
-        boolean samePage = java.util.Objects.equals(renderedOverlayId, editingOverlayId);
-        int scrollPosition = samePage && pageScroll != null ? pageScroll.getVerticalScrollBar().getValue() : 0;
+        if (closed) return;
+        int listPosition = pageScroll == null ? 0 : pageScroll.getVerticalScrollBar().getValue();
+        boolean sameEditor = java.util.Objects.equals(renderedOverlayId, editingOverlayId);
+        int editorPosition = sameEditor && editorScroll != null ? editorScroll.getVerticalScrollBar().getValue() : 0;
         int version = ++rebuildVersion;
         overlaySelectors.clear();
         removeAll();
         add(buildHeader(), BorderLayout.NORTH);
-        add(buildOverlaysPage(), BorderLayout.CENTER);
+        JTabbedPane navigation = new JTabbedPane();
+        navigation.setName("sidebar-tabs");
+        navigation.addTab("Overlays", buildOverlaysPage());
+        navigation.addTab("Create", buildCreatePage());
+        navigation.addTab("Tools", buildToolsPage());
+        navigation.setSelectedIndex(sidebarTab);
+        navigation.addChangeListener(e -> sidebarTab = navigation.getSelectedIndex());
+        add(navigation, BorderLayout.CENTER);
+        OverlayConfig selected = findOverlay(editingOverlayId);
+        if (selected == null) {
+            closeEditor();
+        } else {
+            editorPage.removeAll();
+            editorScroll = scroll(buildOverlayEditor(selected));
+            editorPage.add(editorScroll, BorderLayout.CENTER);
+            editorWindow.title("Edit overlay — " + selected.getName());
+            editorPage.revalidate();
+            editorPage.repaint();
+        }
         renderedOverlayId = editingOverlayId;
         revalidate();
         repaint();
         SwingUtilities.invokeLater(() -> {
-            if (version != rebuildVersion) return;
-            if (pageScroll != null) pageScroll.getVerticalScrollBar().setValue(scrollPosition);
+            if (closed || version != rebuildVersion) return;
+            if (pageScroll != null) pageScroll.getVerticalScrollBar().setValue(listPosition);
+            if (editorScroll != null) editorScroll.getVerticalScrollBar().setValue(editorPosition);
         });
+    }
+
+    private void openEditor(String id) {
+        if (closed || findOverlay(id) == null) return;
+        editingOverlayId = id;
+        rebuild();
+        editorWindow.open(this, editorPage, "Edit overlay — " + findOverlay(id).getName(), () -> {
+            closeEditor();
+            rebuild();
+        });
+    }
+
+    private void closeEditor() {
+        editorWindow.close();
+        editingOverlayId = null;
+        renderedOverlayId = null;
+        editorScroll = null;
+        editorPage.removeAll();
+    }
+
+    public void close() {
+        closed = true;
+        if (SwingUtilities.isEventDispatchThread()) closeEditor();
+        else SwingUtilities.invokeLater(this::closeEditor);
+    }
+
+    private Component buildCreatePage() {
+        WidthTrackingPanel body = verticalPage();
+        String[][] presets = {{"Game Alerts", "game"}, {"Private Messages", "private"},
+                {"Clan Chat", "clan"}, {"All Messages", "all"}, {"Custom Overlay", "custom"}};
+        for (String[] preset : presets) {
+            JButton create = button(preset[0]);
+            create.setAlignmentX(Component.LEFT_ALIGNMENT);
+            create.setMaximumSize(new Dimension(Integer.MAX_VALUE, 32));
+            create.setToolTipText("Create and edit a new " + preset[0] + " overlay.");
+            create.addActionListener(e -> createOverlay(preset[0], preset[1]));
+            body.add(create);
+            body.add(Box.createVerticalStrut(6));
+        }
+        body.add(Box.createVerticalGlue());
+        return scroll(body);
+    }
+
+    private Component buildToolsPage() {
+        WidthTrackingPanel body = verticalPage();
+        JButton settings = button("Chatbox settings…");
+        settings.setToolTipText("Native chatbox, border, cleanup and dialogue settings.");
+        settings.addActionListener(e -> plugin.openSettings());
+        body.add(settings);
+        body.add(Box.createVerticalStrut(8));
+        JButton controls = button("Overlay controls…");
+        controls.setAlignmentX(Component.LEFT_ALIGNMENT);
+        Component help = help("Click an overlay name to open its editor. Changes save automatically. "
+                + "Hold Alt and drag an overlay to move it; right-click it for more actions.");
+        help.setVisible(false);
+        controls.addActionListener(e -> { help.setVisible(!help.isVisible()); body.revalidate(); });
+        body.add(controls);
+        body.add(help);
+        body.add(Box.createVerticalGlue());
+        return scroll(body);
     }
 
     private Component buildHeader() {
@@ -122,22 +213,29 @@ public class ImprovedChatPanel extends PluginPanel {
 
 
         JPanel heading = panel(BG);
+        heading.setAlignmentX(Component.LEFT_ALIGNMENT);
         heading.setLayout(new BorderLayout(4, 0));
         heading.add(label("Chat & Overlays", TEXT, 14, Font.BOLD), BorderLayout.CENTER);
-        JButton settings = button("Settings");
-        settings.setToolTipText("Native chatbox, cleanup and dialogue settings.");
-        settings.addActionListener(e -> plugin.openSettings());
-        heading.add(settings, BorderLayout.EAST);
         root.add(heading);
-        if (plugin.getConfigRecoveryMessage() != null) root.add(help(plugin.getConfigRecoveryMessage()));
+        String warning = plugin.getConfigRecoveryMessage();
+        if (warning != null) {
+            JButton notice = button("Settings notice…");
+            notice.setAlignmentX(Component.LEFT_ALIGNMENT);
+            notice.setForeground(new Color(245, 190, 90));
+            notice.setToolTipText(warning);
+            notice.addActionListener(e -> {
+                JTextArea text = new JTextArea(warning, 0, 40);
+                text.setLineWrap(true);text.setWrapStyleWord(true);text.setEditable(false);text.setOpaque(false);
+                JOptionPane.showMessageDialog(this, text, "Settings notice", JOptionPane.WARNING_MESSAGE);
+            });
+            root.add(Box.createVerticalStrut(5));
+            root.add(notice);
+        }
         return root;
     }
 
 
     private Component buildOverlaysPage() {
-        if (findOverlay(editingOverlayId) == null) {
-            editingOverlayId = plugin.getOverlayConfigs().isEmpty() ? null : plugin.getOverlayConfigs().get(0).getId();
-        }
         WidthTrackingPanel body = verticalPage();
         JPanel toolbar = panel(BG);
         toolbar.setLayout(new BorderLayout(4, 0));
@@ -158,13 +256,9 @@ public class ImprovedChatPanel extends PluginPanel {
             body.add(Box.createVerticalStrut(6));
         }
 
-        OverlayConfig selected = findOverlay(editingOverlayId);
-        if (selected != null) {
-            body.add(Box.createVerticalStrut(10));
-            body.add(buildOverlayEditor(selected));
-        }
         body.add(Box.createVerticalGlue());
-        return scroll(body);
+        pageScroll = scroll(body);
+        return pageScroll;
     }
 
     private Component overlayCard(OverlayConfig oc) {
@@ -181,7 +275,7 @@ public class ImprovedChatPanel extends PluginPanel {
         edit.setName("overlay-selector");
         edit.setHorizontalAlignment(JButton.LEFT);
         edit.setToolTipText("Edit " + oc.getName());
-        edit.addActionListener(e -> { editingOverlayId = oc.getId(); rebuild(); });
+        edit.addActionListener(e -> openEditor(oc.getId()));
         overlaySelectors.put(oc.getId(), edit);
         top.add(edit, BorderLayout.CENTER);
         JCheckBox enabled = new JCheckBox("", oc.isShow());
@@ -415,7 +509,7 @@ public class ImprovedChatPanel extends PluginPanel {
                 return new Dimension(Integer.MAX_VALUE, getPreferredSize().height);
             }
         };
-        tabs.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 10));
+        tabs.setFont(UIManager.getFont("Label.font"));
         tabs.setUI(new javax.swing.plaf.basic.BasicTabbedPaneUI() {
             @Override protected Insets getTabInsets(int placement, int index) {
                 return new Insets(4, 3, 4, 3);
@@ -435,8 +529,7 @@ public class ImprovedChatPanel extends PluginPanel {
         JButton duplicate = button("Duplicate");
         duplicate.setAlignmentX(Component.LEFT_ALIGNMENT);
         duplicate.addActionListener(e -> {
-            editingOverlayId = plugin.duplicateOverlay(oc).getId();
-            rebuild();
+            openEditor(plugin.duplicateOverlay(oc).getId());
         });
         JPanel actions = panel(BG);
         actions.setLayout(new java.awt.GridLayout(1, 2, 6, 0));
@@ -446,7 +539,7 @@ public class ImprovedChatPanel extends PluginPanel {
         delete.setForeground(DANGER);
         delete.setAlignmentX(Component.LEFT_ALIGNMENT);
         delete.addActionListener(e -> {
-            if (JOptionPane.showConfirmDialog(this, help("Delete “" + oc.getName() + "”? This removes its saved settings."),
+            if (JOptionPane.showConfirmDialog(editorPage, help("Delete “" + oc.getName() + "”? This removes its saved settings."),
                     "Delete overlay", JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE) != JOptionPane.OK_OPTION) return;
             plugin.removeOverlay(oc);
             editingOverlayId = null;
@@ -834,7 +927,7 @@ public class ImprovedChatPanel extends PluginPanel {
     private Component colorRow(String name, Color color, java.util.function.Consumer<Color> setter) {
         JButton swatch = colorButton(color, "");
         swatch.addActionListener(e -> {
-            Color chosen = JColorChooser.showDialog(this, name, swatch.getBackground());
+            Color chosen = JColorChooser.showDialog(swatch, name, swatch.getBackground());
             if (chosen != null) {
                 setter.accept(chosen);
                 swatch.setBackground(chosen);
@@ -958,8 +1051,8 @@ public class ImprovedChatPanel extends PluginPanel {
         OverlayConfig oc = OverlayConfig.preset(name, template);
         oc.getTextSettings(); // New overlays have independent styling defaults.
         plugin.addConfiguredOverlay(oc);
-        editingOverlayId = oc.getId();
-        rebuild();
+        sidebarTab = 0;
+        openEditor(oc.getId());
     }
 
 
@@ -1114,7 +1207,6 @@ public class ImprovedChatPanel extends PluginPanel {
 
     private JScrollPane scroll(Component c) {
         JScrollPane sp = new JScrollPane(c);
-        pageScroll = sp;
         sp.setBorder(null);
         sp.setBackground(BG);
         sp.getViewport().setBackground(BG);
@@ -1169,7 +1261,10 @@ public class ImprovedChatPanel extends PluginPanel {
     }
 
     private void saveOverlay() {
+        if (closed) return;
         plugin.onOverlayConfigChanged();
+        OverlayConfig current = findOverlay(editingOverlayId);
+        if (current != null) editorWindow.title("Edit overlay — " + current.getName());
         for (OverlayConfig oc : plugin.getOverlayConfigs()) {
             JButton selector = overlaySelectors.get(oc.getId());
             if (selector != null) {
